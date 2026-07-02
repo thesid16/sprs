@@ -1,0 +1,22 @@
+{
+  "lb_span": 15,
+  "K_min": 6,
+  "K_max": 32,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 96,
+  "lb_instr": 33,
+  "K_star": 32,
+  "lb_K_opt": 96,
+  "su_number": 9,
+  "su_feasible": true,
+  "lb_hu_hlf": 96,
+  "lb_gather": 18,
+  "lb_bisection": 14,
+  "omega": 96,
+  "active_bound": "lb_hu_hlf",
+  "instance": "large_unbal_torus",
+  "N": 500,
+  "G": 32,
+  "topology": "torus"
+}
