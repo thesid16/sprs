@@ -1,0 +1,22 @@
+{
+  "lb_span": 18,
+  "K_min": 48,
+  "K_max": 1024,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 24,
+  "lb_instr": 9,
+  "K_star": 1024,
+  "lb_K_opt": 24,
+  "su_number": 13,
+  "su_feasible": true,
+  "lb_hu_hlf": 24,
+  "lb_gather": 36,
+  "lb_bisection": 20,
+  "omega": 36,
+  "active_bound": "lb_gather",
+  "instance": "max_bal_2d",
+  "N": 4096,
+  "G": 1024,
+  "topology": "torus"
+}
