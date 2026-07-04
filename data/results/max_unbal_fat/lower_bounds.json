@@ -1,0 +1,22 @@
+{
+  "lb_span": 18,
+  "K_min": 35,
+  "K_max": 128,
+  "d_min": 2,
+  "lb_comm": 13,
+  "lb_gen": 144,
+  "lb_instr": 49,
+  "K_star": 125,
+  "lb_K_opt": 144,
+  "su_number": 12,
+  "su_feasible": true,
+  "lb_hu_hlf": 144,
+  "lb_gather": 19,
+  "lb_bisection": 14,
+  "omega": 144,
+  "active_bound": "lb_hu_hlf",
+  "instance": "max_unbal_fat",
+  "N": 3000,
+  "G": 128,
+  "topology": "fat_tree"
+}
