@@ -1,0 +1,22 @@
+{
+  "lb_span": 19,
+  "K_min": 96,
+  "K_max": 1024,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 48,
+  "lb_instr": 17,
+  "K_star": 1024,
+  "lb_K_opt": 48,
+  "su_number": 14,
+  "su_feasible": true,
+  "lb_hu_hlf": 48,
+  "lb_gather": 25,
+  "lb_bisection": 13,
+  "omega": 48,
+  "active_bound": "lb_hu_hlf",
+  "instance": "maxp_dense_hc",
+  "N": 8192,
+  "G": 1024,
+  "topology": "hypercube"
+}
