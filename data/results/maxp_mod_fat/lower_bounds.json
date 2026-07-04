@@ -1,0 +1,22 @@
+{
+  "lb_span": 19,
+  "K_min": 96,
+  "K_max": 4096,
+  "d_min": 2,
+  "lb_comm": 13,
+  "lb_gen": 12,
+  "lb_instr": 5,
+  "K_star": 4096,
+  "lb_K_opt": 13,
+  "su_number": 14,
+  "su_feasible": true,
+  "lb_hu_hlf": 19,
+  "lb_gather": 24,
+  "lb_bisection": 14,
+  "omega": 24,
+  "active_bound": "lb_gather",
+  "instance": "maxp_mod_fat",
+  "N": 8192,
+  "G": 4096,
+  "topology": "fat_tree"
+}
