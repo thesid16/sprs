@@ -1,0 +1,22 @@
+{
+  "lb_span": 10,
+  "K_min": 1,
+  "K_max": 5,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 24,
+  "lb_instr": 9,
+  "K_star": 4,
+  "lb_K_opt": 24,
+  "su_number": 5,
+  "su_feasible": true,
+  "lb_hu_hlf": 24,
+  "lb_gather": 15,
+  "lb_bisection": 13,
+  "omega": 24,
+  "active_bound": "lb_hu_hlf",
+  "instance": "npow2g_small_mesh",
+  "N": 16,
+  "G": 5,
+  "topology": "mesh"
+}
