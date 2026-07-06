@@ -1,0 +1,22 @@
+{
+  "lb_span": 13,
+  "K_min": 2,
+  "K_max": 64,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 12,
+  "lb_instr": 5,
+  "K_star": 64,
+  "lb_K_opt": 12,
+  "su_number": 8,
+  "su_feasible": true,
+  "lb_hu_hlf": 13,
+  "lb_gather": 32,
+  "lb_bisection": 28,
+  "omega": 32,
+  "active_bound": "lb_gather",
+  "instance": "med_mod_ring",
+  "N": 128,
+  "G": 64,
+  "topology": "ring"
+}
