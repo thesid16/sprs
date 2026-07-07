@@ -1,0 +1,22 @@
+{
+  "lb_span": 14,
+  "K_min": 3,
+  "K_max": 12,
+  "d_min": 2,
+  "lb_comm": 13,
+  "lb_gen": 102,
+  "lb_instr": 35,
+  "K_star": 12,
+  "lb_K_opt": 102,
+  "su_number": 8,
+  "su_feasible": true,
+  "lb_hu_hlf": 102,
+  "lb_gather": 16,
+  "lb_bisection": 14,
+  "omega": 102,
+  "active_bound": "lb_hu_hlf",
+  "instance": "npow2_med_fat",
+  "N": 200,
+  "G": 12,
+  "topology": "fat_tree"
+}
