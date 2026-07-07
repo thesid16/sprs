@@ -1,0 +1,22 @@
+{
+  "lb_span": 13,
+  "K_min": 2,
+  "K_max": 10,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 60,
+  "lb_instr": 21,
+  "K_star": 10,
+  "lb_K_opt": 60,
+  "su_number": 7,
+  "su_feasible": true,
+  "lb_hu_hlf": 60,
+  "lb_gather": 16,
+  "lb_bisection": 13,
+  "omega": 60,
+  "active_bound": "lb_hu_hlf",
+  "instance": "npow2_small_torus",
+  "N": 100,
+  "G": 10,
+  "topology": "torus"
+}
