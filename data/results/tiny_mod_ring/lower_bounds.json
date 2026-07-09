@@ -1,0 +1,22 @@
+{
+  "lb_span": 9,
+  "K_min": 1,
+  "K_max": 4,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 12,
+  "lb_instr": 5,
+  "K_star": 4,
+  "lb_K_opt": 12,
+  "su_number": 4,
+  "su_feasible": true,
+  "lb_hu_hlf": 12,
+  "lb_gather": 13,
+  "lb_bisection": 13,
+  "omega": 13,
+  "active_bound": "lb_gather",
+  "instance": "tiny_mod_ring",
+  "N": 8,
+  "G": 4,
+  "topology": "ring"
+}
