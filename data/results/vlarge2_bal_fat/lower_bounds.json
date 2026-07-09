@@ -1,0 +1,22 @@
+{
+  "lb_span": 17,
+  "K_min": 24,
+  "K_max": 256,
+  "d_min": 2,
+  "lb_comm": 13,
+  "lb_gen": 48,
+  "lb_instr": 17,
+  "K_star": 256,
+  "lb_K_opt": 48,
+  "su_number": 12,
+  "su_feasible": true,
+  "lb_hu_hlf": 48,
+  "lb_gather": 20,
+  "lb_bisection": 14,
+  "omega": 48,
+  "active_bound": "lb_hu_hlf",
+  "instance": "vlarge2_bal_fat",
+  "N": 2048,
+  "G": 256,
+  "topology": "fat_tree"
+}
