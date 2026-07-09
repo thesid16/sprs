@@ -1,0 +1,22 @@
+{
+  "lb_span": 9,
+  "K_min": 1,
+  "K_max": 2,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 24,
+  "lb_instr": 8,
+  "K_star": 2,
+  "lb_K_opt": 24,
+  "su_number": 4,
+  "su_feasible": true,
+  "lb_hu_hlf": 24,
+  "lb_gather": 12,
+  "lb_bisection": 13,
+  "omega": 24,
+  "active_bound": "lb_hu_hlf",
+  "instance": "tiny_dense_1d",
+  "N": 8,
+  "G": 2,
+  "topology": "linear"
+}
