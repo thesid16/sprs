@@ -1,0 +1,22 @@
+{
+  "lb_span": 17,
+  "K_min": 24,
+  "K_max": 256,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 48,
+  "lb_instr": 17,
+  "K_star": 256,
+  "lb_K_opt": 48,
+  "su_number": 12,
+  "su_feasible": true,
+  "lb_hu_hlf": 48,
+  "lb_gather": 33,
+  "lb_bisection": 20,
+  "omega": 48,
+  "active_bound": "lb_hu_hlf",
+  "instance": "vlarge_bal_mesh",
+  "N": 2048,
+  "G": 256,
+  "topology": "mesh"
+}
