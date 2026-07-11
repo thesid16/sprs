@@ -1,0 +1,22 @@
+{
+  "lb_span": 16,
+  "K_min": 12,
+  "K_max": 16,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 384,
+  "lb_instr": 129,
+  "K_star": 16,
+  "lb_K_opt": 384,
+  "su_number": 11,
+  "su_feasible": true,
+  "lb_hu_hlf": 384,
+  "lb_gather": 22,
+  "lb_bisection": 20,
+  "omega": 384,
+  "active_bound": "lb_hu_hlf",
+  "instance": "vlarge_extreme_1d",
+  "N": 1024,
+  "G": 16,
+  "topology": "linear"
+}
