@@ -1,0 +1,22 @@
+{
+  "lb_span": 16,
+  "K_min": 12,
+  "K_max": 512,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 12,
+  "lb_instr": 5,
+  "K_star": 512,
+  "lb_K_opt": 12,
+  "su_number": 11,
+  "su_feasible": true,
+  "lb_hu_hlf": 16,
+  "lb_gather": 147,
+  "lb_bisection": 140,
+  "omega": 147,
+  "active_bound": "lb_gather",
+  "instance": "vlarge_mod_ring",
+  "N": 1024,
+  "G": 512,
+  "topology": "ring"
+}
