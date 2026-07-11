@@ -1,0 +1,22 @@
+{
+  "lb_span": 16,
+  "K_min": 12,
+  "K_max": 32,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 192,
+  "lb_instr": 65,
+  "K_star": 32,
+  "lb_K_opt": 192,
+  "su_number": 11,
+  "su_feasible": true,
+  "lb_hu_hlf": 192,
+  "lb_gather": 18,
+  "lb_bisection": 13,
+  "omega": 192,
+  "active_bound": "lb_hu_hlf",
+  "instance": "vlarge_dense_hc",
+  "N": 1024,
+  "G": 32,
+  "topology": "hypercube"
+}
