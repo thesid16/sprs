@@ -1,0 +1,22 @@
+{
+  "lb_span": 16,
+  "K_min": 12,
+  "K_max": 64,
+  "d_min": 1,
+  "lb_comm": 12,
+  "lb_gen": 96,
+  "lb_instr": 33,
+  "K_star": 64,
+  "lb_K_opt": 96,
+  "su_number": 11,
+  "su_feasible": true,
+  "lb_hu_hlf": 96,
+  "lb_gather": 20,
+  "lb_bisection": 14,
+  "omega": 96,
+  "active_bound": "lb_hu_hlf",
+  "instance": "vlarge_dense_2d",
+  "N": 1024,
+  "G": 64,
+  "topology": "torus"
+}
