@@ -1,0 +1,410 @@
+% =====================================================================
+%  references.bib  (URL-verified edition)
+%  Bibliography for "Bitwise-Reproducible Reduction Across Cluster
+%  Reshape: A Compiler/Fabric ABI"
+%
+%  URLs and DOIs verified April 2026.
+%  Issues are documented in the accompanying ISSUES REPORT.
+% =====================================================================
+
+% ---- floating-point numerics ----
+
+@book{higham2002accuracy,
+  author    = {Nicholas J. Higham},
+  title     = {Accuracy and Stability of Numerical Algorithms},
+  edition   = {2nd},
+  publisher = {Society for Industrial and Applied Mathematics},
+  year      = {2002},
+  address   = {Philadelphia, PA},
+  url       = {https://epubs.siam.org/doi/10.1137/1.9780898718027},
+  doi       = {10.1137/1.9780898718027}
+}
+
+% ⚠ STRUCTURAL NOTE: This is a journal article (Communications of the ACM),
+%   but is typed @inproceedings with booktitle instead of journal.
+%   No cite-key change made per your preference.
+%   DOI: 10.1145/363707.363723
+@inproceedings{kahan1965summation,
+  author    = {William Kahan},
+  title     = {Pracniques: Further Remarks on Reducing Truncation Errors},
+  booktitle = {Communications of the ACM},
+  volume    = {8},
+  number    = {1},
+  pages     = {40},
+  year      = {1965},
+  url       = {https://dl.acm.org/doi/10.1145/363707.363723},
+  doi       = {10.1145/363707.363723}
+}
+
+% ⚠ KEY MISMATCH: Cite key says "rump2009accurate" but year=2008.
+%   Part I was published SIAM J. Sci. Comput. 31(1):189-224, 2008.
+%   No cite-key change made per your preference.
+@article{rump2009accurate,
+  author    = {Siegfried M. Rump and Takeshi Ogita and Shin'ichi Oishi},
+  title     = {Accurate Floating-Point Summation Part {I}: Faithful Rounding},
+  journal   = {SIAM Journal on Scientific Computing},
+  volume    = {31},
+  number    = {1},
+  pages     = {189--224},
+  year      = {2008},
+  publisher = {SIAM},
+  url       = {https://epubs.siam.org/doi/10.1137/050645671},
+  doi       = {10.1137/050645671}
+}
+
+@misc{ieee754-2019,
+  author       = {{IEEE}},
+  title        = {{IEEE} Standard for Floating-Point Arithmetic},
+  howpublished = {IEEE Std 754-2019 (Revision of IEEE 754-2008)},
+  year         = {2019},
+  pages        = {1--84},
+  note         = {doi: 10.1109/IEEESTD.2019.8766229},
+  url          = {https://ieeexplore.ieee.org/document/8766229},
+  doi          = {10.1109/IEEESTD.2019.8766229}
+}
+
+% ---- reproducible BLAS and numerical libraries ----
+
+@inproceedings{demmel2013reproBLAS,
+  author    = {James Demmel and Hong Diep Nguyen},
+  title     = {Fast Reproducible Floating-Point Summation},
+  booktitle = {21st IEEE Symposium on Computer Arithmetic (ARITH)},
+  year      = {2013},
+  pages     = {163--172},
+  publisher = {IEEE},
+  url       = {https://ieeexplore.ieee.org/document/6545904},
+  doi       = {10.1109/ARITH.2013.9}
+}
+
+% ⚠ KEY MISMATCH: Cite key says "iakymchuk2016exblas" but year=2015.
+%   Workshop paper presented at NRE2015 at SC15, November 2015.
+%   No cite-key change made per your preference.
+@article{iakymchuk2016exblas,
+  author    = {Roman Iakymchuk and Sylvain Collange and David Defour and Stef Graillat},
+  title     = {{ExBLAS}: Reproducible and Accurate {BLAS} Library},
+  journal   = {Numerical Reproducibility at Exascale (NRE) Workshop, SC},
+  year      = {2015},
+  url       = {https://hal.science/hal-01202396}
+}
+
+% ---- collective communication and production libraries ----
+
+@misc{nccl2018,
+  author       = {{NVIDIA}},
+  title        = {{NCCL}: Optimized Primitives for Collective Multi-GPU Communication},
+  howpublished = {\url{https://github.com/NVIDIA/nccl}},
+  year         = {2018--2025},
+  url          = {https://github.com/NVIDIA/nccl}
+}
+
+@misc{rccl2019,
+  author       = {{AMD}},
+  title        = {{RCCL}: {ROCm} Collective Communication Library},
+  howpublished = {\url{https://github.com/ROCmSoftwarePlatform/rccl}},
+  year         = {2019--2025},
+  url          = {https://github.com/ROCmSoftwarePlatform/rccl}
+}
+
+@article{sergeev2018horovod,
+  author    = {Alexander Sergeev and Mike Del Balso},
+  title     = {Horovod: Fast and Easy Distributed Deep Learning in {TensorFlow}},
+  journal   = {arXiv preprint arXiv:1802.05799},
+  year      = {2018},
+  url       = {https://arxiv.org/abs/1802.05799}
+}
+
+@inproceedings{li2020pytorch,
+  author    = {Shen Li and Yanli Zhao and Rohan Varma and Omkar Salpekar and Pieter Noordhuis
+               and Teng Li and Adam Paszke and Jeff Smith and Brian Vaughan and Pritam Damania
+               and Soumith Chintala},
+  title     = {{PyTorch} Distributed: Experiences on Accelerating Data Parallel Training},
+  booktitle = {VLDB},
+  year      = {2020},
+  url       = {https://dl.acm.org/doi/10.14778/3415478.3415530},
+  doi       = {10.14778/3415478.3415530}
+}
+
+% ⚠ KEY MISMATCH: Cite key says "dongarra2011hpcchallenge" but year=2013.
+%   Also typed @article but is a book chapter (@incollection).
+%   The "journal" field holds the book title (common workaround).
+%   No cite-key change made per your preference.
+@article{dongarra2011hpcchallenge,
+  author    = {Jack Dongarra and Piotr Luszczek},
+  title     = {{HPC} Challenge: Design, History, and Implementation Highlights},
+  journal   = {Contemporary High Performance Computing: From Petascale Toward Exascale},
+  pages     = {13--30},
+  year      = {2013},
+  url       = {https://www.taylorfrancis.com/chapters/edit/10.1201/9781351104005-2/hpc-challenge-design-history-implementation-highlights-jack-dongarra-piotr-luszczek},
+  doi       = {10.1201/9781351104005-2}
+}
+
+% ---- collective compilers and schedulers ----
+
+@inproceedings{shah2023taccl,
+  author    = {Aashaka Shah and Vijay Chidambaram and Meghan Cowan and Saeed Maleki
+               and Madan Musuvathi and Todd Mytkowicz and Jacob Nelson and Olli Saarikivi
+               and Rachee Singh},
+  title     = {{TACCL}: Guiding Collective Algorithm Synthesis using Communication Sketches},
+  booktitle = {NSDI},
+  year      = {2023},
+  url       = {https://www.usenix.org/conference/nsdi23/presentation/shah}
+}
+
+@inproceedings{cai2021synthesizing,
+  author    = {Zixian Cai and Zhengyang Liu and Saeed Maleki and Madan Musuvathi
+               and Todd Mytkowicz and Jacob Nelson and Olli Saarikivi},
+  title     = {Synthesizing Optimal Collective Algorithms},
+  booktitle = {PPoPP},
+  year      = {2021},
+  url       = {https://dl.acm.org/doi/10.1145/3437801.3441620},
+  doi       = {10.1145/3437801.3441620}
+}
+
+@inproceedings{wang2020blink,
+  author    = {Guanhua Wang and Shivaram Venkataraman and Amar Phanishayee and Jorgen Thelin
+               and Nikhil Devanur and Ion Stoica},
+  title     = {{Blink}: Fast and Generic Collectives for Distributed {ML}},
+  booktitle = {MLSys},
+  year      = {2020},
+  url       = {https://proceedings.mlsys.org/paper_files/paper/2020/hash/cd3a9a55f7f3723133fa4a13628cdf03-Abstract.html}
+}
+
+% ---- collective algorithms ----
+
+@article{thakur2005optimization,
+  author    = {Rajeev Thakur and Rolf Rabenseifner and William Gropp},
+  title     = {Optimization of Collective Communication Operations in {MPICH}},
+  journal   = {International Journal of High Performance Computing Applications},
+  volume    = {19},
+  number    = {1},
+  pages     = {49--66},
+  year      = {2005},
+  url       = {https://doi.org/10.1177/1094342005051521},
+  doi       = {10.1177/1094342005051521}
+}
+
+@inproceedings{rabenseifner2004optimization,
+  author    = {Rolf Rabenseifner},
+  title     = {Optimization of Collective Reduction Operations},
+  booktitle = {ICCS 2004},
+  series    = {LNCS},
+  volume    = {3036},
+  pages     = {1--9},
+  year      = {2004},
+  publisher = {Springer},
+  url       = {https://link.springer.com/chapter/10.1007/978-3-540-24685-5_1},
+  doi       = {10.1007/978-3-540-24685-5_1}
+}
+
+@article{patarasuk2009bandwidth,
+  author    = {Pitch Patarasuk and Xin Yuan},
+  title     = {Bandwidth Optimal All-Reduce Algorithms for Clusters of Workstations},
+  journal   = {Journal of Parallel and Distributed Computing},
+  volume    = {69},
+  number    = {2},
+  pages     = {117--124},
+  year      = {2009},
+  url       = {https://doi.org/10.1016/j.jpdc.2008.09.002},
+  doi       = {10.1016/j.jpdc.2008.09.002}
+}
+
+% ⚠ STRUCTURAL NOTE: Typed @inproceedings but this is a journal article
+%   in Parallel Computing (Elsevier), vol.35, no.12, pp.581-594 (2009).
+%   No cite-key change made per your preference.
+@inproceedings{sanders2009two,
+  author    = {Peter Sanders and Jochen Speck and Jesper Larsson Tr\"aff},
+  title     = {Two-Tree Algorithms for Full Bandwidth Broadcast, Reduction, and Scan},
+  booktitle = {Parallel Computing},
+  volume    = {35},
+  number    = {12},
+  pages     = {581--594},
+  year      = {2009},
+  url       = {https://doi.org/10.1016/j.parco.2009.09.001},
+  doi       = {10.1016/j.parco.2009.09.001}
+}
+
+% ⚠ STRUCTURAL NOTE: Typed @inproceedings but this is a journal article
+%   in IEEE TPDS, vol.25, no.4, pp.993-1002 (2014).
+%   No cite-key change made per your preference.
+@inproceedings{jeannot2014treematch,
+  author    = {Emmanuel Jeannot and Guillaume Mercier and Fran\c{c}ois Tessier},
+  title     = {Process Placement in Multicore Clusters: Algorithmic Issues and Practical
+               Techniques},
+  journal   = {IEEE Transactions on Parallel and Distributed Systems},
+  volume    = {25},
+  number    = {4},
+  pages     = {993--1002},
+  year      = {2014},
+  url       = {https://doi.org/10.1109/TPDS.2013.104},
+  doi       = {10.1109/TPDS.2013.104}
+}
+
+% ---- scheduling algorithms ----
+
+@article{topcuoglu2002heft,
+  author    = {Haluk Topcuoglu and Salim Hariri and Min-You Wu},
+  title     = {Performance-Effective and Low-Complexity Task Scheduling for Heterogeneous
+               Computing},
+  journal   = {IEEE Transactions on Parallel and Distributed Systems},
+  volume    = {13},
+  number    = {3},
+  pages     = {260--274},
+  year      = {2002},
+  url       = {https://ieeexplore.ieee.org/document/993206},
+  doi       = {10.1109/71.993206}
+}
+
+@article{yang1994dsc,
+  author    = {Tao Yang and Apostolos Gerasoulis},
+  title     = {{DSC}: Scheduling Parallel Tasks on an Unbounded Number of Processors},
+  journal   = {IEEE Transactions on Parallel and Distributed Systems},
+  volume    = {5},
+  number    = {9},
+  pages     = {951--967},
+  year      = {1994},
+  url       = {https://ieeexplore.ieee.org/document/311795},
+  doi       = {10.1109/71.311795}
+}
+
+@article{lukes1974efficient,
+  author    = {J. A. Lukes},
+  title     = {Efficient Algorithm for the Partitioning of Trees},
+  journal   = {IBM Journal of Research and Development},
+  volume    = {18},
+  number    = {3},
+  pages     = {217--224},
+  year      = {1974},
+  url       = {https://ieeexplore.ieee.org/document/5391463},
+  doi       = {10.1147/rd.183.0217}
+}
+
+@article{karypis1998multilevel,
+  author    = {George Karypis and Vipin Kumar},
+  title     = {A Fast and High Quality Multilevel Scheme for Partitioning Irregular Graphs},
+  journal   = {SIAM Journal on Scientific Computing},
+  volume    = {20},
+  number    = {1},
+  pages     = {359--392},
+  year      = {1998},
+  url       = {https://doi.org/10.1137/S1064827595287997},
+  doi       = {10.1137/S1064827595287997}
+}
+
+@inproceedings{fiduccia1982linear,
+  author    = {C. M. Fiduccia and R. M. Mattheyses},
+  title     = {A Linear-Time Heuristic for Improving Network Partitions},
+  booktitle = {19th Design Automation Conference},
+  pages     = {175--181},
+  year      = {1982},
+  url       = {https://dl.acm.org/doi/10.1145/800263.809204},
+  doi       = {10.1145/800263.809204}
+}
+
+@article{hu1961parallel,
+  author    = {T. C. Hu},
+  title     = {Parallel Sequencing and Assembly Line Problems},
+  journal   = {Operations Research},
+  volume    = {9},
+  number    = {6},
+  pages     = {841--848},
+  year      = {1961},
+  url       = {https://doi.org/10.1287/opre.9.6.841},
+  doi       = {10.1287/opre.9.6.841}
+}
+
+% ---- NoC and networks ----
+
+@book{dally2004principles,
+  author    = {William James Dally and Brian Patrick Towles},
+  title     = {Principles and Practices of Interconnection Networks},
+  publisher = {Morgan Kaufmann},
+  year      = {2004},
+  address   = {San Francisco, CA},
+  url       = {https://www.sciencedirect.com/book/9780122007514/principles-and-practices-of-interconnection-networks}
+}
+
+% �� CRITICAL PROBLEM — See Issue Report below.
+%    The NOTE field is factually wrong: this book is about Forth-style
+%    stack processors, NOT virtual-channel discipline or wormhole forwarding.
+%    The cite key says 1996 but year=1989 (mismatch).
+%    Entry type is @inproceedings but this is a @book.
+%    "booktitle = Ellis Horwood" is the PUBLISHER, not a conference.
+%    URL added for the actual book; the NOTE must be corrected.
+@inproceedings{koopman1996,
+  author    = {Philip Koopman},
+  title     = {Stack Computers: The New Wave},
+  booktitle = {Ellis Horwood},
+  year      = {1989},
+  note      = {Classic reference on virtual-channel discipline and wormhole forwarding},
+  url       = {http://users.ece.cmu.edu/~koopman/stack_computers/index.html}
+}
+
+% ---- in-network reduction ----
+
+@inproceedings{graham2016scalable,
+  author    = {Richard L. Graham and Devendar Bureddy and Pak Lui and Hal Rosenstock
+               and Gilad Shainer and Gil Bloch and Dror Goldenberg and Mike Dubman
+               and Sasha Kotchubievsky and Vladimir Koushnir and Lion Levi and Alex Margolin
+               and Tamir Ronen and Alexander Shpiner and Oded Wertheim and Eitan Zahavi},
+  title     = {Scalable Hierarchical Aggregation Protocol ({SHArP}): A Hardware Architecture
+               for Efficient Data Reduction},
+  booktitle = {COMHPC},
+  pages     = {1--10},
+  year      = {2016},
+  url       = {https://ieeexplore.ieee.org/document/7836669},
+  doi       = {10.1109/COMHPC.2016.007}
+}
+
+@inproceedings{sapio2021scaling,
+  author    = {Amedeo Sapio and Marco Canini and Chen-Yu Ho and Jacob Nelson and Panos Kalnis
+               and Changhoon Kim and Arvind Krishnamurthy and Masoud Moshref and Dan R. K. Ports
+               and Peter Richt\'arik},
+  title     = {Scaling Distributed Machine Learning with In-Network Aggregation},
+  booktitle = {NSDI},
+  year      = {2021},
+  url       = {https://www.usenix.org/conference/nsdi21/presentation/sapio}
+}
+
+% ---- deterministic accelerators ----
+
+@inproceedings{jouppi2017tpu,
+  author    = {Norman P. Jouppi and Cliff Young and Nishant Patil and David Patterson
+               and others},
+  title     = {In-Datacenter Performance Analysis of a Tensor Processing Unit},
+  booktitle = {ISCA},
+  year      = {2017},
+  url       = {https://dl.acm.org/doi/10.1145/3079856.3080246},
+  doi       = {10.1145/3079856.3080246}
+}
+
+@inproceedings{liu2016cambricon,
+  author    = {Shaoli Liu and Zidong Du and Jinhua Tao and Dong Han and Tao Luo and Yuan Xie
+               and Yunji Chen and Tianshi Chen},
+  title     = {Cambricon: An Instruction Set Architecture for Neural Networks},
+  booktitle = {ISCA},
+  year      = {2016},
+  url       = {https://ieeexplore.ieee.org/document/7551409},
+  doi       = {10.1109/ISCA.2016.42}
+}
+
+% ---- formal methods (mechanisation path) ----
+
+@book{jackson2012alloy,
+  author    = {Daniel Jackson},
+  title     = {Software Abstractions: Logic, Language, and Analysis},
+  edition   = {revised},
+  publisher = {MIT Press},
+  year      = {2012},
+  url       = {https://mitpress.mit.edu/9780262016865/software-abstractions/}
+}
+
+@inproceedings{choi2017kami,
+  author    = {Joonwon Choi and Muralidaran Vijayaraghavan and Benjamin Sherman and Adam Chlipala
+               and Arvind},
+  title     = {{Kami}: A Platform for High-Level Parametric Hardware Specification and Its
+               Modular Verification},
+  booktitle = {ICFP},
+  year      = {2017},
+  url       = {https://dl.acm.org/doi/10.1145/3110268},
+  doi       = {10.1145/3110268}
+}
