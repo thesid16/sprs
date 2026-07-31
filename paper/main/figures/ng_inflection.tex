@@ -1,0 +1,43 @@
+% GENERATED — do not edit by hand.
+% script : scripts/gen_figures.py
+% source : /home/rohit/tournament_p1/results/live_hw_results_p1_unified.csv
+% metric : GPU 0 only (DEFECTIVE)
+% date   : 2026-07-28
+% Colours: Okabe-Ito colourblind-safe. Marker shape duplicates hue
+% so the figure survives greyscale printing.
+
+\definecolor{ctorus}{HTML}{0072B2}
+\definecolor{cfattree}{HTML}{D55E00}
+\definecolor{chypercube}{HTML}{009E73}
+\definecolor{cring}{HTML}{CC79A7}
+\definecolor{cmesh}{HTML}{E69F00}
+\definecolor{clinear}{HTML}{000000}
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=\columnwidth, height=5.8cm,
+  xmode=log, log basis x=2,
+  xlabel={$N/G$ (leaves per PE)}, ylabel={champion cycles $/\ \Omega$},
+  ymin=0.9, ymax=2.08,
+  grid=major, major grid style={gray!20},
+  legend style={font=\scriptsize, at={(0.5,1.02)}, anchor=south,
+                legend columns=3, draw=none, fill=none},
+  tick label style={font=\footnotesize},
+  label style={font=\footnotesize},
+  mark options={scale=0.9}]
+\addplot[draw=none, fill=gray!14, forget plot] coordinates {(6,0.9) (8,0.9) (8,2.08) (6,2.08)} \closedcycle;
+\addplot+[only marks, mark=*, color=ctorus] coordinates {(1.0000,0.522) (2.0000,0.312) (4.0000,0.773) (4.0000,0.944) (8.0000,1.333) (10.0000,0.083) (15.6250,1.292) (16.0000,1.292) (16.0000,1.292) (32.0000,0.026)};
+\addlegendentry{torus}
+\addplot+[only marks, mark=square*, color=cfattree] coordinates {(2.0000,0.826) (4.0000,1.417) (4.0000,1.417) (8.0000,1.333) (8.0000,1.333) (8.0000,1.333) (16.6667,1.216) (23.4375,1.278)};
+\addlegendentry{fat-tree}
+\addplot+[only marks, mark=triangle*, color=chypercube] coordinates {(7.1429,1.333) (8.0000,1.333) (8.0000,1.333) (8.0000,1.333) (16.0000,0.667) (23.4375,0.035) (32.0000,1.271)};
+\addlegendentry{hypercube}
+\addplot+[only marks, mark=diamond*, color=cring] coordinates {(2.0000,1.462) (2.0000,0.594) (2.0000,0.232) (2.0000,0.129) (2.5000,1.889) (4.0000,0.231)};
+\addlegendentry{ring}
+\addplot+[only marks, mark=pentagon*, color=cmesh] coordinates {(3.2000,1.125) (8.0000,1.333) (8.0000,1.333) (16.0000,1.292)};
+\addlegendentry{mesh}
+\addplot+[only marks, mark=x, color=clinear] coordinates {(4.0000,1.417) (32.0000,1.062) (64.0000,0.635) (64.0000,1.260)};
+\addlegendentry{linear}
+\node[font=\scriptsize, anchor=south] at (axis cs:6.9,1.95) {predicted};
+\end{axis}
+\end{tikzpicture}
