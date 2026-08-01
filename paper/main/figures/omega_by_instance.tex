@@ -1,0 +1,41 @@
+% GENERATED — do not edit by hand.
+% script : scripts/gen_figures.py
+% source : /home/rohit/tournament_p1/results/live_hw_results_p1_unified.csv
+% metric : GPU 0 only (DEFECTIVE)
+% date   : 2026-07-28
+% Colours: Okabe-Ito colourblind-safe. Marker shape duplicates hue
+% so the figure survives greyscale printing.
+
+\definecolor{ctorus}{HTML}{0072B2}
+\definecolor{cfattree}{HTML}{D55E00}
+\definecolor{chypercube}{HTML}{009E73}
+\definecolor{cring}{HTML}{CC79A7}
+\definecolor{cmesh}{HTML}{E69F00}
+\definecolor{clinear}{HTML}{000000}
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=\columnwidth, height=6.2cm,
+  xmode=log, log basis x=2,
+  xlabel={leaf count $N$}, ylabel={champion cycles $/\ \Omega$},
+  ymin=0.9,
+  grid=major, major grid style={gray!20},
+  legend style={font=\scriptsize, at={(0.5,1.02)}, anchor=south,
+                legend columns=3, draw=none, fill=none},
+  tick label style={font=\footnotesize},
+  label style={font=\footnotesize},
+  mark options={scale=0.9}]
+\addplot+[only marks, mark=*, color=ctorus] coordinates {(32,0.312) (100,0.083) (128,1.333) (128,0.522) (500,1.292) (512,0.026) (1024,1.292) (2048,1.292) (4096,0.944) (8192,0.773)};
+\addlegendentry{torus}
+\addplot+[only marks, mark=square*, color=cfattree] coordinates {(32,1.417) (128,1.417) (200,1.216) (512,1.333) (1024,1.333) (2048,1.333) (3000,1.278) (4096,0.826)};
+\addlegendentry{fat-tree}
+\addplot+[only marks, mark=triangle*, color=chypercube] coordinates {(32,1.333) (50,1.333) (512,0.667) (1024,1.271) (1500,0.035) (4096,1.333) (8192,1.333)};
+\addlegendentry{hypercube}
+\addplot+[only marks, mark=diamond*, color=cring] coordinates {(8,1.462) (10,1.889) (128,0.594) (512,0.232) (1024,0.129) (2048,0.231)};
+\addlegendentry{ring}
+\addplot+[only marks, mark=pentagon*, color=cmesh] coordinates {(16,1.125) (128,1.292) (512,1.333) (2048,1.333)};
+\addlegendentry{mesh}
+\addplot+[only marks, mark=x, color=clinear] coordinates {(8,1.417) (128,1.062) (512,0.635) (1024,1.260)};
+\addlegendentry{linear}
+\end{axis}
+\end{tikzpicture}
