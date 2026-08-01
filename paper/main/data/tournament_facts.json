@@ -1,0 +1,50 @@
+{
+ "generated": "2026-07-28",
+ "source": "/home/rohit/tournament_p1/results/live_hw_results_p1_unified.csv",
+ "trusted_metric": false,
+ "n_instances": 39,
+ "s2_family_share": {
+  "graph partition": 76.9,
+  "multilevel": 17.9,
+  "hierarchical": 2.6,
+  "tree DP": 2.6
+ },
+ "s3_family_share": {
+  "flow": 7.7,
+  "trivial": 51.3,
+  "greedy": 17.9,
+  "tree-aware": 20.5,
+  "metaheuristic": 2.6
+ },
+ "s2_wins": {
+  "2b": 30,
+  "2c": 7,
+  "2n": 1,
+  "2k": 1
+ },
+ "s3_wins": {
+  "3e": 3,
+  "3a": 20,
+  "3i": 1,
+  "3c": 8,
+  "3b": 6,
+  "3d": 1
+ },
+ "selbias": {
+  "10": {
+   "median_rho": 0.873,
+   "median_leak": 0.4,
+   "n": 39
+  },
+  "15": {
+   "median_rho": 0.873,
+   "median_leak": 0.333,
+   "n": 37
+  },
+  "30": {
+   "median_rho": 0.864,
+   "median_leak": 0.15,
+   "n": 32
+  }
+ }
+}

@@ -1,0 +1,43 @@
+% =============================================================================
+% fpga_measured.tex — WITH-LOGS variant of Table~\ref{tab:fpga}.
+%
+% HOW TO USE
+%   1. Obtain the four board logs from the collaborator's machine.
+%   2. Copy this file to  data/fpga_measured.tex  (drop the .template suffix).
+%   3. Replace each XXX with the measured cycle count.
+%   4. Build with:  make fpga     -> produces main-with-fpga.pdf
+%
+% The default `make` target does NOT include this file and produces a paper
+% that makes no FPGA measurement claim, so a submittable PDF always exists.
+%
+% WHAT TO EXTRACT FROM EACH LOG
+%   xsim cycles : the "[PERF] GPU g: perf_total=..." lines. Take the MAX over
+%                 all g, NOT GPU 0's value. (Recording GPU 0 alone was the
+%                 defect found on 2026-07-27; it understated cycles on 54% of
+%                 runs because an idle GPU 0 is common when the reduction root
+%                 lands elsewhere.)
+%   FPGA cycles : vio_perf_cycles from the Hardware Manager VIO probe, or the
+%                 seven-segment readout, per top_fpga_interactive.sv.
+%
+% Delta is computed as 100*(fpga-xsim)/xsim. If the two disagree, say so and
+% explain it -- a non-zero delta is a finding about the toolchain, not a
+% failure. Do not round a real disagreement to 0.00.
+% =============================================================================
+\begin{table}[!t]
+\caption{FPGA-vs-xsim cycle agreement on four boundary points at $N=8$.
+  Cycle counts are the maximum over all PEs' \sv{perf\_total} counters.}
+\label{tab:fpga}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}rrlrrr@{}}
+\toprule
+$N$ & $G$ & Topology & xsim cycles & FPGA cycles & $\Delta$ (\%) \\
+\midrule
+8 & 2 & linear & XXX & XXX & XXX \\
+8 & 2 & ring   & XXX & XXX & XXX \\
+8 & 4 & linear & XXX & XXX & XXX \\
+8 & 4 & ring   & XXX & XXX & XXX \\
+\bottomrule
+\end{tabular}
+\end{table}
