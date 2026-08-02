@@ -1,0 +1,1031 @@
+{
+ "generated": "2026-07-28 00:00:02",
+ "by_N": {
+  "8": {
+   "addr_sub": {
+    "detected": 6,
+    "total": 6
+   },
+   "leaf_corrupt": {
+    "detected": 6,
+    "total": 6
+   }
+  },
+  "10": {
+   "addr_sub": {
+    "detected": 3,
+    "total": 3
+   },
+   "leaf_corrupt": {
+    "detected": 3,
+    "total": 3
+   }
+  },
+  "16": {
+   "addr_sub": {
+    "detected": 3,
+    "total": 3
+   },
+   "leaf_corrupt": {
+    "detected": 3,
+    "total": 3
+   }
+  },
+  "32": {
+   "addr_sub": {
+    "detected": 6,
+    "total": 6
+   },
+   "leaf_corrupt": {
+    "detected": 6,
+    "total": 6
+   }
+  },
+  "50": {
+   "addr_sub": {
+    "detected": 3,
+    "total": 3
+   },
+   "leaf_corrupt": {
+    "detected": 3,
+    "total": 3
+   }
+  },
+  "100": {
+   "addr_sub": {
+    "detected": 3,
+    "total": 3
+   },
+   "leaf_corrupt": {
+    "detected": 3,
+    "total": 3
+   }
+  },
+  "128": {
+   "addr_sub": {
+    "detected": 6,
+    "total": 6
+   },
+   "leaf_corrupt": {
+    "detected": 6,
+    "total": 6
+   }
+  },
+  "200": {
+   "leaf_corrupt": {
+    "detected": 3,
+    "total": 3
+   },
+   "addr_sub": {
+    "detected": 3,
+    "total": 3
+   }
+  },
+  "500": {
+   "leaf_corrupt": {
+    "detected": 3,
+    "total": 3
+   },
+   "addr_sub": {
+    "detected": 3,
+    "total": 3
+   }
+  },
+  "512": {
+   "addr_sub": {
+    "detected": 6,
+    "total": 6
+   },
+   "leaf_corrupt": {
+    "detected": 6,
+    "total": 6
+   }
+  }
+ },
+ "runs": [
+  {
+   "instance": "tiny_dense_1d",
+   "tb": "tb_2a_3e_none",
+   "N": 8,
+   "G": 2,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu0 pc29 addr_a 3->39",
+   "error": ""
+  },
+  {
+   "instance": "tiny_dense_1d",
+   "tb": "tb_2a_3e_none",
+   "N": 8,
+   "G": 2,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L6 bit0 flip",
+   "error": ""
+  },
+  {
+   "instance": "tiny_dense_1d",
+   "tb": "tb_2a_3e_none",
+   "N": 8,
+   "G": 2,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu1 pc20 addr_a 5->60",
+   "error": ""
+  },
+  {
+   "instance": "tiny_dense_1d",
+   "tb": "tb_2a_3e_none",
+   "N": 8,
+   "G": 2,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu1 pc20 addr_a 5->28",
+   "error": ""
+  },
+  {
+   "instance": "tiny_dense_1d",
+   "tb": "tb_2a_3e_none",
+   "N": 8,
+   "G": 2,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L0 bit5 flip",
+   "error": ""
+  },
+  {
+   "instance": "tiny_dense_1d",
+   "tb": "tb_2a_3e_none",
+   "N": 8,
+   "G": 2,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L6 bit0 flip",
+   "error": ""
+  },
+  {
+   "instance": "tiny_mod_ring",
+   "tb": "tb_2a_3a_none",
+   "N": 8,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu0 pc21 addr_a 2->39",
+   "error": ""
+  },
+  {
+   "instance": "tiny_mod_ring",
+   "tb": "tb_2a_3a_none",
+   "N": 8,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu2 pc14 addr_a 2->28",
+   "error": ""
+  },
+  {
+   "instance": "tiny_mod_ring",
+   "tb": "tb_2a_3a_none",
+   "N": 8,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu2 pc14 addr_a 2->60",
+   "error": ""
+  },
+  {
+   "instance": "tiny_mod_ring",
+   "tb": "tb_2a_3a_none",
+   "N": 8,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L6 bit0 flip",
+   "error": ""
+  },
+  {
+   "instance": "tiny_mod_ring",
+   "tb": "tb_2a_3a_none",
+   "N": 8,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L6 bit0 flip",
+   "error": ""
+  },
+  {
+   "instance": "tiny_mod_ring",
+   "tb": "tb_2a_3a_none",
+   "N": 8,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L0 bit5 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2n_tiny_ring",
+   "tb": "tb_2a_3a_4c2",
+   "N": 10,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu1 pc21 addr_a 2->43",
+   "error": ""
+  },
+  {
+   "instance": "npow2n_tiny_ring",
+   "tb": "tb_2a_3a_4c2",
+   "N": 10,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L0 bit6 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2n_tiny_ring",
+   "tb": "tb_2a_3a_4c2",
+   "N": 10,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu0 pc12 addr_a 2->49",
+   "error": ""
+  },
+  {
+   "instance": "npow2n_tiny_ring",
+   "tb": "tb_2a_3a_4c2",
+   "N": 10,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L6 bit2 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2n_tiny_ring",
+   "tb": "tb_2a_3a_4c2",
+   "N": 10,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu2 pc26 addr_a 3->39",
+   "error": ""
+  },
+  {
+   "instance": "npow2n_tiny_ring",
+   "tb": "tb_2a_3a_4c2",
+   "N": 10,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L8 bit1 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2g_small_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 16,
+   "G": 5,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu2 pc21 addr_a 3->28",
+   "error": ""
+  },
+  {
+   "instance": "npow2g_small_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 16,
+   "G": 5,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L13 bit3 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2g_small_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 16,
+   "G": 5,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L1 bit6 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2g_small_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 16,
+   "G": 5,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu1 pc26 addr_a 6->39",
+   "error": ""
+  },
+  {
+   "instance": "npow2g_small_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 16,
+   "G": 5,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu2 pc21 addr_a 3->60",
+   "error": ""
+  },
+  {
+   "instance": "npow2g_small_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 16,
+   "G": 5,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L13 bit3 flip",
+   "error": ""
+  },
+  {
+   "instance": "small_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 32,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu3 pc19 addr_a 3->28",
+   "error": ""
+  },
+  {
+   "instance": "small_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 32,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu3 pc34 addr_a 8->60",
+   "error": ""
+  },
+  {
+   "instance": "small_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 32,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu0 pc82 addr_a 4->39",
+   "error": ""
+  },
+  {
+   "instance": "small_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 32,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L3 bit7 flip",
+   "error": ""
+  },
+  {
+   "instance": "small_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 32,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L27 bit3 flip",
+   "error": ""
+  },
+  {
+   "instance": "small_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 32,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L26 bit3 flip",
+   "error": ""
+  },
+  {
+   "instance": "small_bal_fat",
+   "tb": "tb_2a_3e_none",
+   "N": 32,
+   "G": 8,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L26 bit3 flip",
+   "error": ""
+  },
+  {
+   "instance": "small_bal_fat",
+   "tb": "tb_2a_3e_none",
+   "N": 32,
+   "G": 8,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L27 bit3 flip",
+   "error": ""
+  },
+  {
+   "instance": "small_bal_fat",
+   "tb": "tb_2a_3e_none",
+   "N": 32,
+   "G": 8,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu5 pc20 addr_a 5->60",
+   "error": ""
+  },
+  {
+   "instance": "small_bal_fat",
+   "tb": "tb_2a_3e_none",
+   "N": 32,
+   "G": 8,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu4 pc38 addr_a 12->28",
+   "error": ""
+  },
+  {
+   "instance": "small_bal_fat",
+   "tb": "tb_2a_3e_none",
+   "N": 32,
+   "G": 8,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu4 pc8 addr_a 1->39",
+   "error": ""
+  },
+  {
+   "instance": "small_bal_fat",
+   "tb": "tb_2a_3e_none",
+   "N": 32,
+   "G": 8,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L3 bit7 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_tiny_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 50,
+   "G": 7,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu3 pc6 addr_a 8->43",
+   "error": ""
+  },
+  {
+   "instance": "npow2_tiny_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 50,
+   "G": 7,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu4 pc13 addr_a 2->39",
+   "error": ""
+  },
+  {
+   "instance": "npow2_tiny_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 50,
+   "G": 7,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L3 bit9 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_tiny_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 50,
+   "G": 7,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L49 bit5 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_tiny_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 50,
+   "G": 7,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu0 pc55 addr_a 7->49",
+   "error": ""
+  },
+  {
+   "instance": "npow2_tiny_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 50,
+   "G": 7,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L33 bit1 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_small_torus",
+   "tb": "tb_2a_3a_none",
+   "N": 100,
+   "G": 10,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu6 pc28 addr_a 4->43",
+   "error": ""
+  },
+  {
+   "instance": "npow2_small_torus",
+   "tb": "tb_2a_3a_none",
+   "N": 100,
+   "G": 10,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu8 pc21 addr_a 2->39",
+   "error": ""
+  },
+  {
+   "instance": "npow2_small_torus",
+   "tb": "tb_2a_3a_none",
+   "N": 100,
+   "G": 10,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L66 bit4 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_small_torus",
+   "tb": "tb_2a_3a_none",
+   "N": 100,
+   "G": 10,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L99 bit5 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_small_torus",
+   "tb": "tb_2a_3a_none",
+   "N": 100,
+   "G": 10,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L7 bit9 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_small_torus",
+   "tb": "tb_2a_3a_none",
+   "N": 100,
+   "G": 10,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu0 pc61 addr_a 18->49",
+   "error": ""
+  },
+  {
+   "instance": "med_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu2 pc237 addr_a 30->27",
+   "error": ""
+  },
+  {
+   "instance": "med_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu3 pc6 addr_a 33->60",
+   "error": ""
+  },
+  {
+   "instance": "med_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L109 bit6 flip",
+   "error": ""
+  },
+  {
+   "instance": "med_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L107 bit4 flip",
+   "error": ""
+  },
+  {
+   "instance": "med_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 4,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu1 pc263 addr_a 56->38",
+   "error": ""
+  },
+  {
+   "instance": "med_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 4,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L15 bit9 flip",
+   "error": ""
+  },
+  {
+   "instance": "med_dense_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 8,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu5 pc44 addr_a 5->28",
+   "error": ""
+  },
+  {
+   "instance": "med_dense_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 8,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu5 pc60 addr_a 7->60",
+   "error": ""
+  },
+  {
+   "instance": "med_dense_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 8,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L109 bit6 flip",
+   "error": ""
+  },
+  {
+   "instance": "med_dense_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 8,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu2 pc127 addr_a 28->39",
+   "error": ""
+  },
+  {
+   "instance": "med_dense_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 8,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L107 bit4 flip",
+   "error": ""
+  },
+  {
+   "instance": "med_dense_mesh",
+   "tb": "tb_2a_3a_none",
+   "N": 128,
+   "G": 8,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L15 bit9 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_med_fat",
+   "tb": "tb_2a_3a_none",
+   "N": 200,
+   "G": 12,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L199 bit5 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_med_fat",
+   "tb": "tb_2a_3a_none",
+   "N": 200,
+   "G": 12,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu6 pc36 addr_a 5->39",
+   "error": ""
+  },
+  {
+   "instance": "npow2_med_fat",
+   "tb": "tb_2a_3a_none",
+   "N": 200,
+   "G": 12,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu5 pc13 addr_a 18->43",
+   "error": ""
+  },
+  {
+   "instance": "npow2_med_fat",
+   "tb": "tb_2a_3a_none",
+   "N": 200,
+   "G": 12,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L133 bit7 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_med_fat",
+   "tb": "tb_2a_3a_none",
+   "N": 200,
+   "G": 12,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L15 bit9 flip",
+   "error": ""
+  },
+  {
+   "instance": "npow2_med_fat",
+   "tb": "tb_2a_3a_none",
+   "N": 200,
+   "G": 12,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu0 pc77 addr_a 6->49",
+   "error": ""
+  },
+  {
+   "instance": "large_unbal_torus",
+   "tb": "tb_2a_3a_4g",
+   "N": 500,
+   "G": 32,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L407 bit8 flip",
+   "error": ""
+  },
+  {
+   "instance": "large_unbal_torus",
+   "tb": "tb_2a_3a_4g",
+   "N": 500,
+   "G": 32,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L398 bit9 flip",
+   "error": ""
+  },
+  {
+   "instance": "large_unbal_torus",
+   "tb": "tb_2a_3a_4g",
+   "N": 500,
+   "G": 32,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L266 bit7 flip",
+   "error": ""
+  },
+  {
+   "instance": "large_unbal_torus",
+   "tb": "tb_2a_3a_4g",
+   "N": 500,
+   "G": 32,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu24 pc55 addr_a 8->28",
+   "error": ""
+  },
+  {
+   "instance": "large_unbal_torus",
+   "tb": "tb_2a_3a_4g",
+   "N": 500,
+   "G": 32,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu25 pc26 addr_a 14->60",
+   "error": ""
+  },
+  {
+   "instance": "large_unbal_torus",
+   "tb": "tb_2a_3a_4g",
+   "N": 500,
+   "G": 32,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu17 pc33 addr_a 12->39",
+   "error": ""
+  },
+  {
+   "instance": "large_extreme_1d",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 8,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu6 pc162 addr_a 70->7",
+   "error": ""
+  },
+  {
+   "instance": "large_extreme_1d",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 8,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu6 pc65 addr_a 6->28",
+   "error": ""
+  },
+  {
+   "instance": "large_extreme_1d",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 8,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu3 pc516 addr_a 79->53",
+   "error": ""
+  },
+  {
+   "instance": "large_extreme_1d",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 8,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L439 bit6 flip",
+   "error": ""
+  },
+  {
+   "instance": "large_extreme_1d",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 8,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L60 bit11 flip",
+   "error": ""
+  },
+  {
+   "instance": "large_extreme_1d",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 8,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L431 bit6 flip",
+   "error": ""
+  },
+  {
+   "instance": "large_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 32,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu24 pc53 addr_a 6->28",
+   "error": ""
+  },
+  {
+   "instance": "large_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 32,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L60 bit11 flip",
+   "error": ""
+  },
+  {
+   "instance": "large_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 32,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L439 bit6 flip",
+   "error": ""
+  },
+  {
+   "instance": "large_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 32,
+   "kind": "leaf_corrupt",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "leaf L431 bit6 flip",
+   "error": ""
+  },
+  {
+   "instance": "large_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 32,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu24 pc109 addr_a 10->60",
+   "error": ""
+  },
+  {
+   "instance": "large_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 512,
+   "G": 32,
+   "kind": "addr_sub",
+   "seed": 1002,
+   "detected": true,
+   "mutation": "gpu16 pc72 addr_a 10->39",
+   "error": ""
+  }
+ ]
+}
