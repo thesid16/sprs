@@ -1,0 +1,353 @@
+% =============================================================================
+% SPRS Hardware Implementation Reference — arXiv companion to the TPDS paper
+% "Bitwise-Reproducible Reduction Across Cluster Reshape: A Compiler/Fabric ABI"
+%
+% Source material: design_choices.md (module-by-module rationale) and the RTL
+% itself. This document carries the hardware detail the main paper cites but
+% has no page budget for.
+% =============================================================================
+\documentclass[journal,10pt]{IEEEtran}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\sprs}{\textsc{sprs}}
+\newcommand{\sv}[1]{\texttt{#1}}
+\newcommand{\FBT}{\mathrm{FBT}}
+
+\lstset{basicstyle=\ttfamily\scriptsize, breaklines=true,
+        columns=fullflexible, frame=single, framesep=3pt,
+        rulecolor=\color{gray!50}, showstringspaces=false}
+
+\begin{document}
+
+\title{SPRS: Hardware Implementation Reference\\
+{\large A companion to ``Bitwise-Reproducible Reduction Across Cluster
+Reshape: A Compiler/Fabric ABI''}}
+
+\author{%
+Siddharth~Patel,
+Aman~Awasthi,
+Akshansh~Chaurasia,
+and~Rohit~Singh%
+\thanks{The authors are with the Department of Electrical Engineering,
+Shiv Nadar University, India.
+E-mail: \{sp839, aa634, ac198, rohit.singh\}@snu.edu.in}%
+}
+
+\maketitle
+
+\begin{abstract}
+This companion document specifies the \sprs{} hardware in the detail a
+reimplementation would require: the register-transfer structure of every
+module, the complete instruction and packet encodings, the routing-table
+format, the arbitration and flow-control disciplines, the FPGA bring-up
+procedure, and the verification strategy. It is a reference, not an argument.
+The claims about bitwise reproducibility, the ABI that produces them, and
+their experimental validation are made in the main paper; here we document
+only what the fabric \emph{is}. Readers wanting the result should start with
+the main paper and return here for implementation specifics.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Network-on-chip, reduction tree, deterministic arithmetic, IEEE 754,
+SystemVerilog, FPGA.
+\end{IEEEkeywords}
+
+% =====================================================================
+\section{Scope and Organisation}
+% =====================================================================
+
+The \sprs{} fabric is 3{,}726 lines of SystemVerilog across thirteen
+files: ten implementing the fabric proper and three FPGA wrappers. This
+document walks them in dependency order --- packages, primitives, link layer,
+router, network interface, compute node, top level --- and then covers the
+cross-cutting decisions that do not belong to any single module.
+
+\begin{table}[!t]
+\caption{Source inventory.}
+\label{tab:inventory}
+\centering
+\footnotesize
+\begin{tabular}{@{}llr@{}}
+\toprule
+File & Role & Lines \\
+\midrule
+\sv{noc\_pkg.sv}            & NoC types, packet layout      & 41 \\
+\sv{btree\_pkg.sv}          & ISA, ALU ops, parameters      & 101 \\
+\sv{sync\_fifo.sv}          & FIFO primitive                & 61 \\
+\sv{link\_tx.sv}            & credit-based transmit         & 37 \\
+\sv{noc\_link.sv}           & inter-router link, latency    & 78 \\
+\sv{noc\_router.sv}         & $N$-port multi-VC router      & 295 \\
+\sv{noc\_ni.sv}             & network interface, GCI buffer & 217 \\
+\sv{fp64\_add.sv}           & IEEE-754 FP64 adder           & 242 \\
+\sv{btree\_fsm\_fast.sv}    & per-PE reduction pipeline     & 912 \\
+\sv{noc\_system.sv}         & topology-agnostic top level   & 303 \\
+\midrule
+\sv{top\_fpga\_interactive.sv}     & Artix-7 wrapper, $G{=}2$   & 503 \\
+\sv{top\_fpga\_interactive\_g2.sv} & deterministic $G{=}2$      & 430 \\
+\sv{top\_fpga\_interactive\_g4.sv} & deterministic $G{=}4$      & 506 \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Total}} & \textbf{3{,}726} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Instruction and Packet Encodings}
+% =====================================================================
+
+\subsection{Instruction word}
+
+Instructions are 64 bits, four opcodes, fixed fields:
+
+\begin{lstlisting}
+[63:60] opcode   NOP=0 GENERATE=1 COMPUTE=2 SEND=3
+[59:56] aux      aux[0]=link, aux[3:1]=alu_op
+[55:40] dest     DMEM destination (COMPUTE/GENERATE)
+                 target_addr at receiver (SEND)
+[39:24] addr_a   DMEM source A (COMPUTE)
+                 local DMEM source (SEND)
+[23:8]  addr_b   DMEM source B (COMPUTE)
+                 dest_gpu id (SEND)
+[7:0]   reserved
+\end{lstlisting}
+
+Opcode~4 is \sv{OP\_RESERVED}, formerly \sv{OP\_RECV}, retired when the
+messaging model moved to RDMA-push. Its retirement is load-bearing rather
+than cosmetic: with no receive instruction there is no receive-side blocking
+construct, and therefore no way for a program to deadlock waiting on a
+message that never arrives. Delivery is the network's obligation, not the
+program's.
+
+The ALU field admits eight operations (\sv{ADD}, \sv{MAX}, \sv{MIN},
+\sv{AND}, \sv{OR}, \sv{XOR}, \sv{SADD}, \sv{FADD}). Only \sv{FADD}
+(IEEE-754 double addition) is exercised in the main paper's experiments; the
+others are implemented and functional but unvalidated at scale, and should be
+treated as untested surface.
+
+\subsection{Packet format}
+
+Packets are single-flit, 96 bits:
+
+\begin{lstlisting}
+[95:80] dest_node_id  (16b) target PE, used for routing
+[79:70] target_addr   (10b) DMEM address at the destination
+[69:64] reserved      (6b)
+[63:0]  payload       (64b) the value
+\end{lstlisting}
+
+Single-flit packets are the reason the fabric needs no reassembly logic,
+no flit sequencing, and no virtual-cut-through buffering, at the cost of a
+96-bit datapath width. Bit~63 of the payload additionally steers the virtual
+channel, a deliberate choice discussed in \S\ref{sec:vc}.
+
+\subsection{Routing tables}
+
+Routing is table-driven: router $r$ holds \sv{route\_table[d]} giving the
+egress port for destination $d$. Tables are computed by the compiler and
+loaded at configuration time. This makes topology a configuration input
+rather than a structural property of the RTL --- the same netlist serves
+mesh, torus, hypercube, fat-tree, ring and linear arrangements, selected by
+the adjacency table passed to \sv{noc\_system}.
+
+A width subtlety costs correctness if missed. \sv{route\_table} elements are
+$\lceil\log_2(\text{NUM\_PORTS})\rceil$ bits wide. Most topologies use
+five-port routers, giving three bits, but fat-tree routers have more ports
+and need four. Any tooling that writes the table with a sized literal
+(\sv{3'd}$p$) silently truncates port numbers above seven and breaks fat-tree
+routing in a way that passes elaboration and fails only at run time. Plain
+integer literals, which widen to the left-hand side, are required.
+
+% =====================================================================
+\section{Compute Node: \texttt{btree\_fsm\_fast}}
+% =====================================================================
+
+The per-PE reduction engine is a three-stage pipeline sustaining one
+instruction per cycle.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Stage & Reads & Does \\
+\midrule
+IF & IMEM        & fetch \\
+DE & DMEM        & operand read, hazard check \\
+EX & ALU / TX    & compute, enqueue send, write back \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Scoreboard gating}
+
+Every DMEM address carries a presence bit. \sv{DE} stalls if an instruction
+reads an address whose bit is clear. This is the mechanism that makes
+arrival order unobservable to the program: a \sv{COMPUTE} reads its operands
+\emph{by address}, and proceeds only once both have been written, regardless
+of which agent wrote them, in what order, over which virtual channel, or at
+what time. The scoreboard is what converts a network with nondeterministic
+timing into a machine with deterministic values.
+
+The presence bit is monotone within a program run --- set on write, never
+cleared --- so the gate cannot oscillate.
+
+\subsection{Write arbitration}
+
+Three agents write DMEM: the packet ingress unit (PIU), the GCI leaf
+interface, and the FSM writeback. Priority is fixed at
+$\text{PIU} > \text{GCI} > \text{FSM}$. PIU wins because a dropped inbound
+packet is unrecoverable --- the sender has already retired the instruction ---
+whereas the FSM can stall a cycle without losing information. The GCI path
+carries a write-hold latch so that a leaf value colliding with a PIU write is
+retained rather than discarded.
+
+\subsection{Forwarding}
+
+One level of write-to-read forwarding covers back-to-back \sv{COMPUTE}
+instructions, where the second consumes the first's result. Without it the
+scoreboard would stall every dependent pair for a cycle. The forwarding path
+is value-carrying only; it does not bypass the presence bit, so it cannot
+manufacture a read of never-written data.
+
+\subsection{Fail-stop discipline}
+
+Three independent mechanisms convert malformed state into a halt rather than
+a wrong answer: a per-PE stall timeout, a global watchdog, and an
+invalid-opcode trap. A misrouted packet arriving at the wrong PE is dropped
+rather than written, so a routing-table error manifests as a watchdog
+timeout, never as a silently corrupted result. The main paper states this as
+Property~2.
+
+% =====================================================================
+\section{Router}\label{sec:vc}
+% =====================================================================
+
+An $N$-port router with \sv{NUM\_VCS} virtual channels per input, default
+two, in a three-stage arrangement: input buffering per port per VC, route
+computation with VC and switch allocation, then switch traversal. Arbitration
+is two-level round-robin --- among VCs within a port, then among ports for
+each output --- and advances its pointer only on a successful grant, so a
+blocked request cannot starve its neighbours by consuming arbitration turns.
+
+Virtual channels exist for deadlock freedom on cyclic topologies. The VC is
+selected by packet bit~63, that is, by the compiler rather than by hardware
+policy. This keeps the router simple and puts deadlock avoidance where the
+global view lives, but it also means a compiler bug can construct a cyclic
+channel dependency the hardware will faithfully deadlock on. The watchdog
+converts that into a fail-stop.
+
+Flow control is credit-based, with an eight-bit credit counter per link.
+Credit returns are counter-serialised: an earlier revision pulsed credits
+combinationally and could lose a return when two arrived in the same cycle,
+leaking credits until the link wedged.
+
+% =====================================================================
+\section{Arithmetic}
+% =====================================================================
+
+\sv{fp64\_add} is a fully combinational IEEE-754 double-precision adder:
+round-to-nearest-even, flush-to-zero on both subnormal inputs and subnormal
+results. It handles normal$+$normal, signed zeros, infinities including
+$\infty + (-\infty) \rightarrow$ NaN, and NaN propagation.
+
+It is stateless and unpipelined, and both properties are deliberate. A
+stateless adder is a pure function of its two operands, so the same operand
+pair yields the same 64-bit result regardless of what the unit computed
+previously --- no accumulated rounding mode, no sticky flags, no history. An
+adder carrying mode state would break the main paper's Claim~1 at the
+arithmetic level no matter what the compiler and network did correctly.
+
+Flush-to-zero is a genuine deviation from full IEEE-754 conformance and is
+declared as such. It is uniform across every configuration, so it does not
+threaten reproducibility, but it means \sprs{} results need not agree with an
+external reducer that honours subnormals.
+
+% =====================================================================
+\section{Resource Envelope and Known Limits}
+% =====================================================================
+
+Fixed capacities: DMEM and IMEM 512 entries per PE, TX and RX buffers 8
+entries, timeout 10{,}000 cycles, watchdog 20{,}000. \sv{MAX\_ROUTERS} is
+4096.
+
+The 512-entry instruction memory is the binding constraint on instance
+feasibility, and it is the direct cause of the IMEM-overflow compilation
+failures reported in the main paper: a partition that assigns too many tree
+nodes to one PE produces an instruction image that does not fit, and the
+compiler rejects it rather than emitting a truncated program.
+
+Single-flit packets combined with input-buffered routers mean head-of-line
+blocking is possible at large $G$ on low-bisection topologies. Wormhole
+forwarding would address it and is not implemented.
+
+% =====================================================================
+\section{FPGA Bring-Up}
+% =====================================================================
+
+Three wrappers target a Xilinx Artix-7 (XC7A100T, Nexys-family board). The
+interactive wrapper combines a hardware bootloader that loads instruction
+memory, routing tables and adjacency at reset; VIO probes for entering leaf
+values and triggering a reduction; an ILA for observing pipeline activity;
+and a seven-segment display of the resulting root.
+
+Procedure:
+\begin{enumerate}
+\item Program the bitstream; the config FSM loads IMEM, routing and adjacency.
+\item Drive \sv{vio\_leaf\_value} and \sv{vio\_leaf\_idx}, pulse
+      \sv{vio\_leaf\_wr}, once per leaf.
+\item Pulse \sv{vio\_start} or flip \sv{SW[0]}.
+\item Read \sv{vio\_result} (64-bit root) and \sv{vio\_perf\_cycles}.
+\end{enumerate}
+
+When recording cycle counts, take the maximum of \sv{perf\_total} across all
+PEs, not PE~0's counter. The root of the reduction frequently lands on a PE
+other than zero, in which case PE~0 falls idle early and its counter
+substantially understates end-to-end latency. This mistake corrupted an
+earlier measurement campaign and is documented here so it is not repeated.
+
+% =====================================================================
+\section{Verification}
+% =====================================================================
+
+Four layers. Each emitted testbench embeds an \sv{EXPECTED} constant computed
+by the software oracle and asserts bit-equality of the observed root against
+it, so every simulation is a self-checking test. Dynamic SystemVerilog
+assertions cover the fabric invariants. A mutation harness injects two
+classes of fault --- operand-address substitution and leaf corruption --- and
+confirms the oracle flags them, establishing that the pass criterion is not
+vacuous. Testbench-level SHA-256 hashing deduplicates functionally identical
+images so that simulation effort is spent once per distinct program.
+
+One subtlety in mutation testing deserves recording. A single-bit flip in a
+leaf value is frequently \emph{not} observable at the root: at the operand
+magnitudes used, a mantissa LSB is far below the round bit of the running sum
+and round-to-nearest-even discards it. A harness that counts such mutants as
+missed detections will report a misleadingly poor oracle. The correct
+procedure is to escalate the perturbation until the software oracle confirms
+the canonical root has actually changed, and only then require the hardware
+oracle to flag it.
+
+% =====================================================================
+\section{Reproduction}
+% =====================================================================
+
+The compiler, RTL, benchmark suite, result CSVs and analysis scripts are
+released with the main paper. The fabric elaborates under Vivado xsim 2025.2;
+no vendor IP is instantiated, so it should port to other simulators with
+minor adjustment, though only xsim has been exercised.
+
+Two practical notes for anyone rerunning the campaign. Route-table
+initialisation via the clocked \sv{write\_route()} protocol costs
+$\mathcal{O}(G^2)$ simulated cycles and dominates wall-clock at large $G$;
+rewriting those calls as hierarchical assignments is bit-exact for the root
+result but not for cycle counts, and the substitution should be disclosed
+wherever cycle figures are reported. And elaboration memory grows sharply
+with $G$: the largest instance in the suite requires 50--70~GB per
+elaboration, which is what put it out of reach of the campaign.
+
+\end{document}
