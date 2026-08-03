@@ -1,0 +1,18 @@
+# Testbenches: 326 GB, regenerable from src/sprs_core.py. Never commit.
+data/results/**/tb_*.sv
+*.sv.bak
+
+# Vivado / xsim artefacts
+xsim.dir/ work_bypass_*/ work_mut_*/ vbuild/
+*.jou *.pb *.wdb *.str webtalk*
+xvlog.log xelab.log xsim*.log
+
+# LaTeX intermediates
+*.aux *.bbl *.blg *.out *.toc *.lof *.lot *.synctex.gz
+paper/**/build*.log paper/**/*.log
+
+# Python
+__pycache__/ *.pyc .venv/ venv/
+
+# Local run state
+.rerun_start .rerun_watchdog.pid *.tmp

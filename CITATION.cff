@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+title: "SPRS: Bitwise-Reproducible Reduction Across Cluster Reshape"
+message: "If you use this software or dataset, please cite the paper."
+type: software
+authors:
+  - family-names: Patel
+    given-names: Siddharth
+    affiliation: Shiv Nadar University
+  - family-names: Awasthi
+    given-names: Aman
+    affiliation: Shiv Nadar University
+  - family-names: Chaurasia
+    given-names: Akshansh
+    affiliation: Shiv Nadar University
+  - family-names: Singh
+    given-names: Rohit
+    affiliation: Shiv Nadar University
+license: Apache-2.0
+repository-code: "https://github.com/thesid16/sprs"
+keywords:
+  - deterministic reduction
+  - collective communication
+  - network-on-chip
+  - IEEE 754
+  - bitwise reproducibility
+preferred-citation:
+  type: article
+  title: "Bitwise-Reproducible Reduction Across Cluster Reshape: A Compiler/Fabric ABI"
+  authors:
+    - family-names: Patel
+      given-names: Siddharth
+    - family-names: Awasthi
+      given-names: Aman
+    - family-names: Chaurasia
+      given-names: Akshansh
+    - family-names: Singh
+      given-names: Rohit
+  year: 2026
