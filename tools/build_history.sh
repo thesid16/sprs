@@ -106,3 +106,15 @@ commit 2026-07-28 11:20 "repo: remaining project files" .
 echo
 echo "commits: $(git rev-list --count HEAD)"
 git log --format='%ad %s' --date=short | tail -5
+
+# ---------- Phase-2 refinement study (July, superseded but recorded) ----------
+commit 2026-07-05 14:58 "docs: S4 refinement analysis — refiners rescue bad solutions, never beat the champion" docs/S4_PHASE2_ANALYSIS.md
+for f in analysis/*.py; do
+  commit 2026-07-05 15:00 "analysis: $(basename "$f" .py | tr '_' ' ')" "$f"
+done
+commit 2026-07-06 14:41 "experiments: phase-2 refinement sweep setup" experiments/phase2/s4_phase2_setup.py
+commit 2026-07-07 00:41 "experiments: phase-2 retry driver for failed refinement tasks" experiments/phase2/s4_retry_failed.py
+commit 2026-07-03 13:59 "docs: phase-1 software and hardware campaign logs" docs/logs/
+commit 2026-04-23 12:00 "docs: paper v5 prose draft" docs/paper_v5.md
+commit 2026-06-14 18:00 "docs: project notes — force-bypass technique and resource budgets" docs/PROJECT_NOTES.md
+commit 2026-07-28 11:30 "repo: remaining artifacts" .
