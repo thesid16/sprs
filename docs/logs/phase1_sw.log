@@ -1,0 +1,169 @@
+================================================================================
+  SPRS Tournament v8.0 — Mode: PHASE1 (SW-ONLY)
+================================================================================
+  Instances:   40
+  Phase 1:     180 S2xS3 x 40 inst = 7200 items
+  HW Sim:      SKIPPED (--skip-hw)
+  Eval timeout: 1800s  |  Sim timeout: 3600s
+  Winner tiers: 3 (Max 15)  |  ALU: FADD
+  Output:      /home/rohit/tournament_p1/results/
+
+  Precomputing...
+  Done in 17.1s
+  Lower bounds: 40 instances
+
+--------------------------------------------------------------------------------
+  PHASE 1: Unified SW eval + TB gen + HW sim (single pass)
+--------------------------------------------------------------------------------
+  7200 items (40 instances to run, 0 resumed) on 72 workers
+
+  Step 1: SW eval + TB gen + per-instance dedup (streaming)
+    [   180/7200]   2.5%  9.5/s  ETA=12.3m  inst=0/40  ok=170
+    [dedup tiny_dense_1d] 12/180 unique (93.3% dedup)
+    [   360/7200]   5.0%  18.6/s  ETA=6.1m  inst=1/40  ok=340
+    [dedup tiny_mod_ring] 16/170 unique (90.6% dedup)
+    [   540/7200]   7.5%  25.8/s  ETA=4.3m  inst=2/40  ok=510
+    [   720/7200]  10.0%  32.3/s  ETA=3.3m  inst=2/40  ok=680
+    [   900/7200]  12.5%  37.3/s  ETA=2.8m  inst=2/40  ok=850
+    [dedup small_bal_fat] 41/170 unique (75.9% dedup)
+    [dedup small_dense_hc] 18/170 unique (89.4% dedup)
+    [  1080/7200]  15.0%  42.3/s  ETA=2.4m  inst=4/40  ok=1010
+    [dedup small_mod_2d] 43/170 unique (74.7% dedup)
+    [  1260/7200]  17.5%  47.6/s  ETA=2.1m  inst=5/40  ok=1180
+    [  1440/7200]  20.0%  52.6/s  ETA=1.8m  inst=5/40  ok=1350
+    [dedup med_mod_fat] 54/170 unique (68.2% dedup)
+    [  1620/7200]  22.5%  55.4/s  ETA=1.7m  inst=6/40  ok=1522
+    [dedup med_bal_2d] 46/170 unique (72.9% dedup)
+    [  1800/7200]  25.0%  57.7/s  ETA=1.6m  inst=7/40  ok=1690
+    [dedup med_extreme_1d] 23/170 unique (86.5% dedup)
+    [dedup med_dense_mesh] 33/170 unique (80.6% dedup)
+    [dedup med_mod_ring] 109/170 unique (35.9% dedup)
+    [  1980/7200]  27.5%  56.4/s  ETA=1.5m  inst=10/40  ok=1860
+    [  2160/7200]  30.0%  57.1/s  ETA=1.5m  inst=10/40  ok=2030
+    [  2340/7200]  32.5%  58.2/s  ETA=1.4m  inst=10/40  ok=2200
+    [  2520/7200]  35.0%  59.0/s  ETA=1.3m  inst=10/40  ok=2372
+    [dedup large_dense_hc] 70/170 unique (58.8% dedup)
+    [dedup large_extreme_1d] 55/170 unique (67.6% dedup)
+    [dedup large_dense_2d] 57/170 unique (66.5% dedup)
+    [dedup large_bal_fat] 62/170 unique (63.5% dedup)
+    [  2700/7200]  37.5%  47.8/s  ETA=1.6m  inst=14/40  ok=2540
+    [  2880/7200]  40.0%  33.6/s  ETA=2.1m  inst=14/40  ok=2710
+    [  3060/7200]  42.5%  31.0/s  ETA=2.2m  inst=14/40  ok=2880
+    [  3240/7200]  45.0%  28.7/s  ETA=2.3m  inst=14/40  ok=3050
+    [dedup vlarge_dense_hc] 74/170 unique (56.5% dedup)
+    [dedup vlarge_dense_2d] 95/170 unique (44.1% dedup)
+    [  3420/7200]  47.5%  21.5/s  ETA=2.9m  inst=16/40  ok=3220
+    [  3600/7200]  50.0%  12.1/s  ETA=5.0m  inst=16/40  ok=3392
+    [dedup vlarge_bal_fat] 74/170 unique (56.5% dedup)
+    [dedup vlarge2_dense_2d] 126/170 unique (25.9% dedup)
+    [dedup large_mod_ring] 109/170 unique (35.9% dedup)
+    [  3780/7200]  52.5%  5.4/s  ETA=10.5m  inst=19/40  ok=3560
+    [  3960/7200]  55.0%  2.9/s  ETA=18.7m  inst=19/40  ok=3730
+    [dedup vlarge2_bal_fat] 74/169 unique (56.2% dedup)
+    [dedup vlarge_mod_ring] 106/167 unique (36.5% dedup)
+    [  4140/7200]  57.5%  1.8/s  ETA=28.7m  inst=21/40  ok=3896
+    [dedup max_dense_hc] 107/164 unique (34.8% dedup)
+    [  4320/7200]  60.0%  1.2/s  ETA=39.6m  inst=22/40  ok=4040
+    [dedup max_bal_2d] 118/153 unique (22.9% dedup)
+    [dedup max_mod_fat] 79/152 unique (48.0% dedup)
+    [  4500/7200]  62.5%  0.9/s  ETA=48.9m  inst=24/40  ok=4194
+    [  4680/7200]  65.0%  0.8/s  ETA=51.7m  inst=24/40  ok=4360
+    [dedup large_bal_mesh] 103/170 unique (39.4% dedup)
+    [  4860/7200]  67.5%  0.8/s  ETA=49.6m  inst=25/40  ok=4527
+    [  5040/7200]  70.0%  0.8/s  ETA=46.1m  inst=25/40  ok=4689
+    [dedup med_full_torus] 106/170 unique (37.6% dedup)
+    [  5220/7200]  72.5%  0.8/s  ETA=42.2m  inst=26/40  ok=4856
+    [  5400/7200]  75.0%  0.8/s  ETA=39.2m  inst=26/40  ok=5021
+    [  5580/7200]  77.5%  0.8/s  ETA=34.2m  inst=26/40  ok=5191
+    [dedup npow2n_tiny_ring] 17/170 unique (90.0% dedup)
+    [  5760/7200]  80.0%  0.8/s  ETA=29.5m  inst=27/40  ok=5361
+    [dedup vlarge_extreme_1d] 80/170 unique (52.9% dedup)
+    [  5940/7200]  82.5%  0.8/s  ETA=25.1m  inst=28/40  ok=5531
+    [dedup npow2g_small_mesh] 21/170 unique (87.6% dedup)
+    [dedup npow2_tiny_hc] 25/170 unique (85.3% dedup)
+    [  6120/7200]  85.0%  0.9/s  ETA=20.9m  inst=30/40  ok=5701
+    [  6300/7200]  87.5%  0.9/s  ETA=16.9m  inst=30/40  ok=5871
+    [dedup npow2_small_torus] 33/170 unique (80.6% dedup)
+    [dedup npow2_med_fat] 44/170 unique (74.1% dedup)
+    [  6480/7200]  90.0%  0.9/s  ETA=13.2m  inst=32/40  ok=6040
+    [dedup large_unbal_torus] 98/170 unique (42.4% dedup)
+    [  6660/7200]  92.5%  0.9/s  ETA=9.7m  inst=33/40  ok=6209
+    [  6840/7200]  95.0%  0.9/s  ETA=6.4m  inst=33/40  ok=6373
+    [dedup vlarge_unbal_hc] 104/170 unique (38.8% dedup)
+    [  7020/7200]  97.5%  0.9/s  ETA=3.3m  inst=34/40  ok=6532
+    [dedup max_unbal_fat] 77/170 unique (54.7% dedup)
+    [dedup vlarge_bal_mesh] 126/169 unique (25.4% dedup)
+    [dedup maxp_dense_hc] 104/152 unique (31.6% dedup)
+    [dedup vlarge2_mod_ring] 116/167 unique (30.5% dedup)
+    [dedup maxp_mod_fat] 61/120 unique (49.2% dedup)
+    [dedup maxp_bal_2d] 111/131 unique (15.3% dedup)
+    [  7200/7200] 100.0%  0.7/s  ETA=0s  inst=40/40  ok=6660
+
+  Step 1 done in 2.8h
+  Valid: 6660  |  Instances: 40
+  Unique TBs: 2827 / 6654 (57.5% dedup)
+
+  Step 3: SKIPPED (--skip-hw)
+
+  Selecting winners (tiers=3, max=15)
+  SW winners: 390 across 40 instances
+  Unique (S2,S3) pairs: 65
+
+--------------------------------------------------------------------------------
+  GENERATING REPORTS
+--------------------------------------------------------------------------------
+
+================================================================================
+  RESULTS
+================================================================================
+  Instance                  Best Pipeline                 MS      Om   Ratio   HW
+  ------------------------------------------------------------------------------
+  tiny_mod_ring             2b|3b                         30      13    2.31    -
+  tiny_dense_1d             2b|3a                         37      24    1.54    -
+  small_mod_2d              2l|3c                         43      16    2.69    -
+  small_bal_fat             2b|3e                         36      24    1.50    -
+  small_dense_hc            2b|3b                         72      48    1.50    -
+  med_mod_ring              2b|3e                         71      32    2.22    -
+  med_mod_fat               2b|3e                         40      24    1.67    -
+  med_bal_2d                2b|3b                         86      48    1.79    -
+  med_dense_mesh            2b|3b                        135      96    1.41    -
+  med_extreme_1d            2b|3b                        240     192    1.25    -
+  large_mod_ring            2p|3i                        170      82    2.07    -
+  large_bal_fat             2b|3e                         70      48    1.46    -
+  large_dense_hc            2b|3b                        149      96    1.55    -
+  large_dense_2d            2b|3b                        254     192    1.32    -
+  large_extreme_1d          2b|3b                        471     384    1.23    -
+  vlarge_mod_ring           2b|3e                        309     147    2.10    -
+  vlarge_bal_fat            2b|3e                         72      48    1.50    -
+  vlarge_dense_2d           2b|3b                        156      96    1.62    -
+  vlarge_dense_hc           2b|3b                        261     192    1.36    -
+  vlarge2_bal_fat           2b|3e                         74      48    1.54    -
+  vlarge2_dense_2d          2b|3b                        163      96    1.70    -
+  max_mod_fat               2o|3e                         38      23    1.65    -
+  max_bal_2d                2b|3b                        106      36    2.94    -
+  max_dense_hc              2b|3b                        121      48    2.52    -
+  maxp_mod_fat              2o|3e                         40      24    1.67    -
+  maxp_bal_2d               2b|3b                        119      44    2.70    -
+  maxp_dense_hc             2b|3b                        128      48    2.67    -
+  large_bal_mesh            2b|3b                        100      48    2.08    -
+  vlarge_bal_mesh           2b|3b                        118      48    2.46    -
+  med_full_torus            2g|3j                         49      23    2.13    -
+  vlarge2_mod_ring          2p|3b                        322     147    2.19    -
+  vlarge_extreme_1d         2b|3b                        479     384    1.25    -
+  npow2n_tiny_ring          2o|3a                         32      18    1.78    -
+  npow2g_small_mesh         2l|3h                         39      24    1.62    -
+  npow2_tiny_hc             2o|3a                         73      48    1.52    -
+  npow2_small_torus         2k|3a                        123      60    2.05    -
+  npow2_med_fat             2k|3a                        173     102    1.70    -
+  large_unbal_torus         2b|3b                        149      96    1.55    -
+  vlarge_unbal_hc           2k|3b                        262     144    1.82    -
+  max_unbal_fat             2o|3e                        238     144    1.65    -
+
+  Output: /home/rohit/tournament_p1/results/
+  Summary: /home/rohit/tournament_p1/results/summary.csv
+  tiny_mod_ring/: lower_bounds.json, p1_sw_winners.csv, sw_results.csv, tb_2a_3a_none.sv, tb_2b_3a_none.sv, tb_2c_3a_none.sv, tb_2d_3a_none.sv, tb_2f_3a_none.sv, tb_2g_3a_none.sv, tb_2h_3a_none.sv, tb_2i_3a_none.sv, tb_2j_3a_none.sv, tb_2k_3a_none.sv, tb_2l_3a_none.sv, tb_2n_3a_none.sv, tb_2o_3a_none.sv, tb_2p_3a_none.sv, tb_2q_3a_none.sv, tb_2r_3a_none.sv, unified_results.csv, winners.csv
+  tiny_dense_1d/: lower_bounds.json, p1_sw_winners.csv, sw_results.csv, tb_2a_3e_none.sv, tb_2b_3a_none.sv, tb_2c_3a_none.sv, tb_2f_3a_none.sv, tb_2g_3a_none.sv, tb_2h_3a_none.sv, tb_2i_3a_none.sv, tb_2k_3e_none.sv, tb_2m_3e_none.sv, tb_2n_3a_none.sv, tb_2p_3a_none.sv, tb_2r_3a_none.sv, unified_results.csv, winners.csv
+  small_mod_2d/: lower_bounds.json, p1_sw_winners.csv, sw_results.csv, tb_2a_3i_none.sv, tb_2b_3a_none.sv, tb_2b_3h_none.sv, tb_2c_3a_none.sv, tb_2d_3a_none.sv, tb_2d_3b_none.sv, tb_2d_3d_none.sv, tb_2d_3g_none.sv, tb_2d_3j_none.sv, tb_2f_3a_none.sv, tb_2g_3i_none.sv, tb_2h_3a_none.sv, tb_2h_3b_none.sv, tb_2h_3c_none.sv, tb_2h_3d_none.sv, tb_2h_3e_none.sv, tb_2h_3f_none.sv, tb_2i_3i_none.sv, tb_2j_3a_none.sv, tb_2k_3a_none.sv, tb_2k_3h_none.sv, tb_2l_3a_none.sv, tb_2n_3a_none.sv, tb_2n_3c_none.sv, tb_2n_3e_none.sv, tb_2n_3f_none.sv, tb_2n_3h_none.sv, tb_2o_3i_none.sv, tb_2p_3a_none.sv, tb_2p_3c_none.sv, tb_2p_3e_none.sv, tb_2p_3g_none.sv, tb_2p_3h_none.sv, tb_2q_3a_none.sv, tb_2q_3f_none.sv, tb_2q_3i_none.sv, tb_2r_3a_none.sv, tb_2r_3b_none.sv, tb_2r_3d_none.sv, tb_2r_3e_none.sv, tb_2r_3f_none.sv, tb_2r_3h_none.sv, tb_2r_3j_none.sv, unified_results.csv, winners.csv
+  ... +37 more
+================================================================================
+
