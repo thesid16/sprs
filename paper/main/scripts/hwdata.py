@@ -18,18 +18,13 @@ re-measurement is worse than the original for aggregate statistics, because
 the phases run in size order -- taking it early silently drops every giant
 instance and skews any per-family or per-topology summary.
 """
-
-import os as _os
-# Repo root: override with SPRS_ROOT. Defaults to this file's repo.
-SPRS_ROOT = _os.environ.get("SPRS_ROOT",
-    _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import csv
 import os
 import sys
 
 csv.field_size_limit(sys.maxsize)
 
-P1 = _os.path.join(SPRS_ROOT,"data","results")
+P1 = "'"+SPRS_ROOT+"/data/results"
 MAXPE = f"{P1}/live_hw_results_p1_maxpe.csv"
 ORIG = f"{P1}/live_hw_results_p1_unified.csv"
 COVERAGE_FRAC = 0.95

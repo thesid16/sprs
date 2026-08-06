@@ -21,11 +21,6 @@ Design decisions worth stating:
 Reads the same hwdata source selector as the tables, so figures and tables
 can never disagree about which dataset they came from.
 """
-
-import os as _os
-# Repo root: override with SPRS_ROOT. Defaults to this file's repo.
-SPRS_ROOT = _os.environ.get("SPRS_ROOT",
-    _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import argparse
 import csv
 import datetime
@@ -38,7 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hwdata
 
 csv.field_size_limit(sys.maxsize)
-P1 = _os.path.join(SPRS_ROOT,"data","results")
+P1 = "'"+SPRS_ROOT+"/data/results"
 
 META = {}
 for n, g, t, lab in [

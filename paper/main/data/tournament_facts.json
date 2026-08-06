@@ -1,49 +1,54 @@
 {
- "generated": "2026-07-28",
- "source": "/home/rohit/tournament_p1/results/live_hw_results_p1_unified.csv",
- "trusted_metric": false,
+ "generated": "2026-08-02",
+ "source": "/home/rohit/tournament_p1/results/live_hw_results_p1_maxpe.csv",
+ "trusted_metric": true,
  "n_instances": 39,
  "s2_family_share": {
-  "graph partition": 76.9,
-  "multilevel": 17.9,
-  "hierarchical": 2.6,
-  "tree DP": 2.6
+  "graph partition": 17.9,
+  "tree DP": 53.8,
+  "clustering": 7.7,
+  "hierarchical": 17.9,
+  "multilevel": 2.6
  },
  "s3_family_share": {
-  "flow": 7.7,
-  "trivial": 51.3,
-  "greedy": 17.9,
-  "tree-aware": 20.5,
-  "metaheuristic": 2.6
+  "tree-aware": 7.7,
+  "metaheuristic": 2.6,
+  "greedy": 15.4,
+  "trivial": 61.5,
+  "spectral": 2.6,
+  "flow": 10.3
  },
  "s2_wins": {
-  "2b": 30,
-  "2c": 7,
-  "2n": 1,
-  "2k": 1
+  "2b": 7,
+  "2k": 17,
+  "2g": 3,
+  "2o": 7,
+  "2l": 4,
+  "2c": 1
  },
  "s3_wins": {
-  "3e": 3,
-  "3a": 20,
-  "3i": 1,
-  "3c": 8,
-  "3b": 6,
-  "3d": 1
+  "3c": 3,
+  "3d": 1,
+  "3i": 2,
+  "3a": 24,
+  "3b": 4,
+  "3h": 1,
+  "3e": 4
  },
  "selbias": {
   "10": {
-   "median_rho": 0.873,
-   "median_leak": 0.4,
+   "median_rho": 0.955,
+   "median_leak": 0.3,
    "n": 39
   },
   "15": {
-   "median_rho": 0.873,
-   "median_leak": 0.333,
+   "median_rho": 0.955,
+   "median_leak": 0.2,
    "n": 37
   },
   "30": {
-   "median_rho": 0.864,
-   "median_leak": 0.15,
+   "median_rho": 0.954,
+   "median_leak": 0.1,
    "n": 32
   }
  }

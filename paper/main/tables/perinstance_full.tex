@@ -1,50 +1,50 @@
 % GENERATED — do not edit by hand.
 % script : scripts/gen_tournament.py
-% source : /home/rohit/tournament_p1/results/live_hw_results_p1_unified.csv
-% metric : HW cycles, GPU 0 only (DEFECTIVE)
-% date   : 2026-07-28
+% source : /home/rohit/tournament_p1/results/live_hw_results_p1_maxpe.csv
+% metric : HW cycles, max over PEs (corrected)
+% date   : 2026-08-02
 \begin{tabular}{@{}rrlllrr@{}}
 \toprule
 $N$ & $G$ & Topology & $\asgn$ & $\map$ & cycles & cyc/$\Omega$ \\
 \midrule
-8 & 2 & linear & \sv{RecBisect} & \sv{Identity} & 34 & 1.42 \\
-8 & 4 & ring & \sv{RecBisect} & \sv{Identity} & 19 & 1.46 \\
-10 & 4 & ring & \sv{RecBisect} & \sv{Identity} & 34 & 1.89 \\
-16 & 5 & mesh & \sv{MLfm} & \sv{Identity} & 27 & 1.12 \\
-32 & 4 & hypercube & \sv{RecBisect} & \sv{Identity} & 64 & 1.33 \\
-32 & 8 & fat-tree & \sv{RecBisect} & \sv{Identity} & 34 & 1.42 \\
-32 & 16 & torus & \sv{MLfm} & \sv{Identity} & 5 & 0.31 \\
-50 & 7 & hypercube & \sv{RecBisect} & \sv{Identity} & 64 & 1.33 \\
-100 & 10 & torus & \sv{MLfm} & \sv{Identity} & 5 & 0.08 \\
-128 & 4 & linear & \sv{ClHEFT} & \sv{Identity} & 204 & 1.06 \\
-128 & 8 & mesh & \sv{RecBisect} & \sv{TreeMatch} & 124 & 1.29 \\
-128 & 16 & torus & \sv{RecBisect} & \sv{Identity} & 64 & 1.33 \\
-128 & 32 & fat-tree & \sv{RecBisect} & \sv{TreeMatch} & 34 & 1.42 \\
-128 & 64 & ring & \sv{RecBisect} & \sv{TreeMatch} & 19 & 0.59 \\
-128 & 128 & torus & \sv{RecBisect} & \sv{Identity} & 12 & 0.52 \\
-200 & 12 & fat-tree & \sv{RecBisect} & \sv{Identity} & 124 & 1.22 \\
-500 & 32 & torus & \sv{RecBisect} & \sv{HopMin} & 124 & 1.29 \\
-512 & 8 & linear & \sv{MLfm} & \sv{Identity} & 244 & 0.64 \\
-512 & 16 & torus & \sv{MLfm} & \sv{RAGreedy} & 5 & 0.03 \\
-512 & 32 & hypercube & \sv{MLfm} & \sv{Identity} & 64 & 0.67 \\
-512 & 64 & fat-tree & \sv{RecBisect} & \sv{MCF} & 64 & 1.33 \\
-512 & 64 & mesh & \sv{RecBisect} & \sv{Identity} & 64 & 1.33 \\
-512 & 256 & ring & \sv{RecBisect} & \sv{MCF} & 19 & 0.23 \\
-1024 & 16 & linear & \sv{RecBisect} & \sv{HopMin} & 484 & 1.26 \\
-1024 & 32 & hypercube & \sv{RecBisect} & \sv{Identity} & 244 & 1.27 \\
-1024 & 64 & torus & \sv{RecBisect} & \sv{HopMin} & 124 & 1.29 \\
-1024 & 128 & fat-tree & \sv{RecBisect} & \sv{TreeMatch} & 64 & 1.33 \\
-1024 & 512 & ring & \sv{RecBisect} & \sv{TreeMatch} & 19 & 0.13 \\
-1500 & 64 & hypercube & \sv{MLfm} & \sv{Identity} & 5 & 0.03 \\
-2048 & 128 & torus & \sv{RecBisect} & \sv{Identity} & 124 & 1.29 \\
-2048 & 256 & fat-tree & \sv{RecBisect} & \sv{TreeMatch} & 64 & 1.33 \\
-2048 & 256 & mesh & \sv{RecBisect} & \sv{HopMin} & 64 & 1.33 \\
-2048 & 512 & ring & \sv{RecBisect} & \sv{TreeMatch} & 34 & 0.23 \\
-3000 & 128 & fat-tree & \sv{Lukes} & \sv{Identity} & 184 & 1.28 \\
-4096 & 512 & hypercube & \sv{RecBisect} & \sv{TreeMatch} & 64 & 1.33 \\
-4096 & 1024 & torus & \sv{RecBisect} & \sv{HopMin} & 34 & 0.94 \\
-4096 & 2048 & fat-tree & \sv{RecBisect} & \sv{MCF} & 19 & 0.83 \\
-8192 & 1024 & hypercube & \sv{RecBisect} & \sv{QAP-SA} & 64 & 1.33 \\
-8192 & 2048 & torus & \sv{RecBisect} & \sv{HopMin} & 34 & 0.77 \\
+8 & 2 & linear & \sv{RecBisect} & \sv{Identity} & 44 & 1.83 \\
+8 & 4 & ring & \sv{MLfm} & \sv{Identity} & 40 & 3.08 \\
+10 & 4 & ring & \sv{ParSub} & \sv{Identity} & 42 & 2.33 \\
+16 & 5 & mesh & \sv{Frederickson} & \sv{Identity} & 52 & 2.17 \\
+32 & 4 & hypercube & \sv{Lukes} & \sv{Identity} & 85 & 1.77 \\
+32 & 8 & fat-tree & \sv{RecBisect} & \sv{MCF} & 80 & 3.33 \\
+32 & 16 & torus & \sv{Lukes} & \sv{Identity} & 62 & 3.88 \\
+50 & 7 & hypercube & \sv{ParSub} & \sv{Identity} & 87 & 1.81 \\
+100 & 10 & torus & \sv{Lukes} & \sv{Identity} & 138 & 2.30 \\
+128 & 4 & linear & \sv{Lukes} & \sv{Identity} & 265 & 1.38 \\
+128 & 8 & mesh & \sv{Lukes} & \sv{RAGreedy} & 156 & 1.62 \\
+128 & 16 & torus & \sv{Lukes} & \sv{Spectral} & 107 & 2.23 \\
+128 & 32 & fat-tree & \sv{RecBisect} & \sv{MCF} & 110 & 4.58 \\
+128 & 64 & ring & \sv{DSC} & \sv{Identity} & 159 & 4.97 \\
+128 & 128 & torus & \sv{Frederickson} & \sv{Identity} & 95 & 4.13 \\
+200 & 12 & fat-tree & \sv{Lukes} & \sv{Identity} & 187 & 1.83 \\
+500 & 32 & torus & \sv{RecBisect} & \sv{HopMin} & 192 & 2.00 \\
+512 & 8 & linear & \sv{Lukes} & \sv{Identity} & 518 & 1.35 \\
+512 & 16 & torus & \sv{Lukes} & \sv{RAGreedy} & 287 & 1.49 \\
+512 & 32 & hypercube & \sv{Lukes} & \sv{Identity} & 178 & 1.85 \\
+512 & 64 & fat-tree & \sv{RecBisect} & \sv{TreeMatch} & 153 & 3.19 \\
+512 & 64 & mesh & \sv{Lukes} & \sv{QAP-SA} & 144 & 3.00 \\
+512 & 256 & ring & \sv{DSC} & \sv{HopMin} & 341 & 4.16 \\
+1024 & 16 & linear & \sv{Lukes} & \sv{Identity} & 537 & 1.40 \\
+1024 & 32 & hypercube & \sv{Lukes} & \sv{TreeMatch} & 298 & 1.55 \\
+1024 & 64 & torus & \sv{Lukes} & \sv{Identity} & 189 & 1.97 \\
+1024 & 128 & fat-tree & \sv{Lukes} & \sv{MCF} & 166 & 3.46 \\
+1024 & 512 & ring & \sv{Frederickson} & \sv{HopMin} & 1043 & 7.10 \\
+1500 & 64 & hypercube & \sv{Lukes} & \sv{Identity} & 304 & 2.11 \\
+2048 & 128 & torus & \sv{Lukes} & \sv{HopMin} & 200 & 2.08 \\
+2048 & 256 & fat-tree & \sv{RecBisect} & \sv{TreeMatch} & 183 & 3.81 \\
+2048 & 256 & mesh & \sv{ParSub} & \sv{Identity} & 195 & 4.06 \\
+2048 & 512 & ring & \sv{DSC} & \sv{Identity} & 707 & 4.81 \\
+3000 & 128 & fat-tree & \sv{ParSub} & \sv{Identity} & 337 & 2.34 \\
+4096 & 512 & hypercube & \sv{ParSub} & \sv{Identity} & 162 & 3.38 \\
+4096 & 1024 & torus & \sv{ParSub} & \sv{Identity} & 247 & 6.86 \\
+4096 & 2048 & fat-tree & \sv{RecBisect} & \sv{MCF} & 185 & 8.04 \\
+8192 & 1024 & hypercube & \sv{ParSub} & \sv{Identity} & 173 & 3.60 \\
+8192 & 2048 & torus & \sv{Frederickson} & \sv{Identity} & 399 & 9.07 \\
 \bottomrule
 \end{tabular}

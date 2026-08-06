@@ -173,6 +173,34 @@ crash-restarting, checkpointed via the output CSV's settled-row scan), writing t
 **Scope of impact:** Claim 1 is untouched — it rests on `Pass`, the bit-exact root comparison, and
 all 2,822 witnesses stand. Every cycle-derived number must come from the re-measured CSV.
 
+### Outcome (2026-07-31, campaign complete)
+
+821.5 core-hours, 142 h wall-clock, **2,822 passing across 39 instances — identical coverage to the
+original**, so nothing was lost by re-measuring. The correction was far larger than the Ω test
+could detect:
+
+| | |
+|---|---|
+| testbenches whose cycle count changed | **1,424 / 2,822 (50.5%)** |
+| median understatement | **1.28×** |
+| worst understatement | **148.4×** |
+| **per-instance champions that changed** | **35 / 39 (90%)** |
+
+The algorithm-family conclusion *reversed*: on the defective metric graph partitioning won 77% of
+instances; on the corrected metric **tree DP wins 54%** and graph partitioning drops to 18%. Had we
+published the original numbers, the tournament characterisation would have been almost entirely
+wrong — and nothing in the invariance result would have flagged it, because that result never
+depended on cycles.
+
+**The structural cost model's prediction was confirmed.** §8.3 predicted GCI serialisation binds
+only while N/G ≲ 6–8. Measured, banded by N/G: 4.16 → 3.96 → **3.28 → 1.91** → 1.37 (× Ω). The
+sharpest transition in the table is exactly at the predicted band, and the knee location was fixed
+in advance by the hardware constant `gci_gap = 6`, not fitted. Topology ordering also tracks
+bisection width as §8.5 implies: linear 1.39× best, ring 4.48× worst.
+
+This is a materially better outcome than the fabricated `1.12×` would have been: a confirmed
+prediction from a stated model, rather than an unbacked ratio.
+
 ---
 
 ## 6. Verified numbers available today

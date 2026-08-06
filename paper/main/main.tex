@@ -1559,8 +1559,7 @@ choices matter for cycle counts but not for the bit result.
 \subsection{Compilation Pipeline}\label{sec:compiler-pipeline}
 
 \sprs{} compiles a triple $(N, G, \text{topology})$ into a per-PE IMEM
-image plus per-router adjacency and routing tables via seven stages
-(Fig.~\ref{fig:pipeline-dag}):
+image plus per-router adjacency and routing tables via seven stages:
 
 \begin{enumerate}[label=\textbf{S\arabic*},leftmargin=2.5em]
 \setcounter{enumi}{-1}
@@ -1568,7 +1567,7 @@ image plus per-router adjacency and routing tables via seven stages
   secondary metric, see \S\ref{sec:method-lb}.
 \item $\FBT(N)$ instantiation (\sv{CBTree.\_\_init\_\_}).
 \item Assignment $\asgn:$ tree nodes $\to$ GPUs, selected from 18
-  algorithms (Appendix~\ref{app:algos}, Tab.~\ref{tab:s2-taxonomy}).
+  algorithms (Appendix~\ref{app:algos}, Tab.~\ref{tab:catalogue}).
 \setcounter{enumi}{1}
 \addtocounter{enumi}{-1}
 \item[{\footnotesize\textbf{S2.5}}] \emph{Connectivity repair}
@@ -2160,6 +2159,24 @@ Figure~\ref{fig:nginflect} plots them individually. If term~3 is right,
 instances below the band should sit further from $\Omega$ --- paying for leaf
 generation that cannot overlap --- and the normalised cost should flatten
 above it.
+
+The prediction holds. Below the band the normalised cost is high and roughly
+flat ($4.16$ at $N/G \le 2$, $3.96$ on $(2,6]$); crossing it produces the
+sharpest transition in the table ($3.28$ on $(6,8]$ falling to $1.91$ on
+$(8,32]$, a $42\%$ drop); above it the curve flattens again toward $1.37$.
+The location of the knee was fixed in advance by $\sv{gci\_gap} = 6$, a
+hardware constant, not fitted to these measurements --- so the agreement is a
+successful prediction rather than a description. We take this as evidence
+that the structural decomposition identifies the right terms, which is the
+most we can claim without the baseline of \S\ref{sec:method-nd}.
+
+Two secondary readings follow. First, the topology ordering in
+Table~\ref{tab:omegaratio} tracks bisection width as term~5 implies: linear
+sits closest to the bound ($1.39$) and ring furthest ($4.48$), with the
+higher-bisection topologies in between. Second, no instance reaches $\Omega$
+--- the best is $1.35\times$ --- which is expected, since $\Omega$ is a
+lower bound assembled from seven separately-derived constraints and is not
+claimed to be tight.
 
 \subsubsection{Distance to the lower bound}
 

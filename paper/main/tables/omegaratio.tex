@@ -1,8 +1,8 @@
 % GENERATED — do not edit by hand.
 % script : scripts/gen_cost_tables.py
-% source : /home/rohit/tournament_p1/results/live_hw_results_p1_unified.csv
-% metric : GPU 0 only (DEFECTIVE)
-% date   : 2026-07-28
+% source : /home/rohit/tournament_p1/results/live_hw_results_p1_maxpe.csv
+% metric : max over PEs (corrected)
+% date   : 2026-08-02
 \begin{table}[!t]
 \caption{Distance to the composite lower bound $\Omega$ by topology. $\Omega$ bounds any schedule on this fabric, so these ratios upper-bound what an unconstrained reducer could have recovered.}
 \label{tab:omegaratio}
@@ -12,14 +12,14 @@
 \toprule
 Topology & instances & median cyc/$\Omega$ & best \\
 \midrule
-ring & 6 & 0.41 & 0.13 \\
-torus & 10 & 0.86 & 0.03 \\
-linear & 4 & 1.16 & 0.64 \\
-mesh & 4 & 1.31 & 1.12 \\
-fat-tree & 8 & 1.33 & 0.83 \\
-hypercube & 7 & 1.33 & 0.03 \\
+linear & 4 & 1.39 & 1.35 \\
+hypercube & 7 & 1.85 & 1.55 \\
+torus & 10 & 2.26 & 1.49 \\
+mesh & 4 & 2.58 & 1.62 \\
+fat-tree & 8 & 3.40 & 1.83 \\
+ring & 6 & 4.48 & 2.33 \\
 \midrule
-\textbf{all} & 39 & 1.28 & 0.03 \\
+\textbf{all} & 39 & 2.34 & 1.35 \\
 \bottomrule
 \end{tabular}
 \end{table}

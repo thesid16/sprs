@@ -18,11 +18,6 @@ Reads the re-measured max-over-PEs CSV when complete; otherwise falls back to
 the original with a loud warning and stamps the output DEFECTIVE, which
 `make check` treats as a build failure.
 """
-
-import os as _os
-# Repo root: override with SPRS_ROOT. Defaults to this file's repo.
-SPRS_ROOT = _os.environ.get("SPRS_ROOT",
-    _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import argparse
 import csv
 import datetime
@@ -38,7 +33,7 @@ from collections import defaultdict, Counter
 
 csv.field_size_limit(sys.maxsize)
 
-P1 = _os.path.join(SPRS_ROOT,"data","results")
+P1 = "'"+SPRS_ROOT+"/data/results"
 MAXPE = f"{P1}/live_hw_results_p1_maxpe.csv"
 ORIG = f"{P1}/live_hw_results_p1_unified.csv"
 MIN_ROWS = 2000
