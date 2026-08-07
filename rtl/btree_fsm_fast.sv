@@ -301,8 +301,14 @@ module btree_fsm_fast #(
             end else begin
                 if (piu_pkt[95:80] == gpu_id) begin
                     // Packet for this GPU — write directly to DMEM[target_addr]
+                    // Trace is opt-in (-d NOC_TRACE): on large configurations
+                    // one line per delivered packet per GPU dominates runtime.
+                    // Only the $display is gated; the state updates below are
+                    // functional and always execute.
+`ifdef NOC_TRACE
                     $display("[PIU] %0t | GPU %0d RX: pkt=%0h -> DMEM[%0d]",
                              $time, gpu_id, piu_pkt, piu_pkt[79:70]);
+`endif
                     piu_active <= 1'b0;
                     piu_credit_return[piu_src_link] <= 1'b1;
                 end else begin

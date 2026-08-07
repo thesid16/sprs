@@ -9,18 +9,13 @@ writes to a per-worker work_dir, runs xvlog+xelab+xsim, parses output, records r
 
 Output: appends to live_hw_results_p1_unified.csv with bypass marker in ErrorCode.
 """
-
-import os as _os
-# Repo root: override with SPRS_ROOT. Defaults to this file's repo.
-SPRS_ROOT = _os.environ.get("SPRS_ROOT",
-    _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import os, re, csv, sys, time, json, shutil, subprocess, argparse, threading, signal
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-BASE = SPRS_ROOT   # current baked TBs live here (was tournament_new = stale 2026-05 TBs)
-RTL  = _os.path.join(SPRS_ROOT,'rtl')
+BASE = "/home/rohit/tournament_p1"   # current baked TBs live here (was tournament_new = stale 2026-05 TBs)
+RTL  = f"{BASE}/rtl"
 RES  = f"{BASE}/results"
-VIVADO_BIN = "" + _os.environ.get("VIVADO_BIN","/opt/Xilinx/2025.2/Vivado/bin") + ""
+VIVADO_BIN = "/home/rohit/Downloads/2025.2/Vivado/bin"
 RTL_FILES = ["noc_pkg.sv","btree_pkg.sv","sync_fifo.sv","link_tx.sv",
              "noc_link.sv","noc_router.sv","noc_ni.sv","fp64_add.sv",
              "btree_fsm_fast.sv","noc_system.sv"]
@@ -98,7 +93,12 @@ def run_one(args):
         snap = f"sim_byp_{tb_fname}"
         xelab_log = f"{wd}/xelab.log"
         with open(xelab_log,"w") as lf:
-            proc = subprocess.Popen([xelab,"-mt","2","-timescale","1ns/1ps","-debug","typical",
+            # -mt is the elaboration thread count. Default 2 preserves the
+            # behaviour every prior campaign ran under; XELAB_MT raises it for
+            # the giant instances, where elaboration (not simulation) dominates
+            # and the box has far more threads than workers x 2.
+            _mt = os.environ.get("XELAB_MT", "2")
+            proc = subprocess.Popen([xelab,"-mt",_mt,"-timescale","1ns/1ps","-debug","typical",
                                      "-top",module_name,"-snapshot",snap],
                                     stdout=lf, stderr=subprocess.STDOUT,
                                     cwd=wd, start_new_session=True)

@@ -2755,6 +2755,29 @@ Claim~\ref{claim:1}: the invariance result is a statement about
 \emph{every} HW-validated configuration rather than a selected subset, and
 enlarging the set can only expose a divergence, never manufacture agreement.
 
+\section{Per-Instance Results}\label{app:perinstance}
+% =====================================================================
+
+Table~\ref{tab:perinstance} gives, for every HW-validated instance, the
+winning compiler triple by measured cycle count, that cycle count, and its
+ratio to the composite lower bound $\Omega$. Winners are decided on measured
+cycles rather than on the compiler's own makespan estimate; see
+Appendix~\ref{app:bias} for the leakage this introduces. The complete
+per-configuration record is released as
+\sv{live\_hw\_results\_p1\_maxpe.csv} in the artefact.
+
+\begin{table}[!t]
+\caption{Per-instance winners across the HW-validated suite. Cycle counts are
+  the maximum over all PEs' \sv{perf\_total} counters; cyc/$\Omega$ is the
+  distance to the composite lower bound of \S\ref{sec:method-lb}.}
+\label{tab:perinstance}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{1.1}
+\input{tables/perinstance_full}
+\end{table}
+
+% =====================================================================
 \section{Reproducibility Checklist}\label{app:repro}
 % =====================================================================
 

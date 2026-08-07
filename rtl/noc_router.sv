@@ -119,6 +119,11 @@ module noc_router #(
         end
     end
 
+    // Per-packet tracing. Unconditional tracing costs hours of wall-clock on
+    // large configurations (4096 routers x every packet), so it is opt-in:
+    // compile with -d NOC_TRACE to enable. $display cannot affect signal
+    // values or consume simulation time, so gating it does not change results.
+`ifdef NOC_TRACE
     always_ff @(posedge clk) begin
         for (int jp = 0; jp < NUM_PORTS; jp++) begin
             if (rx_valid[jp])
@@ -127,6 +132,7 @@ module noc_router #(
                 $display("[NOCTRC] %0t | Router %0d TX Port %0d: pkt=%0h (tgt=%0d, src=%0d)", $time, ROUTER_ID, jp, tx_data[jp], tx_data[jp][95:80], tx_data[jp][79:64]);
         end
     end
+`endif
 
     // =========================================================================
     // Stage 3: Output — per-port egress FIFOs + credit TX controllers

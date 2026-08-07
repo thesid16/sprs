@@ -26,7 +26,7 @@ PAPER="${SPRS_PAPER:-$BASE/paper/main}"
 OUT="$BASE/data/results/live_hw_results_p1_maxpe.csv"
 LOG="$BASE/rerun_autoresume.log"
 DONE_MARK="$BASE/.rerun_finished"
-TOTAL=2844
+TOTAL=2962
 
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
@@ -69,6 +69,56 @@ if [[ "$n" -ge "$TOTAL" ]]; then
     echo "[$(ts)] completion hook finished" >>"$LOG"
   fi
   exit 0
+fi
+
+# ---- refresh the paper whenever new maxp_mod_fat data lands ----
+# The completion hook below only fires when EVERYTHING is settled. maxp is a
+# long tail, so regenerate incrementally: the moment the first testbench
+# passes, instance coverage becomes 40/40 and the invariance table gains a
+# third configuration at N=8192. Waiting for all 118 would leave that on the
+# floor for days.
+STAMP="$BASE/.maxp_lastcount"
+cur=$(python3 - "$OUT" <<'PY2' 2>/dev/null || echo 0
+import csv,sys
+csv.field_size_limit(sys.maxsize)
+n=0
+with open(sys.argv[1],newline='',encoding='utf-8',errors='replace') as f:
+    for r in csv.reader(f):
+        if len(r)>=7 and r[0]=='maxp_mod_fat' and r[6]=='OK_BYPASS': n+=1
+print(n)
+PY2
+)
+prev=$(cat "$STAMP" 2>/dev/null || echo -1)
+if [[ "${cur:-0}" -ne "${prev:-(-1)}" ]]; then
+  echo "$cur" >"$STAMP"
+  if [[ "${cur:-0}" -gt 0 ]]; then
+    echo "[$(ts)] maxp_mod_fat passing count now $cur — refreshing paper" >>"$LOG"
+    ( cd "$PAPER" && make tables && make ) >>"$LOG" 2>&1
+    echo "[$(ts)] paper refreshed ($(cd "$PAPER" && make check >/dev/null 2>&1 && echo 'gate PASS' || echo 'gate FAIL'))" >>"$LOG"
+  fi
+fi
+
+# ---- maxp_mod_fat runs under its own supervisor; revive it too ----
+maxp_running() {
+  local p
+  p=$(cat "$BASE/.maxp_watchdog.pid" 2>/dev/null) || return 1
+  [[ -n "$p" ]] && kill -0 "$p" 2>/dev/null
+}
+maxp_settled=$(python3 - "$OUT" <<'PY2' 2>/dev/null || echo 0
+import csv,sys
+csv.field_size_limit(sys.maxsize)
+S={'OK_BYPASS','OK_BYPASS_REUSED','SIM_TB_TIMEOUT_BYPASS','SIM_FAIL_BYPASS','SIM_UNKNOWN_BYPASS'}
+n=0
+with open(sys.argv[1],newline='',encoding='utf-8',errors='replace') as f:
+    for r in csv.reader(f):
+        if len(r)>=7 and r[0]=='maxp_mod_fat' and r[6] in S: n+=1
+print(n)
+PY2
+)
+if [[ "${maxp_settled:-0}" -lt 118 ]] && ! maxp_running; then
+  echo "[$(ts)] maxp supervisor down at ${maxp_settled:-0}/118 — restarting" >>"$LOG"
+  rm -f "$BASE/.maxp_watchdog.pid"
+  "$BASE/maxp_watchdog.sh" start >>"$LOG" 2>&1
 fi
 
 # ---- not finished: make sure it is actually running ----

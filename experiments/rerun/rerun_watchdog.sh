@@ -25,7 +25,7 @@
 set -uo pipefail
 
 BASE="${SPRS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-OUT="$BASE/results/live_hw_results_p1_maxpe.csv"
+OUT="$BASE/data/results/live_hw_results_p1_maxpe.csv"
 LOG="$BASE/rerun_watchdog.log"
 PIDF="$BASE/.rerun_watchdog.pid"
 RUNNER="$BASE/_bypass_runner.py"
@@ -35,7 +35,19 @@ TIMEOUT=28800                 # per-TB cap, same as the original campaign
 PHASES=(
   "A:/tmp/rerun_phaseA.json:32"
   "B:/tmp/rerun_phaseB.json:16"
+  # Phase C: maxp_mod_fat (8192 leaves x 4096 GPUs, fat-tree) -- the one
+  # instance the campaign never completed. Five prior attempts each burned
+  # ~12 h and died at the 8 h cap while emitting [NOCTRC] packet traces; the
+  # traces are now compile-gated (-d NOC_TRACE, off by default), which was
+  # verified cycle-identical on five reference TBs across five topologies.
+  # 5 workers keeps peak RSS near 350 GB against 503 GB installed.
+  "C:/tmp/rerun_phaseC.json:5"
 )
+# Per-phase overrides. Phase C elaborates a 4096-node design, so it gets more
+# elaboration threads (the box has 72) and a far longer cap than the 8 h that
+# defeated every earlier attempt.
+declare -A PHASE_TIMEOUT=( [C]=43200 )
+declare -A PHASE_MT=( [C]=6 )
 
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
@@ -54,7 +66,7 @@ PY
 }
 
 total_tbs() {
-  python3 -c "import json;print(sum(len(json.load(open(p))) for p in ['/tmp/rerun_phaseA.json','/tmp/rerun_phaseB.json']))" 2>/dev/null || echo 2844
+  python3 -c "import json,os;print(sum(len(json.load(open(p))) for p in ['/tmp/rerun_phaseA.json','/tmp/rerun_phaseB.json','/tmp/rerun_phaseC.json'] if os.path.exists(p)))" 2>/dev/null || echo 2962
 }
 
 supervise() {
@@ -79,8 +91,9 @@ supervise() {
     local attempt=0
     while :; do
       attempt=$((attempt+1))
-      echo "[$(ts)] --- phase $ph attempt $attempt ($jobs workers) ---" >>"$LOG"
-      python3 -u "$RUNNER" --jobs "$jobs" --timeout "$TIMEOUT" \
+      local to="${PHASE_TIMEOUT[$ph]:-$TIMEOUT}" mt="${PHASE_MT[$ph]:-2}"
+      echo "[$(ts)] --- phase $ph attempt $attempt ($jobs workers, cap ${to}s, -mt $mt) ---" >>"$LOG"
+      XELAB_MT="$mt" python3 -u "$RUNNER" --jobs "$jobs" --timeout "$to" \
               --tb-list-json "$list" --out-csv "$OUT" >>"$LOG" 2>&1
       rc=$?
       if [[ $rc -eq 0 ]]; then
@@ -133,11 +146,25 @@ out,d,t,startf=sys.argv[1],int(sys.argv[2]),int(sys.argv[3]),sys.argv[4]
 try: start=float(open(startf).read().strip())
 except Exception: start=os.path.getmtime(out)
 el=max(1.0, time.time()-start)
-if d and d<t:
-    rem=(el/d)*(t-d)
-    print(f"elapsed {el/3600:.1f}h  rate {d/(el/3600):.0f} TB/h  ETA ~{rem/3600:.1f}h remaining")
-elif d>=t:
-    print(f"elapsed {el/3600:.1f}h  COMPLETE")
+# ETA from a TRAILING window, not the global average. Phase A (light
+# instances) runs ~600 TB/h; phase B is giants at hours per TB, so a global
+# rate extrapolates to a wildly optimistic finish once phase B starts.
+sim=[]
+with open(out,newline='',encoding='utf-8',errors='replace') as f:
+    for r in csv.reader(f):
+        if len(r)>=7 and r[6].startswith(('OK_BYPASS','SIM_')):
+            try: sim.append(float(r[5]))
+            except: pass
+print(f"elapsed {el/3600:.1f}h  overall {d/(el/3600):.0f} TB/h")
+if d>=t:
+    print("COMPLETE")
+elif len(sim)>=20:
+    recent=sim[-20:]
+    per=sum(recent)/len(recent)          # mean seconds per TB, recent work
+    workers=int(os.environ.get("RERUN_WORKERS","16"))
+    rem=(t-d)*per/max(1,workers)
+    print(f"recent mean {per/60:.0f} min/TB  ->  ETA ~{rem/3600:.1f}h "
+          f"for the remaining {t-d} (dominated by the giant instances)")
 sim=[]
 with open(out,newline='',encoding='utf-8',errors='replace') as f:
     for r in csv.reader(f):
