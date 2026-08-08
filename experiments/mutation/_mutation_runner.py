@@ -30,11 +30,6 @@ ISA layout (btree_pkg.sv):
 Usage:
   python3 _mutation_runner.py --sample 3 --jobs 16 --out results/_mutation_results.json
 """
-
-import os as _os
-# Repo root: override with SPRS_ROOT. Defaults to this file's repo.
-SPRS_ROOT = _os.environ.get("SPRS_ROOT",
-    _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import argparse
 import json
 import os
@@ -48,10 +43,10 @@ import time
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-BASE = SPRS_ROOT
-RTL = _os.path.join(SPRS_ROOT,'rtl')
+BASE = _os.environ.get("SPRS_ROOT", _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+RTL = f"{BASE}/rtl"
 RES = f"{BASE}/results"
-VIVADO_BIN = "" + _os.environ.get("VIVADO_BIN","/opt/Xilinx/2025.2/Vivado/bin") + ""
+VIVADO_BIN = "/home/rohit/Downloads/2025.2/Vivado/bin"
 RTL_FILES = ["noc_pkg.sv", "btree_pkg.sv", "sync_fifo.sv", "link_tx.sv",
              "noc_link.sv", "noc_router.sv", "noc_ni.sv", "fp64_add.sv",
              "btree_fsm_fast.sv", "noc_system.sv"]
@@ -126,6 +121,14 @@ TARGETS = [
     ("med_extreme_1d", 128, 4), ("med_dense_mesh", 128, 8),
     ("npow2_med_fat", 200, 12), ("large_unbal_torus", 500, 32),
     ("large_extreme_1d", 512, 8), ("large_dense_hc", 512, 32),
+    # The invariance table carries one row per leaf-count class, so every
+    # class needs mutation data or its two rightmost cells stay empty. These
+    # six cover the large end; within each class we take the smallest G,
+    # since elaboration cost scales with the node count and detection is a
+    # property of the oracle rather than of scale.
+    ("vlarge_extreme_1d", 1024, 16), ("vlarge_unbal_hc", 1500, 64),
+    ("vlarge2_dense_2d", 2048, 128), ("max_unbal_fat", 3000, 128),
+    ("max_dense_hc", 4096, 512), ("maxp_dense_hc", 8192, 1024),
 ]
 
 
@@ -275,18 +278,42 @@ def main():
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--timeout", type=int, default=1800)
     ap.add_argument("--out", default=f"{RES}/_mutation_results.json")
+    ap.add_argument("--merge", action="store_true",
+                    help="keep leaf classes already present in --out; only run missing ones")
     a = ap.parse_args()
+
+    # Merge with any previous campaign: re-running leaf classes that already
+    # have data wastes hours on the large instances for no new information.
+    prior = {"by_N": {}, "runs": []}
+    if a.merge and os.path.exists(a.out):
+        with open(a.out) as f:
+            prior = json.load(f)
+        have = {int(k) for k in prior.get("by_N", {})}
+        print(f"  merging with {a.out}: {len(have)} leaf class(es) already covered "
+              f"({sorted(have)})")
+    else:
+        have = set()
 
     jobs = []
     for inst, n, g in TARGETS:
-        tbs = sorted(f[:-3] for f in os.listdir(f"{RES}/{inst}")
+        if n in have:
+            continue
+        d = f"{RES}/{inst}"
+        if not os.path.isdir(d):
+            print(f"  [skip] {inst}: no results directory")
+            continue
+        tbs = sorted(f[:-3] for f in os.listdir(d)
                      if f.startswith("tb_") and f.endswith(".sv"))
         if not tbs:
+            print(f"  [skip] {inst}: no testbenches on disk")
             continue
         base = tbs[0]                      # deterministic pick
         for kind in MUTATORS:
             for s in range(a.sample):
                 jobs.append((inst, base, n, g, kind, 1000 + s, a.timeout))
+    if not jobs:
+        print("  nothing to do — every leaf class already has mutation data")
+        return
 
     print(f"[{time.strftime('%H:%M:%S')} ] mutation campaign: {len(jobs)} mutants "
           f"over {len(TARGETS)} instances x {len(MUTATORS)} classes "
@@ -305,8 +332,12 @@ def main():
 
     # Aggregate for the invariance table's two rightmost columns.
     byN = defaultdict(lambda: defaultdict(lambda: {"detected": 0, "total": 0}))
+    for k, v in prior.get("by_N", {}).items():
+        for kind, c in v.items():
+            byN[int(k)][kind] = dict(c)
+    results = prior.get("runs", []) + results
     for r in results:
-        if r["detected"] is None:
+        if r["detected"] is None or r["N"] in have:
             continue
         c = byN[r["N"]][r["kind"]]
         c["total"] += 1

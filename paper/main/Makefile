@@ -61,8 +61,14 @@ tables:
 
 # Fail if anything still unresolved — used before submission
 check: all
-	@n=$$(grep -o '\\todo{' $(MAIN).tex | wc -l); \
-	 if [ "$$n" -ne 0 ]; then echo "FAIL: $$n \\todo{} placeholders remain"; exit 1; fi
+	@# Scan main.tex AND every generated file it pulls in. Checking main.tex
+	@# alone reported PASS while six rows of the invariance table still held
+	@# \todo{--}: the placeholders were in tables/, not in the manuscript.
+	@files="$(MAIN).tex $$(ls tables/*.tex figures/*.tex data/*.tex 2>/dev/null)"; \
+	 n=$$(cat $$files 2>/dev/null | grep -v '^\s*%' | grep -c '\\todo{' || true); \
+	 if [ "$${n:-0}" -ne 0 ]; then \
+	   printf 'FAIL: %s live todo placeholder(s) remain\n' "$$n"; \
+	   grep -n '\\todo{' $$files 2>/dev/null | grep -v ':\s*%' | head; exit 1; fi
 	@if grep -qE "Citation .* undefined" build.log; then echo "FAIL: undefined citations"; grep -E "Citation .* undefined" build.log | head; exit 1; fi
 	@if grep -qE "Reference .* undefined" build.log; then echo "FAIL: undefined references"; grep -E "Reference .* undefined" build.log | head; exit 1; fi
 	@if grep -rl "DEFECTIVE" tables/ >/dev/null 2>&1; then echo "FAIL: tables generated from the defective GPU-0 cycle metric:"; grep -rl "DEFECTIVE" tables/; exit 1; fi
