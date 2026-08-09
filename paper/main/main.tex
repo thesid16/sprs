@@ -118,7 +118,7 @@ E-mail: \{sp839, aa634, ac198, rohit.singh\}@snu.edu.in}%
 }
 
 \markboth{IEEE TRANSACTIONS ON PARALLEL AND DISTRIBUTED SYSTEMS,~Vol.~XX, No.~X, Month~YYYY}%
-{Mueller \MakeLowercase{\textit{et~al.}}: Bitwise-Reproducible Reduction Across Cluster Reshape}
+{Patel \MakeLowercase{\textit{et~al.}}: Bitwise-Reproducible Reduction Across Cluster Reshape}
 
 \IEEEtitleabstractindextext{%
 \begin{abstract}
@@ -290,8 +290,11 @@ flat direct-network topologies.
 
 \subsection{Contributions}
 
-This paper makes three contributions, supported throughout by mechanised
-runtime checks, dynamic SystemVerilog assertions, and mutation testing.
+This paper makes three contributions, supported throughout by runtime
+assertions in the compiler, dynamic SystemVerilog assertions in the fabric,
+and mutation testing. We use ``mechanised'' nowhere in its formal-methods
+sense: the invariance argument is by code inspection and dynamic checking,
+not machine-checked proof (\S\ref{sec:mechanization}).
 
 \textbf{C1 --- Reduction order as a compiler/fabric ABI, with a structural
 invariance argument.} We define the ABI as post-order operand binding over
@@ -326,12 +329,12 @@ implementing flush-to-zero subnormals and round-to-nearest-even rounding.
 Topology is a runtime configuration of adjacency and routing tables, not
 an RTL artefact.
 
-\textbf{C3 --- Empirical characterisation of the same-fabric overhead.}
+\textbf{C3 --- Hardware validation at scale, and a structural pricing of the ABI.}
 We evaluate on forty instances spanning $N \in \{8,\ldots,8192\}$,
 $G \in \{2,\ldots,4096\}$, and six topologies (linear, ring, mesh, torus,
-fat-tree, hypercube). A two-phase tournament explores the $22{,}000$-point
-compiler configuration space, validated by cycle-accurate Vivado xsim on
-every passing configuration\ifdefined\fpgadata{} and silicon-validated on a
+fat-tree, hypercube). The compiler's configuration space spans
+$\approx\!22{,}000$ points; the campaign compiles $7{,}200$ of them and
+validates every feasible result with cycle-accurate Vivado xsim\ifdefined\fpgadata{} and silicon-validated on a
 Xilinx Artix-7 FPGA at $(N, G) \in \{(8,2),(8,4)\}$\fi. The headline result
 is that all $2{,}822$ RTL-validated configurations produce bit-identical
 roots at each $N$ --- across reshapes as large as $G{=}4$ on a linear chain
@@ -339,7 +342,7 @@ to $G{=}128$ on a torus at $N{=}128$. We price the ABI structurally, in four
 components (tree-depth critical path, operand-binding locality, GCI
 serialisation, root-gather fan-in), rather than against a
 non-deterministic baseline we did not build. We report zero silent divergence
-across all configurations, and a detection rate of $107/107$ under two classes of
+across all configurations, and a detection rate of $107$ of $107$ mutants reaching a verdict, under two classes of
 injected mutations (address-substitution and leaf-corruption), confirming the oracle
 harness is non-vacuous.
 
@@ -362,9 +365,9 @@ on cancellation. These choices are documented (\S\ref{sec:fadd}) and
 strictly narrower than IEEE~754-2019~\cite{ieee754-2019}; a subnormal-aware
 alternative inherits Claim~1 by construction.
 
-\emph{Silicon scalability.} The fabric is a research prototype with
-FPGA validation at small $G$ and cycle-accurate RTL simulation at the
-remaining scales.  We make no claim of timing closure, area, power, or
+\emph{Silicon scalability.} The fabric is a research prototype
+characterised by cycle-accurate RTL simulation\ifdefined\fpgadata{}, with FPGA
+validation at small $G$\fi.  We make no claim of timing closure, area, power, or
 frequency at production-die scale, and we do not benchmark against
 production all-reduce libraries running on NVLink/NVSwitch silicon.
 
@@ -396,8 +399,9 @@ DMEM allocation) that construct the compiler-side obligations rather than
 assume them. Section~\ref{sec:method} describes the evaluation methodology
 (instance suite, tournament protocol, mutation testing, metric convention).
 Section~\ref{sec:results} presents the cross-topology bitwise invariance
-result, the FPGA-xsim fidelity boundary check, the same-fabric overhead,
-and the cost-of-determinism decomposition. Section~\ref{sec:discussion}
+result, the mutation-detection campaign that shows the oracle is
+non-vacuous, and a structural pricing of the ABI together with the measured
+distance to $\Omega$. Section~\ref{sec:discussion}
 discusses scope, generalisation, and --- most importantly --- how the
 ABI discipline can be exported onto production collective libraries as
 \emph{pinned-FBT}. Section~\ref{sec:related} covers related work.
@@ -1138,11 +1142,11 @@ accounting --- are simple enough to fit in a two-page RTL inspection.
 
 Two per-router configuration tables parameterise the topology.
 
-The \emph{adjacency table} (\sv{noc\_pkg.sv:24--27}) maps
+The \emph{adjacency table} (\sv{adj\_entry\_t} in \sv{noc\_pkg.sv}) maps
 $(\text{router}, \text{port}) \to (\text{target\_router},
 \text{target\_port}) \mid \sv{ADJ\_DISCONNECTED}$, set by the compiler via
 a write-enable interface before \texttt{program\_start}. The
-\emph{routing table} (\sv{noc\_router.sv:59}) maps
+\emph{routing table} (\sv{route\_table} in \sv{noc\_router.sv}) maps
 $(\text{router}, \text{destination}) \to \text{output\_port}$, also
 compiler-loaded. A single \sv{noc\_system} module with \sv{N\_NODES} and
 \sv{N\_ROUTERS} parameters supports the full family $\T$. Port~0 is
@@ -1195,7 +1199,7 @@ exactly one FP64 value per packet:
 \label{fig:packet}
 \end{figure}
 
-Bit $[64]$ is the VC-steering bit (\sv{noc\_router.sv:113}). VC selection
+Bit $[64]$ is the VC-steering bit (the VC-select comparison in \sv{noc\_router.sv}). VC selection
 is a function of a \emph{header} bit, not any payload bit. Were VC
 selection payload-dependent, contention and buffer occupancy would be
 value-dependent; cycle counts would be adversarially perturbable under
@@ -1234,7 +1238,7 @@ A four-bit opcode addresses sixteen slots; four are live
 
 \texttt{DMEM[0]} is reserved as the identity element of the active ALU
 operation; \texttt{scoreboard[0]} is initialised to $1$ on reset
-(\sv{btree\_fsm\_fast.sv:703}); the allocator reserves address $0$
+(the DMEM write port in \sv{btree\_fsm\_fast.sv}); the allocator reserves address $0$
 (\sv{sprs\_core.py:5098}). This realises \textsf{F-id} and supports
 compiler emission of identity-preserving half-reductions.
 
@@ -1348,7 +1352,7 @@ Each PE hosts a three-stage pipeline:
 \label{fig:pipeline}
 \end{figure*}
 The DMEM read path uses a two-level write-to-read forwarding network
-(\sv{btree\_fsm\_fast.sv:166--181}), realising \textsf{F-fw}. Level~1
+(the forwarding network in \sv{btree\_fsm\_fast.sv}), realising \textsf{F-fw}. Level~1
 forwards a cycle-$N$ write to a cycle-$(N{+}1)$ read of the same address
 --- the back-to-back-COMPUTE case. Level~2 forwards across a single
 intervening stall, catching the case where the one-cycle forward expired
@@ -1371,7 +1375,7 @@ The fabric implements a three-way safety net that makes Property~\ref{prop:2}
 provable rather than asserted.
 
 \emph{PIU autonomous write and misroute drop.} The PIU
-(\sv{btree\_fsm\_fast.sv:282--345}) drains RX FIFOs on a priority basis.
+(the PIU block in \sv{btree\_fsm\_fast.sv}) drains RX FIFOs on a priority basis.
 On each drained packet it examines bits $[95{:}80]$ (\sv{dest\_gpu\_id}).
 If equal to the local PE's id, it writes the payload to
 $\texttt{DMEM[pkt[79:70]]}$ (\sv{target\_addr} from the header) and sets
@@ -1390,7 +1394,7 @@ localised by the watchdog.
 
 \emph{Watchdog + stall timeout + invalid-opcode trap.} The fabric
 maintains three error detectors in the \texttt{P\_RUN} state
-(\sv{btree\_fsm\_fast.sv:769--824}):
+(the stall logic in \sv{btree\_fsm\_fast.sv}):
 
 \begin{itemize}
 \item Watchdog: fires after $\sv{WATCHDOG\_MAX} = 20{,}000$ cycles with no
@@ -1412,10 +1416,10 @@ The four DMEM write agents demand the same resource; their arbitration
 (Fig.~\ref{fig:pipeline}, bottom) realises \textsf{F-arb}.
 
 The arbiter is strict-priority $\mathrm{PIU} > \mathrm{GCI} >
-\mathrm{FSM}$ (\sv{btree\_fsm\_fast.sv:358--376}). PIU always wins ---
+\mathrm{FSM}$ (the DMEM write arbiter in \sv{btree\_fsm\_fast.sv}). PIU always wins ---
 maintaining the RDMA-push semantic that incoming data is never
 blocked. The GCI write carries a retry latch
-(\sv{gci\_write\_held}, \sv{btree\_fsm\_fast.sv:411--417, 725--732}):
+(\sv{gci\_write\_held} in \sv{btree\_fsm\_fast.sv}):
 if GCI completion (\texttt{gci\_done}) collides with a PIU write in the
 same cycle, the arbiter drops the GCI write but the retry latch captures
 the pending value and re-asserts \texttt{gci\_dmem\_wr} until the arbiter
@@ -1434,12 +1438,12 @@ it is necessary-for-correctness, not merely nice-to-have.
 \subsection{Routing Discipline and Deadlock Freedom}
 
 The fabric provides $\sv{NUM\_VCS} = 2$ virtual channels per port
-(\sv{DEFAULT\_VCS = 2}, \sv{noc\_pkg.sv:16}). Per-link credit-based
+(\sv{DEFAULT\_VCS = 2}, \sv{noc\_pkg.sv}). Per-link credit-based
 flow control prevents buffer overflow: the $\sv{link\_tx}$ module
 decrements a per-link credit counter on each transmission and
 increments it on each credit-return pulse, with counter conservation
 $\sum \text{pulses} = \sum \text{reads}$ (\textsf{F-credit}). The
-counter-serialised credit return (\sv{noc\_router.sv:175--205})
+counter-serialised credit return (the credit-return counter in \sv{noc\_router.sv})
 fixes a multi-VC credit-loss bug in which a single-bit credit pulse
 collapsed multi-VC reads into one return; the fixed implementation
 counts $\text{new\_reads} = \sum_v \texttt{ibuf\_ren}[p][v]$ and drains
@@ -1461,7 +1465,7 @@ corroborate dynamically via SVA; a hardware-level dateline check
 for production deployment.
 
 Round-robin allocation at each output port advances only on a successful
-grant (\sv{noc\_router.sv:239--248}): $\texttt{rr\_ptr}[i]$ increments
+grant (the round-robin arbiter in \sv{noc\_router.sv}): $\texttt{rr\_ptr}[i]$ increments
 iff $\texttt{obuf\_wen}[i]$ this cycle. Without this guard, RR advance
 on empty cycles would allow unfairness; with it, every contending
 $(port, vc)$ pair is served within \texttt{NUM\_CANDIDATES} cycles of
@@ -1488,12 +1492,14 @@ port count.
 \begin{tabular}{@{}l r r@{}}
 \toprule
 \textbf{Component} & \textbf{Per-router bits} & \textbf{Aggregate} \\
- & & \textbf{(Mbit)} \\
+ & & \textbf{(Mbit)$^{\dagger}$} \\
 \midrule
 Routing table (8-port, $\lceil\log_2 8\rceil = 3$\,b)        & $4096 \times 3 = 12{,}288$  & 48 \\
 VC ingress FIFOs ($8 \times 2 \times 8 \times 96$)           & $12{,}288$                  & 48 \\
 Egress FIFOs ($8 \times 8 \times 96$)                        & $6{,}144$                   & 24 \\
 Crossbar ($8 \times 8 \times 96$, mux storage-equiv.)        & $6{,}144$                   & 24 \\
+\midrule
+\multicolumn{3}{@{}l}{\footnotesize $^{\dagger}$ Aggregate over $G = 4096$ routers, $1\,\text{Mbit} = 2^{20}$ bits.} \\
 \textbf{Per-router subtotal}                                 & $\mathbf{\approx 37{,}000}$ & \textbf{144} \\
 \midrule
 Per-PE IMEM ($512 \times 64$) + DMEM ($512 \times 64$)       & $65{,}536$                  & 256 \\
@@ -1585,9 +1591,10 @@ image plus per-router adjacency and routing tables via seven stages:
 
 All three algorithmic search stages (S2, S3, S4) preserve the ABI by
 Argument A1 (\S\ref{sec:abi-args}); every valid triple $(\asgn, \map, r)$
-yields an ABI-compliant IMEM, and the resulting ${\sim}22{,}000$
-configurations produce the same 64-bit root result by
-Theorem~\ref{thm:orth}.
+yields an ABI-compliant IMEM, and every configuration in the
+${\sim}22{,}000$-point space therefore produces the same 64-bit root result by
+Theorem~\ref{thm:orth} --- a structural consequence, of which
+\S\ref{sec:results-invariance} verifies $2{,}822$ instances directly.
 
 
 
@@ -1784,10 +1791,11 @@ choice among 18 S2, 10 S3, and 122 S4 algorithms --- affects
 \emph{which PE hosts a node} and \emph{when a \texttt{COMPUTE} fires},
 not \emph{which operand pair is bound}. The tournament
 (\S\ref{sec:method-tour}) therefore optimises over a space
-structurally incapable of affecting the bit result. Empirically, every
-one of the ${\sim}22{,}000$ compiler configurations produces the same
-64-bit root result on each instance (Table~\ref{tab:invariance}); they
-differ only in the cycle count.
+structurally incapable of affecting the bit result. Empirically, every one of
+the $2{,}822$ HW-validated configurations produces the same 64-bit root
+result at its leaf count (Table~\ref{tab:invariance}); they differ only in
+the cycle count. The remainder of the ${\sim}22{,}000$-point space is covered
+by the argument above rather than by measurement.
 
 
 % =====================================================================
@@ -1799,7 +1807,7 @@ Claim~\ref{claim:1} (same bit result across all configurations at the same
 $N$), and \emph{performance} characterisation of the same-fabric overhead
 (cycle count of ABI-compliant schedules relative to non-deterministic
 schedules on the identical substrate). Both rest on a single cycle-accurate
-simulation pipeline (Vivado xsim 2023.1) with FPGA validation at the
+simulation pipeline (Vivado xsim 2025.2)\ifdefined\fpgadata{} with FPGA validation at the\fi
 small-scale boundary.
 
 \subsection{Lower Bound $\Omega$ as a Secondary Metric}\label{sec:method-lb}
@@ -1885,16 +1893,25 @@ are thin due to convenience sampling, a limitation we discuss in
 \S\ref{sec:limitations}.
 
 Leaf values are generated by \sv{make\_leaf\_val}
-(\sv{sprs\_core.py:5355--5363}):
+(\sv{make\_leaf\_val} in \sv{sprs\_core.py}):
 \begin{equation}\label{eq:leaves}
 L[i] \;=\; (i+1)\cdot 1000.0 + \bigl((i \cdot 37 + 13) \bmod 100\bigr)/100 + 0.007.
 \end{equation}
-The formula is deliberately chosen so that (i) no two leaves share an
-exponent (no degenerate same-magnitude additions), (ii) every FADD
-exercises the guard, round, and sticky bits, and (iii) any reordering
-changes the last bits of the partial sums --- so any bit mismatch
-between fabric and oracle necessarily indicates a determinism
-violation, not a coincidence of a value distribution.
+The formula is chosen so that every leaf carries a non-trivial fractional
+part: the additive $((37i+13) \bmod 100)/100 + 0.007$ term guarantees a
+populated mantissa, so each FADD exercises the guard, round and sticky bits
+rather than reducing to an exact power-of-two addition. Magnitudes span
+$10^3$ to $8\times10^6$ across the suite, so partial sums accumulate across a
+wide exponent range and reassociation is observable in the low-order bits.
+
+We deliberately do not claim that reordering \emph{always} changes the
+result. It does not: at these magnitudes a sufficiently small perturbation is
+absorbed by rounding, which is precisely what the mutation protocol of
+\S\ref{sec:method-mutation} has to work around. What the value distribution
+buys is that a bit mismatch between fabric and oracle is a determinism
+violation rather than an artefact of degenerate inputs; the converse --- that
+every violation must show up as a mismatch --- is established by mutation
+testing, not by the choice of leaf values.
 
 \subsection{Tournament Protocol}\label{sec:method-tour}
 
@@ -1920,7 +1937,7 @@ makes each remaining xsim run informative for the invariance claim.
 
 \emph{Selection-bias quantification.} Phase 1 selects by software
 \sv{makespan}; Phase~3 measures \sv{hw\_cycles}. Appendix~\ref{app:bias}
-reports, on a stratified 8-instance subset, the leakage rate $p$
+reports, over every HW-validated instance, the leakage rate $p$
 (fraction of top-15-by-\sv{hw\_cycles} outside top-15-by-\sv{makespan}),
 the Spearman correlation $\rho$ between software and hardware ranks, and
 an ablation at cutoffs $\{10, 15, 30\}$ showing the qualitative
@@ -1934,11 +1951,22 @@ classes per instance and record the detection rate:
 
 \begin{description}[leftmargin=1.3em,style=nextline]
 \item[Address substitution.] In one randomly chosen \texttt{COMPUTE},
-  replace \texttt{addr\_b} with the DMEM address of a different (legal)
-  tree node. Breaks Argument A1 while preserving A2--A4.
-\item[Leaf corruption.] In one randomly chosen \texttt{GENERATE}, flip
-  one mantissa bit of the leaf value. Breaks \textsf{C-leaf}.
+  repoint \texttt{addr\_a} at a different DMEM address. Breaks Argument A1
+  while preserving A2--A4.
+\item[Leaf corruption.] Perturb one leaf value by the smallest single-bit
+  flip that provably moves the canonical root. Breaks \textsf{C-leaf}.
 \end{description}
+
+The escalation in the second class is necessary, not incidental, and it is
+the same phenomenon the paper is about. Flipping the mantissa LSB is
+frequently \emph{not} observable at the root: at these operand magnitudes the
+perturbation falls below the round bit of the running sum and RNE discards
+it, leaving the canonical root unchanged. A fabric reporting \sv{PASS} on
+such a mutant is correct to do so, and counting it as a missed detection
+would understate the oracle. We therefore raise the flipped bit position
+until the software oracle confirms the root has actually moved, so that every
+counted mutant is a test of detection rather than a test of whether rounding
+happened to preserve the value.
 
 We deliberately do not use operand-swap as a mutation: FADD is
 commutative at the bit level under FTZ+RNE ($\fadd(a,b) = \fadd(b,a)$
@@ -1949,11 +1977,14 @@ spuriously inflate the false null-detection rate.
 
 \sv{hw\_cycles} is the primary metric: $\sv{hw\_cycles} = \max_p
 \sv{perf\_total\_cycles}[p]$ as measured by per-PE performance counters
-in Vivado xsim (silicon-validated on FPGA at $G \leq 4$). \sv{makespan}
-from the software cost model is a diagnostic only. Summary statistics
-(median, 90th percentile) carry 95\% bootstrap CIs over $10^4$
-resamples. Per-topology breakdowns are reported where cell counts
-permit; thin cells are labelled.
+in Vivado xsim\ifdefined\fpgadata{} (silicon-validated on FPGA at $G \leq 4$)\fi. \sv{makespan}
+from the software cost model is a diagnostic only. Summary statistics are
+reported as medians with observed ranges rather than as interval estimates:
+the per-instance samples are not independent draws from a population --- they
+enumerate a deterministic configuration space --- so a resampling interval
+would describe our sampling of that space rather than any underlying
+uncertainty. Per-topology breakdowns are reported where cell counts permit;
+thin cells are labelled.
 
 % =====================================================================
 \section{Evaluation Results}\label{sec:results}
@@ -1962,15 +1993,21 @@ permit; thin cells are labelled.
 \subsection{Setup}\label{sec:results-setup}
 
 Vivado xsim 2025.2 on Linux; ten SystemVerilog sources in \sv{rtl/}
-(3{,}726 lines). The tournament runs on a 72-thread Intel Xeon~w9-3475X
+($3{,}738$ lines). The tournament runs on a 72-thread Intel Xeon~w9-3475X
 workstation with 503~GB of RAM and RNG seeds pinned at $42$.
 Per-algorithm timeout $1800$~s; per-simulation wall-clock cap $28{,}800$~s.
 Xsim wall-clock per instance is listed in Appendix~\ref{app:coverage}.
 
-The campaign consumed $351.9$ core-hours of RTL simulation across $2{,}822$
-passing runs, at a median of $46$~s per testbench; the five largest instances
-account for $81.3\%$ of that total, and the single longest run took $7.06$~h.
-Hardware validation covers $39$ of the $40$ instances
+Every cycle figure reported in this paper comes from a single campaign of
+$2{,}822$ passing runs consuming $821.5$ core-hours, at a median of $99$~s per
+testbench; the five largest instances account for $90.0\%$ of that total and
+the single longest run took $5.51$~h. An earlier campaign over the same
+testbenches is not used for any reported number: it recorded PE~0's
+performance counter rather than the maximum across PEs, which understates
+end-to-end latency whenever the reduction root lands elsewhere. That defect
+moved $50.5\%$ of cycle counts and changed the winning configuration on $35$
+of $39$ instances, so the measurements were repeated in full rather than
+corrected in place. Hardware validation covers $39$ of the $40$ instances
 (\S\ref{sec:limitations}).
 
 \subsection{Cross-Topology Bitwise Invariance}\label{sec:results-invariance}
@@ -2029,8 +2066,8 @@ as divergent. A vacuous oracle --- one that compares nothing, or compares
 against a value it derives from the run itself --- would score zero here while
 still producing a clean divergence column.
 
-\emph{Extrapolation to scales beyond FPGA validation.} Bit-result
-invariance at $G > 4$ rests on the structural argument of
+\emph{Extrapolation beyond the measured range.} Bit-result
+invariance at untested $G$ rests on the structural argument of
 \S\ref{sec:abi-claim}: operand binding (A1) and scoreboard gating (A3)
 remain total functions of $N$ and $L$ as $G$ grows, so adding PEs
 changes the \emph{location} of FADD operations but not the operand
@@ -2042,9 +2079,11 @@ counts at large $G$ are cycle-accurate simulation artefacts, not
 silicon measurements, and we make no absolute competitiveness claim.
 
 \emph{Mutation results.} Across all sixteen leaf-count classes the campaign
-injected $107$ mutants and the oracle flagged every one ($107/107$), spanning
-$N$ from $8$ to $8192$ so that no row of Table~\ref{tab:invariance} rests on
-an untested oracle. One methodological point deserves emphasis, because it
+injected mutants spanning $N$ from $8$ to $8192$, so that no row of
+Table~\ref{tab:invariance} rests on an untested oracle. Of the $108$ mutants
+run, $107$ reached a verdict and the oracle flagged all $107$; the remaining
+one, on the largest instance, terminated without producing either verdict and
+is excluded from the rate rather than counted as a detection. One methodological point deserves emphasis, because it
 is the same phenomenon the paper is about. Our first leaf-corruption mutator
 flipped the mantissa LSB, and a substantial fraction of those mutants were
 \emph{not} detected --- correctly so. At these operand magnitudes an LSB
@@ -2575,8 +2614,8 @@ three fabric safeguards (scoreboard monotonicity, misroute drop,
 write-arbitration retry latch) do the heavy lifting.
 
 We instantiated the ABI as \sprs{}: a topology-parametric SystemVerilog
-NoC plus a seven-stage compiler exploring ${\sim}22{,}000$ algorithmic
-configurations. On forty instances across $N \in [8, 8192]$,
+NoC plus a seven-stage compiler whose configuration space spans
+${\sim}22{,}000$ algorithmic choices. On forty instances across $N \in [8, 8192]$,
 $G \in [2, 4096]$, and six direct-network topologies, all
 HW-validated configurations produce bit-identical root results. A
 mutation-testing harness confirms that the zero-divergence result is
@@ -2783,7 +2822,7 @@ per-configuration record is released as
 % =====================================================================
 
 \begin{itemize}
-\item \textbf{RTL.} 13 SystemVerilog files totalling $3{,}726$ lines
+\item \textbf{RTL.} 13 SystemVerilog files totalling $3{,}738$ lines
       (10 fabric sources plus 3 FPGA wrappers); tested under Vivado xsim
       2025.2 on Linux.
 \item \textbf{Compiler.} Python 3.9+; deterministic under insertion-ordered

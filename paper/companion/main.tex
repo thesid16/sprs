@@ -63,7 +63,7 @@ SystemVerilog, FPGA.
 \section{Scope and Organisation}
 % =====================================================================
 
-The \sprs{} fabric is 3{,}726 lines of SystemVerilog across thirteen
+The \sprs{} fabric is $3{,}738$ lines of SystemVerilog across thirteen
 files: ten implementing the fabric proper and three FPGA wrappers. This
 document walks them in dependency order --- packages, primitives, link layer,
 router, network interface, compute node, top level --- and then covers the
@@ -83,17 +83,17 @@ File & Role & Lines \\
 \sv{sync\_fifo.sv}          & FIFO primitive                & 61 \\
 \sv{link\_tx.sv}            & credit-based transmit         & 37 \\
 \sv{noc\_link.sv}           & inter-router link, latency    & 78 \\
-\sv{noc\_router.sv}         & $N$-port multi-VC router      & 295 \\
+\sv{noc\_router.sv}         & $N$-port multi-VC router      & 301 \\
 \sv{noc\_ni.sv}             & network interface, GCI buffer & 217 \\
 \sv{fp64\_add.sv}           & IEEE-754 FP64 adder           & 242 \\
-\sv{btree\_fsm\_fast.sv}    & per-PE reduction pipeline     & 912 \\
+\sv{btree\_fsm\_fast.sv}    & per-PE reduction pipeline     & 918 \\
 \sv{noc\_system.sv}         & topology-agnostic top level   & 303 \\
 \midrule
 \sv{top\_fpga\_interactive.sv}     & Artix-7 wrapper, $G{=}2$   & 503 \\
 \sv{top\_fpga\_interactive\_g2.sv} & deterministic $G{=}2$      & 430 \\
 \sv{top\_fpga\_interactive\_g4.sv} & deterministic $G{=}4$      & 506 \\
 \midrule
-\multicolumn{2}{@{}l}{\textbf{Total}} & \textbf{3{,}726} \\
+\multicolumn{2}{@{}l}{\textbf{Total}} & \textbf{3{,}738} \\
 \bottomrule
 \end{tabular}
 \end{table}
