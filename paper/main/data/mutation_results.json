@@ -1,5 +1,5 @@
 {
- "generated": "2026-07-28 00:00:02",
+ "generated": "2026-08-03 01:30:02",
  "by_N": {
   "8": {
    "addr_sub": {
@@ -99,6 +99,66 @@
    "leaf_corrupt": {
     "detected": 6,
     "total": 6
+   }
+  },
+  "1024": {
+   "leaf_corrupt": {
+    "detected": 2,
+    "total": 2
+   },
+   "addr_sub": {
+    "detected": 2,
+    "total": 2
+   }
+  },
+  "1500": {
+   "leaf_corrupt": {
+    "detected": 2,
+    "total": 2
+   },
+   "addr_sub": {
+    "detected": 2,
+    "total": 2
+   }
+  },
+  "2048": {
+   "addr_sub": {
+    "detected": 2,
+    "total": 2
+   },
+   "leaf_corrupt": {
+    "detected": 2,
+    "total": 2
+   }
+  },
+  "3000": {
+   "leaf_corrupt": {
+    "detected": 2,
+    "total": 2
+   },
+   "addr_sub": {
+    "detected": 2,
+    "total": 2
+   }
+  },
+  "4096": {
+   "leaf_corrupt": {
+    "detected": 2,
+    "total": 2
+   },
+   "addr_sub": {
+    "detected": 2,
+    "total": 2
+   }
+  },
+  "8192": {
+   "addr_sub": {
+    "detected": 1,
+    "total": 1
+   },
+   "leaf_corrupt": {
+    "detected": 2,
+    "total": 2
    }
   }
  },
@@ -1026,6 +1086,270 @@
    "detected": true,
    "mutation": "gpu16 pc72 addr_a 10->39",
    "error": ""
+  },
+  {
+   "instance": "vlarge_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 1024,
+   "G": 16,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L878 bit7 flip",
+   "error": ""
+  },
+  {
+   "instance": "vlarge_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 1024,
+   "G": 16,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu12 pc249 addr_a 32->60",
+   "error": ""
+  },
+  {
+   "instance": "vlarge_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 1024,
+   "G": 16,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu12 pc90 addr_a 12->28",
+   "error": ""
+  },
+  {
+   "instance": "vlarge_extreme_1d",
+   "tb": "tb_2a_3a_none",
+   "N": 1024,
+   "G": 16,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L120 bit10 flip",
+   "error": ""
+  },
+  {
+   "instance": "vlarge_unbal_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 1500,
+   "G": 64,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L878 bit11 flip",
+   "error": ""
+  },
+  {
+   "instance": "vlarge_unbal_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 1500,
+   "G": 64,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu4 pc29 addr_a 4->49",
+   "error": ""
+  },
+  {
+   "instance": "vlarge_unbal_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 1500,
+   "G": 64,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu34 pc154 addr_a 18->43",
+   "error": ""
+  },
+  {
+   "instance": "vlarge_unbal_hc",
+   "tb": "tb_2a_3a_none",
+   "N": 1500,
+   "G": 64,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L120 bit14 flip",
+   "error": ""
+  },
+  {
+   "instance": "vlarge2_dense_2d",
+   "tb": "tb_2a_3a_none",
+   "N": 2048,
+   "G": 128,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu97 pc96 addr_a 34->27",
+   "error": ""
+  },
+  {
+   "instance": "vlarge2_dense_2d",
+   "tb": "tb_2a_3a_none",
+   "N": 2048,
+   "G": 128,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L1757 bit10 flip",
+   "error": ""
+  },
+  {
+   "instance": "vlarge2_dense_2d",
+   "tb": "tb_2a_3a_none",
+   "N": 2048,
+   "G": 128,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu99 pc21 addr_a 18->60",
+   "error": ""
+  },
+  {
+   "instance": "vlarge2_dense_2d",
+   "tb": "tb_2a_3a_none",
+   "N": 2048,
+   "G": 128,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L240 bit10 flip",
+   "error": ""
+  },
+  {
+   "instance": "max_unbal_fat",
+   "tb": "tb_2a_3a_4g",
+   "N": 3000,
+   "G": 128,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L1757 bit10 flip",
+   "error": ""
+  },
+  {
+   "instance": "max_unbal_fat",
+   "tb": "tb_2a_3a_4g",
+   "N": 3000,
+   "G": 128,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L240 bit14 flip",
+   "error": ""
+  },
+  {
+   "instance": "max_unbal_fat",
+   "tb": "tb_2a_3a_4g",
+   "N": 3000,
+   "G": 128,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu76 pc147 addr_a 14->43",
+   "error": ""
+  },
+  {
+   "instance": "max_unbal_fat",
+   "tb": "tb_2a_3a_4g",
+   "N": 3000,
+   "G": 128,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu8 pc111 addr_a 11->49",
+   "error": ""
+  },
+  {
+   "instance": "max_dense_hc",
+   "tb": "tb_2a_3a_4c2",
+   "N": 4096,
+   "G": 512,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L3514 bit11 flip",
+   "error": ""
+  },
+  {
+   "instance": "max_dense_hc",
+   "tb": "tb_2a_3a_4c2",
+   "N": 4096,
+   "G": 512,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L480 bit9 flip",
+   "error": ""
+  },
+  {
+   "instance": "max_dense_hc",
+   "tb": "tb_2a_3a_4c2",
+   "N": 4096,
+   "G": 512,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu394 pc68 addr_a 4->28",
+   "error": ""
+  },
+  {
+   "instance": "max_dense_hc",
+   "tb": "tb_2a_3a_4c2",
+   "N": 4096,
+   "G": 512,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "gpu404 pc26 addr_a 2->60",
+   "error": ""
+  },
+  {
+   "instance": "maxp_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 8192,
+   "G": 1024,
+   "kind": "addr_sub",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "gpu800 pc49 addr_a 5->28",
+   "error": ""
+  },
+  {
+   "instance": "maxp_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 8192,
+   "G": 1024,
+   "kind": "leaf_corrupt",
+   "seed": 1000,
+   "detected": true,
+   "mutation": "leaf L7028 bit10 flip",
+   "error": ""
+  },
+  {
+   "instance": "maxp_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 8192,
+   "G": 1024,
+   "kind": "leaf_corrupt",
+   "seed": 1001,
+   "detected": true,
+   "mutation": "leaf L960 bit14 flip",
+   "error": ""
+  },
+  {
+   "instance": "maxp_dense_hc",
+   "tb": "tb_2a_3a_4g",
+   "N": 8192,
+   "G": 1024,
+   "kind": "addr_sub",
+   "seed": 1001,
+   "detected": null,
+   "mutation": "gpu816 pc36 addr_a 2->60",
+   "error": "no verdict in xsim output"
   }
  ]
 }

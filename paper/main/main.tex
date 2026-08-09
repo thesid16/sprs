@@ -150,7 +150,7 @@ explicit \emph{mapping/topology orthogonality} theorem. On 40 instances
 spanning $N\!\in\![8,8192]$, $G\!\in\![2,4096]$, and six direct-network
 topologies, $2{,}822$ RTL-validated configurations produce bit-identical
 roots with zero divergence, and an injected-fault campaign confirms the
-oracle is non-vacuous at $84/84$ detection. We price the ABI structurally
+oracle is non-vacuous at $107/107$ detection. We price the ABI structurally
 rather than empirically: its cost decomposes into a $\log_2 N$ dependence
 chain, a prohibition on locality-driven reassociation, leaf-generation
 serialisation, and root-gather fan-in. The RTL is
@@ -339,7 +339,7 @@ to $G{=}128$ on a torus at $N{=}128$. We price the ABI structurally, in four
 components (tree-depth critical path, operand-binding locality, GCI
 serialisation, root-gather fan-in), rather than against a
 non-deterministic baseline we did not build. We report zero silent divergence
-across all configurations, and a detection rate of $84/84$ under two classes of
+across all configurations, and a detection rate of $107/107$ under two classes of
 injected mutations (address-substitution and leaf-corruption), confirming the oracle
 harness is non-vacuous.
 
@@ -2041,9 +2041,10 @@ bit-result invariance under the fifteen assumptions; absolute cycle
 counts at large $G$ are cycle-accurate simulation artefacts, not
 silicon measurements, and we make no absolute competitiveness claim.
 
-\emph{Mutation results.} Across ten leaf-count classes the campaign injected
-$84$ mutants and the oracle flagged every one ($84/84$), with no run failing
-to produce a verdict. One methodological point deserves emphasis, because it
+\emph{Mutation results.} Across all sixteen leaf-count classes the campaign
+injected $107$ mutants and the oracle flagged every one ($107/107$), spanning
+$N$ from $8$ to $8192$ so that no row of Table~\ref{tab:invariance} rests on
+an untested oracle. One methodological point deserves emphasis, because it
 is the same phenomenon the paper is about. Our first leaf-corruption mutator
 flipped the mantissa LSB, and a substantial fraction of those mutants were
 \emph{not} detected --- correctly so. At these operand magnitudes an LSB
@@ -2579,7 +2580,7 @@ configurations. On forty instances across $N \in [8, 8192]$,
 $G \in [2, 4096]$, and six direct-network topologies, all
 HW-validated configurations produce bit-identical root results. A
 mutation-testing harness confirms that the zero-divergence result is
-non-vacuous, flagging every one of $84$ injected faults. We price the ABI
+non-vacuous, flagging every one of $107$ injected faults. We price the ABI
 structurally rather than against a non-deterministic baseline, which remains
 the principal open item in the evaluation.
 
