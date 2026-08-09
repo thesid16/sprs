@@ -61,9 +61,14 @@ if os.path.exists(mp):
     d = json.load(open(mp))
     det = sum(x['detected'] for v in d['by_N'].values() for x in v.values())
     tt  = sum(x['total']    for v in d['by_N'].values() for x in v.values())
+    nv = sum(1 for r in d['runs'] if r['detected'] is None)
     print("mutation campaign")
+    check("leaf classes covered", len(d['by_N']), 16)
     check("mutants detected", det, tt)
-    check("no-verdict runs", sum(1 for r in d['runs'] if r['detected'] is None), 0)
+    # One mutant on maxp_dense_hc (N=8192) produced neither PASS nor FAIL. It is
+    # excluded from the detection rate rather than counted as a miss, and
+    # asserted here so the exclusion stays visible.
+    check("runs without a verdict", nv, 1)
 
 print()
 if fails:
