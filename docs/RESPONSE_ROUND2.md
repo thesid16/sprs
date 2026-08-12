@@ -11,6 +11,13 @@ them turned out to be a substantive error in the paper rather than a wording nit
 Every item below was verified against the source or the measured data before being
 changed. Line references are to the revised manuscript.
 
+> **Note on table numbers.** Two tables were added in this revision, so the
+> numbering has shifted. Round-2 "Table III" (resources) is now **Table IV**;
+> "Table IV" (invariance — the one whose 16 roots you recomputed) is now
+> **Table V**; "Table VIII" (coverage) is now **Table IX**. New: **Table III**
+> (measured radix) and **Table X** (per-instance wall-clock). Numbers below
+> refer to the revised manuscript.
+
 ---
 
 ## §0 — The N=200 finding
@@ -61,8 +68,8 @@ So the companion's "port numbers above seven" warning was the correct side of th
 and it was in fact understated — it said fat-tree "needs four" bits; it needs seven.
 Hypercube also exceeds 8 ports at G ≥ 256, which neither document mentioned.
 
-The reviewer's further inference was also right: **Table III understated fat-tree
-routers**, and badly, because the crossbar term is O(P²). Table III is now
+The reviewer's further inference was also right: **the resource table understated fat-tree
+routers**, and badly, because the crossbar term is O(P²). The resource table (now **Table IV**) is
 radix-parametric, generated from the measured `PPR` values, holding route-table depth
 at G = 4096 so the columns isolate radix:
 
@@ -77,12 +84,12 @@ at G = 4096 so the columns isolate radix:
 A fat-tree router is 23× a mesh router, and 70% of it is crossbar. The old fixed
 8-port estimate (≈37,000 bits) was wrong by ~16× at the top of the range.
 
-Changed: new Table II (measured radix), Table III rebuilt, §IV-A "Design Goals",
+Changed: new **Table III** (measured radix), **Table IV** rebuilt, §IV-A "Design Goals",
 Appendix A's egress-port paragraph, and companion §II-C/§IV. The paper now states
 plainly that a flat crossbar is not what one would build at radix 66, and that we
 report it because it is what we simulated.
 
-### 3. Table VIII now sums to 40
+### 3. The coverage table (now Table IX) sums to 40
 
 Regenerated from the instance manifest as the reviewer suggested, not patched by hand.
 The old table was wrong in most cells, not only in the total (mesh was 7 against a true
@@ -90,7 +97,7 @@ The old table was wrong in most cells, not only in the total (mesh was 7 against
 fat-tree 9, hypercube 7. The generator asserts both margins equal 40 before emitting.
 
 We also made the §VII-A forward reference true rather than repointing it (finding F):
-Appendix D now contains the promised per-instance xsim wall-clock table. It reconciles
+Appendix D now contains the promised per-instance xsim wall-clock table (**Table X**). It reconciles
 exactly to the §VII-A headline — 2,822 passing runs, 821.5 core-h, 99 s median, 5.51 h
 longest, 90.0% consumed by the five largest instances — which is now a machine-checked
 property rather than a coincidence.
@@ -186,10 +193,10 @@ G=256 and SHA-256, not the 256 Mbit figure).
 
 | Area | Change |
 |---|---|
-| Table II (new) | Measured router radix by topology, from emitted testbenches |
-| Table III | Rebuilt radix-parametric; fat-tree no longer understated ~16× |
-| Table VIII | Regenerated from manifest; sums to 40; assertion-gated |
-| Table IX (new) | Per-instance xsim wall-clock; reconciles to §VII-A exactly |
+| Table III (new) | Measured router radix by topology, from emitted testbenches |
+| Table IV (was III) | Rebuilt radix-parametric; fat-tree no longer understated ~16× |
+| Table IX (was VIII) | Regenerated from manifest; sums to 40; assertion-gated |
+| Table X (new) | Per-instance xsim wall-clock; reconciles to §VII-A exactly |
 | §IV-A, App. A | `MAX_PORTS = 8` claims removed; radix is per-instance |
 | §IV-H | Credit-counter paragraph rewritten |
 | Appendix E, §X-L6 | Correct ρ and leakage figures; macro defect fixed at source |
@@ -199,4 +206,5 @@ G=256 and SHA-256, not the 256 Mbit figure).
 | Build | `scripts/check_consistency.py`, gated in `make check` |
 
 No experiment was re-run and no claim changed. Claim 1 and its 2,822 validated
-configurations are untouched.
+configurations are untouched, and the invariance table you re-derived (now
+Table V) is unchanged.
