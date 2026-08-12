@@ -282,15 +282,22 @@ def main():
          r"% Usage: \TournTopFamily, \TournTopFamilyShare, ...",
          f"\\newcommand{{\\TournNInst}}{{{ninst}}}",
          f"\\newcommand{{\\TournTopFamily}}{{{top2f}}}",
-         f"\\newcommand{{\\TournTopFamilyShare}}{{{100*top2v/ninst:.0f}\\%}}",
+         f"\\newcommand{{\\TournTopFamilyShare}}{{{100*top2v/ninst:.1f}\\%}}",
          f"\\newcommand{{\\TournTopMap}}{{{S3[top3k][0]}}}",
-         f"\\newcommand{{\\TournTopMapShare}}{{{100*top3v/ninst:.0f}\\%}}",
+         f"\\newcommand{{\\TournTopMapShare}}{{{100*top3v/ninst:.1f}\\%}}",
          f"\\newcommand{{\\TournTopAsgn}}{{{S2[win2.most_common(1)[0][0]][0]}}}",
          f"\\newcommand{{\\TournTopAsgnWins}}{{{win2.most_common(1)[0][1]}}}"]
+    # LaTeX macro names may not contain digits: \TournRho15 parses as
+    # \TournRho followed by a literal "15", which typesets silently and
+    # corrupts the number. Spell the cutoff instead.
+    WORD = {10: "Ten", 15: "Fifteen", 30: "Thirty"}
     for K in (10, 15, 30):
         if rho[K]:
-            m += [f"\\newcommand{{\\TournRho{K}}}{{{st.median(rho[K]):.2f}}}",
-                  f"\\newcommand{{\\TournLeak{K}}}{{{st.median(leak[K]):.2f}}}"]
+            m += [f"\\newcommand{{\\TournRho{WORD[K]}}}{{{st.median(rho[K]):.2f}}}",
+                  f"\\newcommand{{\\TournLeak{WORD[K]}}}{{{st.median(leak[K]):.2f}}}",
+                  # percent form, for prose that reads "a median 20% of ..."
+                  f"\\newcommand{{\\TournLeakPct{WORD[K]}}}"
+                  f"{{{st.median(leak[K])*100:.0f}\\%}}"]
     open("data/tournament_macros.tex", "w").write("\n".join(m) + "\n")
 
     print(f"  wrote 4 tables + data/tournament_facts.json")

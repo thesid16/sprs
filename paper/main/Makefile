@@ -57,6 +57,8 @@ tables:
 	@python3 scripts/gen_tables.py
 	@python3 scripts/gen_cost_tables.py
 	@python3 scripts/gen_tournament.py
+	@python3 scripts/gen_resource.py
+	@python3 scripts/gen_coverage.py
 	@python3 scripts/gen_figures.py
 
 # Fail if anything still unresolved — used before submission
@@ -69,13 +71,22 @@ check: all
 	 if [ "$${n:-0}" -ne 0 ]; then \
 	   printf 'FAIL: %s live todo placeholder(s) remain\n' "$$n"; \
 	   grep -n '\\todo{' $$files 2>/dev/null | grep -v ':\s*%' | head; exit 1; fi
+	@# A missing build.log made the two guards below silently pass: `grep -q`
+	@# on an absent file is simply false. Require it to exist.
+	@test -f build.log || { echo "FAIL: build.log missing — run 'make' first (the undefined-ref guards cannot run without it)"; exit 1; }
 	@if grep -qE "Citation .* undefined" build.log; then echo "FAIL: undefined citations"; grep -E "Citation .* undefined" build.log | head; exit 1; fi
 	@if grep -qE "Reference .* undefined" build.log; then echo "FAIL: undefined references"; grep -E "Reference .* undefined" build.log | head; exit 1; fi
 	@if grep -rl "DEFECTIVE" tables/ >/dev/null 2>&1; then echo "FAIL: tables generated from the defective GPU-0 cycle metric:"; grep -rl "DEFECTIVE" tables/; exit 1; fi
-	@echo "PASS: no placeholders, no undefined refs or citations"
+	@# Numbers stated more than once must agree. A clean LaTeX build does not
+	@# imply this: \newcommand{\Foo15} typesets a literal "15" without error,
+	@# and a table whose cells sum to 42 in a 40-instance paper builds fine.
+	@python3 scripts/check_consistency.py || exit 1
+	@echo "PASS: no placeholders, no undefined refs or citations, numbers consistent"
 
 clean:
-	rm -f *.aux *.bbl *.blg *.log *.out *.toc *.lof *.lot *.synctex.gz build*.log
+	@# Remove the PDF too: leaving it made `make clean && make` a no-op when
+	@# the PDF was newer than main.tex, so no build.log was produced.
+	rm -f *.aux *.bbl *.blg *.log *.out *.toc *.lof *.lot *.synctex.gz build*.log $(MAIN).pdf $(MAIN)-with-fpga.pdf
 
 distclean: clean
 	rm -f $(MAIN).pdf main-with-fpga.pdf

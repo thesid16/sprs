@@ -16,3 +16,6 @@ __pycache__/ *.pyc .venv/ venv/
 
 # Local run state
 .rerun_start .rerun_watchdog.pid *.tmp
+
+# Editor/scratch backups
+*.bak_*

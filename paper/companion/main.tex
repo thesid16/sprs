@@ -99,7 +99,7 @@ File & Role & Lines \\
 \end{table}
 
 % =====================================================================
-\section{Instruction and Packet Encodings}
+\section{Instruction and Packet Encodings}\label{sec:packet}
 % =====================================================================
 
 \subsection{Instruction word}
@@ -119,7 +119,8 @@ Instructions are 64 bits, four opcodes, fixed fields:
 \end{lstlisting}
 
 Egress port selection is not carried in the instruction: one bit could not
-address the eight ports \sv{MAX\_PORTS} allows. The port is resolved by the
+address a router's egress ports, of which there are up to 66 in this suite
+(\S\ref{sec:router}). The port is resolved by the
 router's $\sv{route\_table}[\sv{dest\_gpu}]$ lookup, with \sv{dest\_gpu} taken
 from \sv{addr\_b} on a \texttt{SEND}. \sv{aux}[0] is a vestigial hint retained
 for encoding compatibility and ignored by the router.
@@ -172,12 +173,17 @@ mesh, torus, hypercube, fat-tree, ring and linear arrangements, selected by
 the adjacency table passed to \sv{noc\_system}.
 
 A width subtlety costs correctness if missed. \sv{route\_table} elements are
-$\lceil\log_2(\text{NUM\_PORTS})\rceil$ bits wide. Most topologies use
-five-port routers, giving three bits, but fat-tree routers have more ports
-and need four. Any tooling that writes the table with a sized literal
-(\sv{3'd}$\langle p\rangle$, e.g.\ \sv{3'd7}) silently truncates port numbers above seven and breaks fat-tree
-routing in a way that passes elaboration and fails only at run time. Plain
-integer literals, which widen to the left-hand side, are required.
+$\lceil\log_2(\text{NUM\_PORTS})\rceil$ bits wide, and \sv{NUM\_PORTS} is
+\sv{PORTS\_PER\_RTR}, a per-instance value the compiler emits --- not the
+constant \sv{MAX\_PORTS}, which is declared in \sv{noc\_pkg.sv} and
+referenced by no module. Mesh and torus use five-port routers, giving three
+bits; hypercube reaches eleven ports at $G = 1024$ (four bits); fat-tree
+reaches \emph{sixty-six} at $G = 4096$, needing seven. Any tooling that
+writes the table with a sized literal (\sv{3'd}$\langle p\rangle$, e.g.\
+\sv{3'd7}) silently truncates every port number above seven and breaks
+fat-tree and large-hypercube routing in a way that passes elaboration and
+fails only at run time. Plain integer literals, which widen to the
+left-hand side, are required.
 
 % =====================================================================
 \section{Compute Node: \texttt{btree\_fsm\_fast}}
@@ -239,7 +245,7 @@ timeout, never as a silently corrupted result. The main paper states this as
 Property~2.
 
 % =====================================================================
-\section{Router}\label{sec:vc}
+\section{Router}\label{sec:vc}\label{sec:router}
 % =====================================================================
 
 An $N$-port router with \sv{NUM\_VCS} virtual channels per input, default
@@ -250,8 +256,8 @@ each output --- and advances its pointer only on a successful grant, so a
 blocked request cannot starve its neighbours by consuming arbitration turns.
 
 Virtual channels exist for deadlock freedom on cyclic topologies. The VC is
-selected by packet bit~63, that is, by the compiler rather than by hardware
-policy. This keeps the router simple and puts deadlock avoidance where the
+selected by packet bit~64 (\S\ref{sec:packet}), that is, by the compiler
+rather than by hardware policy. This keeps the router simple and puts deadlock avoidance where the
 global view lives, but it also means a compiler bug can construct a cyclic
 channel dependency the hardware will faithfully deadlock on. The watchdog
 converts that into a fail-stop.

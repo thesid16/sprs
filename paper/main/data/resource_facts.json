@@ -1,0 +1,42 @@
+{
+  "radix_by_topology": {
+    "ring": [
+      3
+    ],
+    "linear": [
+      3
+    ],
+    "torus": [
+      5
+    ],
+    "fat_tree": [
+      5,
+      6,
+      8,
+      10,
+      14,
+      18,
+      48,
+      66
+    ],
+    "hypercube": [
+      3,
+      4,
+      6,
+      7,
+      10,
+      11
+    ],
+    "mesh": [
+      5
+    ]
+  },
+  "max_radix": 66,
+  "max_radix_instance": "maxp_mod_fat",
+  "max_radix_routers": 4192,
+  "per_router_bits": {
+    "5": 26208,
+    "11": 53344,
+    "66": 598912
+  }
+}

@@ -20,6 +20,7 @@
 \usepackage{tikz}
 \usepackage{xcolor}
 \usetikzlibrary{arrows.meta, positioning}
+\usetikzlibrary{shadows}
 
 
 
@@ -105,6 +106,8 @@
 % Every figure quoted in running text comes from here so prose
 % cannot drift from the tables.
 \input{data/tournament_macros}
+\input{data/resource_macros}
+\input{data/coverage_macros}
 
 \begin{document}
 
@@ -153,7 +156,7 @@ therefore not that the property is surprising but that the discipline
 survives contact with a real compiler search space and real RTL at scale,
 which is not guaranteed. We state and
 argue two properties under six compiler obligations and nine fabric
-invariants: \emph{cross-topology bitwise invariance} (Claim~1) and
+invariants: \emph{cross-topology bitwise invariance} (Claim~\ref{claim:1}) and
 \emph{fail-stop under assumption violation} (Property~\ref{prop:2}), connected by an
 explicit \emph{mapping/topology orthogonality} theorem. On 40 instances
 spanning $N\!\in\![8,8192]$, $G\!\in\![2,4096]$, and six direct-network
@@ -314,7 +317,7 @@ binding is a function of tree-node identity alone, invariance follows by
 unwinding the definitions, and we say so rather than dressing it as a
 discovery. We define the ABI as post-order operand binding over
 $\FBT(N)$ together with a canonical leaf enumeration, and we state two
-properties that follow from it. \emph{Claim~1 (cross-topology bitwise
+properties that follow from it. \emph{Claim~\ref{claim:1} (cross-topology bitwise
 invariance)} establishes that, under six compiler obligations and nine
 fabric invariants, the 64-bit root result is a pure function of $(N, L)$.
 \emph{Property~\ref{prop:2} (fail-stop fabric)} establishes that every violation of
@@ -381,7 +384,7 @@ and output, RNE rounding only, a deterministic but non-canonical qNaN
 propagation rule, and a deterministic signed-zero rule that returns $+0$
 on cancellation. These choices are documented (\S\ref{sec:fadd}) and
 strictly narrower than IEEE~754-2019~\cite{ieee754-2019}; a subnormal-aware
-alternative inherits Claim~1 by construction.
+alternative inherits Claim~\ref{claim:1} by construction.
 
 \emph{Silicon scalability.} The fabric is a research prototype
 characterised by cycle-accurate RTL simulation\ifdefined\fpgadata{}, with FPGA
@@ -408,7 +411,7 @@ Section~\ref{sec:background} fixes notation for IEEE 754 non-associativity
 and the threat model, then tabulates prior reproducibility approaches.
 Section~\ref{sec:abi} is the paper's theoretical core: the canonical tree,
 the ABI definition, the compiler-side and fabric-side assumption lists,
-Claim~1, Property~2, and the orthogonality proposition.
+Claim~\ref{claim:1}, Property~\ref{prop:2}, and the orthogonality proposition.
 Section~\ref{sec:fabric} describes the fabric --- ISA, pipeline,
 write-arbitration, fail-stop discipline, and resource envelope.
 Section~\ref{sec:compiler} describes the compiler, with particular
@@ -542,7 +545,7 @@ binding disciplines (\S\ref{sec:abi-def}), enumerate the fifteen
 assumptions on which the argument rests, cleanly partitioned into
 compiler obligations and fabric invariants (\S\ref{sec:abi-assumptions}),
 and state the two properties that follow: cross-topology bitwise
-invariance (Claim~1) and fail-stop-under-violation (Property~2). The
+invariance (Claim~\ref{claim:1}) and fail-stop-under-violation (Property~\ref{prop:2}). The
 supporting arguments are given in \S\ref{sec:abi-args}. A key corollary
 --- that the mapping and topology choices are \emph{orthogonal} to the bit
 result --- is stated and proven as an explicit mini-theorem in
@@ -671,7 +674,7 @@ else.
 For every leaf $k \in \mathrm{leaves}(\FBT(N))$, the \texttt{GENERATE}
 instruction on the PE hosting $k$ writes, into the DMEM slot bound to $k$,
 the 64-bit value $L[\mathrm{idx}(k)]$, where $\mathrm{idx}$ is the
-canonical leaf enumeration of Definition~\ref{def:fbt}.
+canonical leaf enumeration of Definition~\ref{def:leafenum}.
 \end{definition}
 
 The fabric's obligation is to execute the two disciplines symmetrically:
@@ -800,12 +803,12 @@ any fabric execution --- they are compile-time verifiable. The
 \textsf{F-*} invariants are properties of the fabric's behaviour that
 can be established once by RTL inspection and SystemVerilog assertions,
 independently of any particular compilation. Separating the two means
-that a failure of Claim~1 can be diagnosed precisely: either the
+that a failure of Claim~\ref{claim:1} can be diagnosed precisely: either the
 compiler violated an obligation (a bug in \sprs{}) or the fabric
 violated an invariant (a bug in the RTL), but not both.
 \end{remark}
 
-\subsection{Claim 1 and Property 2}\label{sec:abi-claim}
+\subsection{Claim 1 and the Fail-Stop Property}\label{sec:abi-claim}
 
 \begin{claim}[Cross-topology bitwise invariance]\label{claim:1}
 Let $N \in \mathbb{N}$ and let $L \in (\mathrm{bits}_{64})^N$ be a fixed
@@ -1004,7 +1007,7 @@ in post-order by data dependence, initial values coming from the
 $\mathrm{evaluate}(\FBT(N), L, \fadd) = \Rcan(N, L)$, a pure function
 of $(N, L)$.
 
-\begin{remark}[On Property~2]
+\begin{remark}[On Property~\ref{prop:2}]
 The fail-stop argument is more direct. A \textsf{C-route} violation routes
 a packet to the wrong PE, where \textsf{F-misroute} drops it; the
 destination's scoreboard bit is never set; \texttt{COMPUTE} stalls
@@ -1201,10 +1204,12 @@ the program at a diagnostic state rather than producing silent corruption
 
 \subsection{Design Goals}
 
-The fabric supports a cluster of up to $\sv{MAX\_ROUTERS} = 4096$ PEs with
-up to $\sv{MAX\_PORTS} = 8$ ports per router, in a single Verilog
-instantiation whose topology is determined by the adjacency and routing
-tables loaded at boot. The reduction ISA has four live opcodes, one
+The fabric supports a cluster of up to $\sv{MAX\_ROUTERS} = 4096$ PEs, in a
+single Verilog instantiation whose topology is determined by the adjacency
+and routing tables loaded at boot. Router radix is not fixed by the design:
+it is the per-instance parameter \sv{PORTS\_PER\_RTR}, which the compiler
+emits and which ranges $\RadixMin$--$\RadixMax$ across our suite
+(\S\ref{sec:resource}). The reduction ISA has four live opcodes, one
 reserved for future barrier/reset semantics. All determinism-critical
 mechanisms --- scoreboard, forwarding network, DMEM write arbiter, credit
 accounting --- are simple enough to fit in a two-page RTL inspection.
@@ -1513,17 +1518,17 @@ The fabric provides $\sv{NUM\_VCS} = 2$ virtual channels per port
 flow control prevents buffer overflow: the $\sv{link\_tx}$ module
 decrements a per-link credit counter on each transmission and
 increments it on each credit-return pulse, with counter conservation
-$\sum \text{pulses} = \sum \text{reads}$ (\textsf{F-credit}). The
-counter-serialised credit return (the credit-return counter in
-\sv{noc\_router.sv}). This per-cycle read-tally counter is distinct from the
-eight-bit per-link credit \emph{balance} register; the tally only has to count
-simultaneous read events across VCs, which is why two bits suffice at
-$\sv{NUM\_VCS}=2$ even though the balance itself ranges to
-$\sv{BUF\_DEPTH}=8$
-fixes a multi-VC credit-loss bug in which a single-bit credit pulse
-collapsed multi-VC reads into one return; the fixed implementation
+$\sum \text{pulses} = \sum \text{reads}$ (\textsf{F-credit}). Credit
+return is counter-serialised (the credit-return counter in
+\sv{noc\_router.sv}). This design fixes a multi-VC credit-loss bug in which
+a single-bit credit pulse collapsed several simultaneous reads into one
+return: the corrected implementation
 counts $\text{new\_reads} = \sum_v \texttt{ibuf\_ren}[p][v]$ and drains
-one pulse per cycle.
+one pulse per cycle. This per-cycle read tally is a distinct register from
+the eight-bit per-link credit \emph{balance}: the tally counts only
+simultaneous read events across VCs, so two bits suffice at
+$\sv{NUM\_VCS} = 2$ even though the balance itself ranges to
+$\sv{BUF\_DEPTH} = 8$.
 
 For cyclic topologies (ring, torus, hypercube), the compiler emits
 routing tables that satisfy a dimension-ordered (DOR) restriction with a
@@ -1549,47 +1554,70 @@ becoming ready. This is a liveness property of the NoC.
 
 \subsection{Resource Envelope}\label{sec:resource}
 
-Table~\ref{tab:resource} gives a per-router resource estimate at
-$G = 4096$. We break out the routing table, VC ingress FIFOs, egress
-FIFOs, crossbar muxing, and per-PE memories as separate rows. The
-per-PE rows are not-per-router; they scale with $G$, not with router
-port count.
+Router cost is dominated by radix, and radix is a property of the
+topology, not a constant of the design. \sv{MAX\_PORTS} is declared in
+\sv{noc\_pkg.sv} but is never referenced by any module; the live quantity
+is \sv{PORTS\_PER\_RTR}, which the compiler emits per instance. We read it
+back out of every generated testbench rather than assume it:
+Table~\ref{tab:radix} reports what the suite actually instantiates.
 
 \begin{table}[!t]
-\caption{Per-router resource estimate at $G = 4096$, with aggregate
-  over the full cluster in Mbits. A research-prototype envelope; no
-  post-place-and-route data.}
+\caption{Measured router radix across the 40-instance suite, read from the
+  \sv{PPR} localparam of each emitted testbench. Radix is a topology
+  property; \sv{MAX\_PORTS} in \sv{noc\_pkg.sv} is vestigial and enforces
+  nothing.}
+\label{tab:radix}
+\centering
+\footnotesize
+\input{tables/radix}
+\end{table}
+
+The span is \RadixMin--\RadixMax{} ports. Low-diameter mesh and torus
+routers stay at $P = \RadixLo$, hypercube reaches $P = \RadixHc$ at
+$G = 1024$, and fat-tree reaches $P = \RadixMax$ at $G = 4096$
+(\RadixMaxInst, \RadixMaxRouters{} routers). Because the crossbar term is
+$O(P^2)$, a single fixed-radix estimate is not merely imprecise across
+topologies --- it is wrong by more than an order of magnitude at the top of
+the range. Table~\ref{tab:resource} therefore reports the envelope as a
+function of $P$, holding the route-table depth at $G = 4096$ so that the
+columns isolate the effect of radix alone.
+
+\begin{table}[!t]
+\caption{Per-router resource estimate as a function of radix $P$, at a
+  common route-table depth $G = 4096$. A research-prototype envelope
+  (storage-equivalent bits; the crossbar row prices mux storage-equivalent,
+  not registers); no post-place-and-route data.}
 \label{tab:resource}
 \centering
 \footnotesize
 \renewcommand{\arraystretch}{1.15}
-% \resizebox forces the table to fit exactly within the column width
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{@{}l r r@{}}
-\toprule
-\textbf{Component} & \textbf{Per-router bits} & \textbf{Aggregate} \\
- & & \textbf{(Mbit)$^{\dagger}$} \\
-\midrule
-Routing table (8-port, $\lceil\log_2 8\rceil = 3$\,b)        & $4096 \times 3 = 12{,}288$  & 48 \\
-VC ingress FIFOs ($8 \times 2 \times 8 \times 96$)           & $12{,}288$                  & 48 \\
-Egress FIFOs ($8 \times 8 \times 96$)                        & $6{,}144$                   & 24 \\
-Crossbar ($8 \times 8 \times 96$, mux storage-equiv.)        & $6{,}144$                   & 24 \\
-\midrule
-\multicolumn{3}{@{}l}{\footnotesize $^{\dagger}$ Aggregate over $G = 4096$ routers, $1\,\text{Mbit} = 2^{20}$ bits.} \\
-\textbf{Per-router subtotal}                                 & $\mathbf{\approx 37{,}000}$ & \textbf{144} \\
-\midrule
-Per-PE IMEM ($512 \times 64$) + DMEM ($512 \times 64$)       & $65{,}536$                  & 256 \\
-\bottomrule
-\end{tabular}%
+\input{tables/resource}%
 }
 \end{table}
 
-Aggregate storage is $\approx$ 400 Mbit at $G = 4096$, excluding link
-drivers, clock distribution, and I/O. The critical combinational path
-is through \sv{fp64\_add} at EX (single cycle in our implementation); a
+A fat-tree router is \RouterBlowup$\times$ a mesh router
+(\RouterBitsFt{} bits against \RouterBitsLo{}), and \XbarShareFt{} of that
+is crossbar. Aggregated over the fabric the gap is starker still:
+$\approx \AggLoMbit$~Mbit of router storage at $P = \RadixLo$ over 4096
+routers, against $\approx \AggFtMbit$~Mbit for \RadixMaxInst{} --- the
+regime where a flat crossbar stops being the right structure and a
+hierarchical or input-queued switch is the standard answer. We report the
+flat figure because it is what we simulated, not because it is what we would
+build at that radix.
+
+Per-PE memory is independent of topology: IMEM $512 \times 64$ plus DMEM
+$512 \times 64$ is \PerPEBits{} bits per PE, $\approx \AggPEMbit$~Mbit over
+$G = 4096$ PEs. This is the row Appendix~\ref{app:isa}'s 64-bit instruction
+word sizes.
+
+Two caveats bound the estimate. It counts storage-equivalent bits only ---
+link drivers, clock distribution, arbiter logic, and I/O are excluded --- and
+it is an RTL-level count, not a synthesis result. The critical combinational
+path is through \sv{fp64\_add} at EX (single cycle in our implementation); a
 production deployment would pipeline the FADD to 3--5 stages and migrate
-scoreboard release to ALU completion. Neither change affects the
-invariance claim --- pipelined-but-still-deterministic FADD inherits
+scoreboard release to ALU completion. Neither change affects the invariance
+claim --- pipelined-but-still-deterministic FADD inherits
 Claim~\ref{claim:1} by construction.
 
 \subsection{Known Limitations}\label{sec:fabric-lim}
@@ -2108,12 +2136,13 @@ Vivado xsim 2025.2 on Linux; ten SystemVerilog sources in \sv{rtl/}
 ($3{,}738$ lines). The tournament runs on a 72-thread Intel Xeon~w9-3475X
 workstation with 503~GB of RAM and RNG seeds pinned at $42$.
 Per-algorithm timeout $1800$~s; per-simulation wall-clock cap $28{,}800$~s.
-Xsim wall-clock per instance is listed in Appendix~\ref{app:coverage}.
+Per-instance xsim wall-clock is in Table~\ref{tab:walltime} (Appendix~\ref{app:coverage}).
 
 Every cycle figure reported in this paper comes from a single campaign of
-$2{,}822$ passing runs consuming $821.5$ core-hours, at a median of $99$~s per
-testbench; the five largest instances account for $90.0\%$ of that total and
-the single longest run took $5.51$~h. An earlier campaign over the same
+$\WallTBs$ passing runs consuming $\WallTotalH$ core-hours, at a median of
+$\WallMedianS$~s per testbench; the five largest instances account for
+\WallGiantShare{} of that total and the single longest run took
+$\WallMaxH$~h. An earlier campaign over the same
 testbenches is not used for any reported number: it recorded PE~0's
 performance counter rather than the maximum across PEs, which understates
 end-to-end latency whenever the reduction root lands elsewhere. That defect
@@ -2392,7 +2421,7 @@ complexity yields exact optima; graph partitioning (MLfm, RecBisect, DKway)
 takes balanced topologies whose bisection structure aligns with recursive
 partitioning; list scheduling (HEFT, CPOP) takes tall narrow trees where the
 critical path dominates. At S3, \sv{\TournTopMap} wins $24$ of the $39$
-HW-validated instances ($62\%$), which is itself informative: for most instances the assignment's
+HW-validated instances (\TournTopMapShare), which is itself informative: for most instances the assignment's
 GPU indexing already suits the physical topology, and non-trivial placement
 pays only where S2 produced a good partition under a bad labelling.
 
@@ -2754,8 +2783,8 @@ only where cell counts permit.
 \sv{makespan} (Phase 1/2) but evaluates on \sv{hw\_cycles} (Phase 3).
 Appendix~\ref{app:bias} quantifies the resulting leakage across every
 HW-validated instance: at the $K{=}15$ operating point a median
-\TournLeak15{} of the true top-15 by measured cycles falls outside the
-top-15 by makespan, dropping to \TournLeak30{} at $K{=}30$. Winner
+\TournLeakPctFifteen{} of the true top-15 by measured cycles falls outside
+the top-15 by makespan, dropping to \TournLeakPctThirty{} at $K{=}30$. Winner
 distributions should therefore be read as ``best among what was simulated''.
 A full tournament selected on \sv{hw\_cycles} is computationally infeasible.
 This does not touch Claim~\ref{claim:1}, which quantifies over every
@@ -2783,7 +2812,7 @@ study would cover scoreboard-set mutations, forwarding-network
 mutations, credit-return mutations, and more. We view our results as a
 lower bound on the harness's sensitivity.
 
-\emph{L12 --- No formal proof of Claim~1.} Our argument is by code
+\emph{L12 --- No formal proof of Claim~\ref{claim:1}.} Our argument is by code
 inspection and dynamic assertion, not mechanised proof. The
 Alloy/Kami path of \S\ref{sec:mechanization} is future work.
 
@@ -2844,8 +2873,9 @@ $\texttt{DMEM[addr\_b]}$, which is the operand pair the ABI binds. For
 
 The \sv{aux} field is four bits: $\sv{aux}[3{:}1]$ selects the ALU operation
 and $\sv{aux}[0]$ is a legacy link hint. Egress port selection is \emph{not}
-an instruction field --- a single bit could not address the eight ports
-\sv{MAX\_PORTS} permits. The port is resolved in hardware by the emitting
+an instruction field --- no small fixed field could address a router's egress
+ports, which range up to $P = \RadixMax$ across the suite
+(Table~\ref{tab:radix}). The port is resolved in hardware by the emitting
 router's $\texttt{route\_table}[\sv{dest\_gpu}]$ lookup, which is what makes
 topology a configuration input rather than a property of the emitted code.
 
@@ -2943,30 +2973,43 @@ scoreboard-gated adds commit, and therefore the final 64 bits.
 % =====================================================================
 
 Table~\ref{tab:coverage} reports per-$(N$-bucket, topology) cell counts
-in the 40-instance suite. Cells marked $-$ are unpopulated; cells with
-$\leq 2$ instances are labelled ``thin'' in the results. A stratified
-extension to fill thin cells is in progress.
+in the \SuiteSize-instance suite, and Table~\ref{tab:walltime} the measured
+xsim wall-clock per instance. Both are generated directly from the instance
+manifest and the measured CSV (\sv{scripts/gen\_coverage.py}), which
+asserts that both margins sum to \SuiteSize{} before emitting the table.
+Cells marked $-$ are unpopulated;
+cells with $\leq 2$ instances are labelled ``thin'' in the results. Coverage
+is deliberately uneven --- \SuiteThinCells{} of the 26 populated cells are
+thin and \SuiteEmptyCells{} cells are empty --- which is the basis for
+limitation L5. A stratified extension to fill thin cells is in progress.
 
 \begin{table}[!t]
-\caption{Instance-suite cell counts by $N$-bucket and topology. Rows
-  sum to the 40-instance total.}
+\caption{Instance-suite cell counts by $N$-bucket and topology. Rows and
+  columns both sum to the \SuiteSize-instance total.}
 \label{tab:coverage}
 \centering
 \footnotesize
 \renewcommand{\arraystretch}{1.15}
-\begin{tabular}{@{}lcccccc@{}}
-\toprule
-$N$-bucket & Lin. & Ring & Mesh & Torus & Fat-tree & Hyp.\\
-\midrule
-8--32    & 1 & 2 & 1 & 2 & 1 & 0 \\
-64--256  & 2 & 2 & 2 & 3 & 2 & 1 \\
-512--1K  & 1 & 2 & 2 & 3 & 2 & 2 \\
-1K--4K   & 1 & 1 & 1 & 2 & 1 & 2 \\
-8K       & 0 & 0 & 1 & 1 & 0 & 1 \\
-\midrule
-Total    & 5 & 7 & 7 & 11 & 6 & 6 \\
-\bottomrule
-\end{tabular}
+\input{tables/coverage}
+\end{table}
+
+Table~\ref{tab:walltime} reconciles exactly to the campaign totals quoted in
+\S\ref{sec:results-setup}: \WallTBs{} passing runs and \WallTotalH{}
+core-hours, at the stated $\WallMedianS$~s median and $\WallMaxH$~h maximum.
+\sv{maxp\_mod\_fat} does not appear --- it has no passing runs, and the
+$58.9$ core-hours it consumed are accounted in \S\ref{sec:limitations}.
+
+\begin{table}[!t]
+\caption{Measured xsim wall-clock per instance, over passing runs only.
+  ``Med.'' is the median per-testbench wall-clock, ``Max'' the longest
+  single testbench.}
+\label{tab:walltime}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{1.05}
+\resizebox{\columnwidth}{!}{%
+\input{tables/walltime}%
+}
 \end{table}
 
 % =====================================================================
@@ -2986,10 +3029,11 @@ true top-$K$-by-cycles that falls outside the top-$K$-by-makespan.
 
 \input{tables/selbias}
 
-The correlation is high ($\rho \approx \TournRho15$ at the median), but
-leakage at the operating point is not negligible: at $K=15$ a median
-\TournLeak15{} of the genuine top-15 would have been missed by a
-makespan-chosen shortlist, falling to \TournLeak30{} at $K=30$. The
+The correlation is high ($\rho \approx \TournRhoFifteen$ at the median),
+but leakage at the operating point is not negligible: at $K=15$ a median
+\TournLeakPctFifteen{} of the genuine top-15 would have been missed by a
+makespan-chosen shortlist, and even at the more permissive $K=30$ cutoff
+\TournLeakPctThirty{} is still missed. The
 practical reading is that software makespan is a good \emph{filter} and a
 poor \emph{selector} --- adequate for deciding what to simulate, not for
 deciding what won.
