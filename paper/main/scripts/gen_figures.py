@@ -33,7 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hwdata
 
 csv.field_size_limit(sys.maxsize)
-P1 = "'"+SPRS_ROOT+"/data/results"
+P1 = "/home/rohit/tournament_p1/results"
 
 META = {}
 for n, g, t, lab in [

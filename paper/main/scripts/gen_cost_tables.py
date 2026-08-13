@@ -27,7 +27,7 @@ from collections import defaultdict
 
 csv.field_size_limit(sys.maxsize)
 
-P1 = "'"+SPRS_ROOT+"/data/results"
+P1 = "/home/rohit/tournament_p1/results"
 MAXPE = f"{P1}/live_hw_results_p1_maxpe.csv"
 ORIG = f"{P1}/live_hw_results_p1_unified.csv"
 

@@ -108,7 +108,7 @@ Instructions are 64 bits, four opcodes, fixed fields:
 
 \begin{lstlisting}
 [63:60] opcode   NOP=0 GENERATE=1 COMPUTE=2 SEND=3
-[59:56] aux      aux[0]=link, aux[3:1]=alu_op
+[59:56] aux      aux[0]=legacy link hint, aux[3:1]=alu_op
 [55:40] dest     DMEM destination (COMPUTE/GENERATE)
                  target_addr at receiver (SEND)
 [39:24] addr_a   DMEM source A (COMPUTE)
@@ -117,6 +117,12 @@ Instructions are 64 bits, four opcodes, fixed fields:
                  dest_gpu id (SEND)
 [7:0]   reserved
 \end{lstlisting}
+
+Egress port selection is not carried in the instruction: one bit could not
+address the eight ports \sv{MAX\_PORTS} allows. The port is resolved by the
+router's $\sv{route\_table}[\sv{dest\_gpu}]$ lookup, with \sv{dest\_gpu} taken
+from \sv{addr\_b} on a \texttt{SEND}. \sv{aux}[0] is a vestigial hint retained
+for encoding compatibility and ignored by the router.
 
 Opcode~4 is \sv{OP\_RESERVED}, formerly \sv{OP\_RECV}, retired when the
 messaging model moved to RDMA-push. Its retirement is load-bearing rather
@@ -144,8 +150,17 @@ Packets are single-flit, 96 bits:
 
 Single-flit packets are the reason the fabric needs no reassembly logic,
 no flit sequencing, and no virtual-cut-through buffering, at the cost of a
-96-bit datapath width. Bit~63 of the payload additionally steers the virtual
-channel, a deliberate choice discussed in \S\ref{sec:vc}.
+96-bit datapath width. Virtual-channel selection reads bit~64 --- the
+low bit of the reserved header field, immediately \emph{above} the 64-bit
+payload --- so VC choice is independent of the transported value. This
+matters: bit~63 is the sign bit of an FP64 payload, and steering on it would
+make buffer occupancy and contention depend on whether a partial sum happens
+to be negative. The RTL comparison is
+\sv{rx\_data[p][64 -: VC\_W]} in \sv{noc\_router.sv}. At the default
+\sv{NUM\_VCS} $=2$ ($\sv{VC\_W}=1$) this reads bit~64 alone; note that at
+\sv{NUM\_VCS} $=4$ the same expression would extend down into payload bit~63,
+so raising the VC count requires moving the field rather than widening it in
+place.
 
 \subsection{Routing tables}
 
@@ -160,7 +175,7 @@ A width subtlety costs correctness if missed. \sv{route\_table} elements are
 $\lceil\log_2(\text{NUM\_PORTS})\rceil$ bits wide. Most topologies use
 five-port routers, giving three bits, but fat-tree routers have more ports
 and need four. Any tooling that writes the table with a sized literal
-(\sv{3'd}$p$) silently truncates port numbers above seven and breaks fat-tree
+(\sv{3'd}$\langle p\rangle$, e.g.\ \sv{3'd7}) silently truncates port numbers above seven and breaks fat-tree
 routing in a way that passes elaboration and fails only at run time. Plain
 integer literals, which widen to the left-hand side, are required.
 

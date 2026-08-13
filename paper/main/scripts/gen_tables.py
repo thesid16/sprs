@@ -3,7 +3,7 @@
 gen_tables.py — regenerate every data-driven LaTeX table in paper_v6 from the
 authoritative CSVs.
 
-Authoritative dataset: '"+SPRS_ROOT+"/data/results/  (July clean Phase-1
+Authoritative dataset: /home/rohit/tournament_p1/results/  (July clean Phase-1
 restart; supersedes tournament_portable — see PAPER_V6_PLAN.md §5a).
 
 Every emitted .tex file carries a provenance header naming this script, the
@@ -25,9 +25,9 @@ from collections import defaultdict, Counter
 
 csv.field_size_limit(sys.maxsize)
 
-P1 = "'"+SPRS_ROOT+"/data/results"
+P1 = "/home/rohit/tournament_p1/results"
 HW_CSV = f"{P1}/live_hw_results_p1_unified.csv"
-MAXP_CSV = _os.path.join(SPRS_ROOT, "data", "results", "live_hw_results_maxp_mod_fat.csv")
+MAXP_CSV = "/home/rohit/tournament_portable/results/live_hw_results_maxp_mod_fat.csv"
 
 # (N, G, topology, label) — mirrors sprs_core.TEST_INSTANCES
 INSTANCES = [

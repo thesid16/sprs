@@ -68,6 +68,7 @@
 % ---------- theorem environments ----------
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
 \newtheorem{claim}{Claim}
 \newtheorem{property}{Property}
 \newtheorem{lemma}{Lemma}
@@ -79,6 +80,9 @@
 
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}
+% A code-inspection argument is not a proof; give it its own environment
+% so the distinction is visible rather than asserted in prose.
+\newenvironment{structuralargument}{\begin{proof}[Structural argument]}{\end{proof}}
 
 % ---------- editorial placeholders ----------
 % \todo{x} marks an unfinalised numerical value; replace before camera-ready.
@@ -142,14 +146,19 @@ network-on-chip with a four-opcode reduction ISA and a combinational
 flush-to-zero/round-to-nearest-even FADD; and a seven-stage compiler whose
 algorithmic configuration space spans $18\times 10\times 122 \approx 22{,}000$
 assignment/mapping/refinement combinations, of which this campaign compiles
-$7{,}200$ and validates $2{,}822$ in RTL. We state and
+$7{,}200$ and validates $2{,}822$ in RTL. Given the ABI, invariance is close to definitional --- if every
+\texttt{COMPUTE} always adds the same predetermined pair of addresses, neither
+timing nor physical placement can reach the result. The contribution is
+therefore not that the property is surprising but that the discipline
+survives contact with a real compiler search space and real RTL at scale,
+which is not guaranteed. We state and
 argue two properties under six compiler obligations and nine fabric
 invariants: \emph{cross-topology bitwise invariance} (Claim~1) and
-\emph{fail-stop under assumption violation} (Property~2), connected by an
+\emph{fail-stop under assumption violation} (Property~\ref{prop:2}), connected by an
 explicit \emph{mapping/topology orthogonality} theorem. On 40 instances
 spanning $N\!\in\![8,8192]$, $G\!\in\![2,4096]$, and six direct-network
-topologies, $2{,}822$ RTL-validated configurations produce bit-identical
-roots with zero divergence, and an injected-fault campaign confirms the
+topologies (39 of the 40 hardware-validated), $2{,}822$ RTL-validated
+configurations produce bit-identical roots with zero divergence, and an injected-fault campaign confirms the
 oracle is non-vacuous at $107/107$ detection. We price the ABI structurally
 rather than empirically: its cost decomposes into a $\log_2 N$ dependence
 chain, a prohibition on locality-driven reassociation, leaf-generation
@@ -199,8 +208,11 @@ gives, for two reduction orders $\sigma$ and $\sigma'$ of the same multiset,
   \;\leq\; (N-1)\,u\,{\textstyle\sum_i} |x_i| + \mathcal{O}(u^2),
   \label{eq:higham}
 \end{equation}
-with $u$ the unit of last place; under cancellation this bound is
-catastrophically loose and the actual discrepancy is a function of the
+with $u$ the unit in the last place. The classical statement bounds one
+summation order against the exact sum; applying it to the difference of two
+orders costs a factor of two by the triangle inequality, which we absorb into
+the constant since only the scaling matters here. Under cancellation this
+bound is catastrophically loose and the actual discrepancy is a function of the
 summation tree. The consequence is concrete. A training job rerun on a
 cluster resized from $G{=}128$ to $G{=}256$ GPUs --- identical seed,
 identical dataset, identical code --- produces bit-divergent weights by the
@@ -297,12 +309,15 @@ sense: the invariance argument is by code inspection and dynamic checking,
 not machine-checked proof (\S\ref{sec:mechanization}).
 
 \textbf{C1 --- Reduction order as a compiler/fabric ABI, with a structural
-invariance argument.} We define the ABI as post-order operand binding over
+invariance argument.} We claim the framing, not the difficulty: once operand
+binding is a function of tree-node identity alone, invariance follows by
+unwinding the definitions, and we say so rather than dressing it as a
+discovery. We define the ABI as post-order operand binding over
 $\FBT(N)$ together with a canonical leaf enumeration, and we state two
 properties that follow from it. \emph{Claim~1 (cross-topology bitwise
 invariance)} establishes that, under six compiler obligations and nine
 fabric invariants, the 64-bit root result is a pure function of $(N, L)$.
-\emph{Property~2 (fail-stop fabric)} establishes that every violation of
+\emph{Property~\ref{prop:2} (fail-stop fabric)} establishes that every violation of
 an assumption produces either a correct result or a localised
 \texttt{P\_ERROR} with diagnostic context, never a silently wrong output.
 The two are connected by an explicit \emph{mapping/topology orthogonality}
@@ -319,7 +334,10 @@ partitioning, tree dynamic programming, and critical-path variants (S2);
 a load-bearing \emph{connectivity repair} pass that restores the ABI
 prerequisite after any S2 algorithm that fractures the partition
 (S2.5); worker-to-physical-PE \emph{mapping} from ten algorithms (S3);
-\emph{refinement} from twelve base methods chainable to 122 configurations
+\emph{refinement} from twelve base methods (eleven refiners plus
+\sv{None}), chainable to $12 + 11 \times 10 = 122$ configurations --- each
+method alone, plus every ordered pair of two \emph{distinct} refiners, since
+\sv{refine\_phased} applies at most two and never repeats one
 (S4); memory enforcement against $512$-entry IMEM/DMEM budgets (S5); and
 code emission with cycle-accurate NOP padding (S6). The fabric is a
 topology-parametric SystemVerilog NoC with a four-opcode reduction ISA,
@@ -376,7 +394,7 @@ mappings, twelve refinements, dimension-ordered routing, virtual-channel
 escape discipline, and scoreboarded pipeline are all individually due to
 prior work~\cite{topcuoglu2002heft,lukes1974efficient,fiduccia1982linear,%
 yang1994dsc,karypis1998multilevel,jeannot2014treematch,%
-koopman1996,dally2004principles}. Our contribution is not a new component
+dally1987deadlock,dally2004principles}. Our contribution is not a new component
 but the interface observation: that \emph{if} compiler and fabric agree
 on a size-indexed reduction tree as a shared contract, \emph{then} any
 choice among those prior-art components inherits cross-topology invariance
@@ -390,7 +408,7 @@ Section~\ref{sec:background} fixes notation for IEEE 754 non-associativity
 and the threat model, then tabulates prior reproducibility approaches.
 Section~\ref{sec:abi} is the paper's theoretical core: the canonical tree,
 the ABI definition, the compiler-side and fabric-side assumption lists,
-Claim~1, Property~2, and the orthogonality theorem.
+Claim~1, Property~2, and the orthogonality proposition.
 Section~\ref{sec:fabric} describes the fabric --- ISA, pipeline,
 write-arbitration, fail-stop discipline, and resource envelope.
 Section~\ref{sec:compiler} describes the compiler, with particular
@@ -544,6 +562,27 @@ $2N-1$ is always odd, every internal node has exactly two children: the
 single-child edge case is eliminated at the tree level.
 \end{definition}
 
+\begin{definition}[Canonical leaf enumeration]\label{def:leafenum}
+Let $\mathcal{L}(N) \subset \{0,\ldots,2N-2\}$ be the leaf set of $\FBT(N)$.
+The canonical enumeration $\mathrm{idx}: \mathcal{L}(N) \to \{0,\ldots,N-1\}$
+assigns index $k$ to the $k$-th smallest \emph{heap index} in
+$\mathcal{L}(N)$.
+\end{definition}
+
+This is worth stating precisely, because the obvious informal paraphrase is
+wrong. Ascending heap index and left-to-right \emph{visual} order coincide
+exactly when $N$ is a power of two. When it is not, $\FBT(N)$ is
+depth-imbalanced: some leaves sit one level higher than the rest, and a
+higher leaf carries a \emph{smaller} heap index than the deeper leaves to its
+left. For $N=7$ the leaf set is $\{6,\ldots,12\}$; ascending heap index gives
+$\langle 6,7,8,9,10,11,12\rangle$, whereas left-to-right traversal gives
+$\langle 7,8,9,10,11,12,6\rangle$ --- node $6$ is a leaf at depth two and
+appears \emph{last} visually. Seven of the sixteen leaf counts we evaluate
+($10, 50, 100, 200, 500, 1500, 3000$) are of this shape, and at $N=200$ the
+two enumerations produce root values differing by one ulp. The ABI is defined
+by heap index; an implementation using visual order is a \emph{different}
+contract, not an equivalent restatement of this one.
+
 The post-order traversal of $\FBT(N)$ --- left, right, node --- is a pure
 function of $N$. We write $\pi_N$ for the post-order sequence of internal
 nodes. For $N=4$:
@@ -556,16 +595,15 @@ The canonical evaluation is
 \begin{equation}\label{eq:Rcan}
   \Rcan(N, L) \;=\; \mathrm{evaluate}\bigl(\FBT(N), L, \fadd\bigr),
 \end{equation}
-where $L$ is the leaf-value vector indexed by canonical leaf enumeration
+where $L$ is the leaf-value vector indexed by the canonical leaf
+enumeration of Definition~\ref{def:leafenum}
 and $\fadd$ denotes the combinational semantics of our FP64 adder
 (\S\ref{sec:fadd}). Equation~\eqref{eq:Rcan} is the \emph{target} of every
 $\sprs{}$ execution on input $(N, L)$.
 
-We also define the \emph{canonical leaf enumeration}
-$\mathrm{idx}: \mathrm{leaves}(\FBT(N)) \to \{0,\ldots,N-1\}$ as the
-left-to-right order of leaves in the tree. This enumeration is again a
-pure function of $N$ and is the referent for all uses of ``leaf index''
-below.
+The canonical leaf enumeration $\mathrm{idx}$ of
+Definition~\ref{def:leafenum} is likewise a pure function of $N$, and is the
+referent for every use of ``leaf index'' below.
 
 \begin{figure}[!t]
 \centering
@@ -666,10 +704,15 @@ compiler or user must discharge them), and \emph{fabric invariants}
   Established by the S2.5 \emph{connectivity repair} pass
   (\S\ref{sec:compiler-repair}); a load-bearing invariant without which the
   binding discipline fails.
-\item[\textsf{C-sw} (Single-writer allocation).] For every PE $p$ and every
-  DMEM address $a \neq 0$, the emitted instruction image contains exactly
-  one instruction whose destination is $(p, a)$. Constructed by the
-  SU-ordered allocator (\S\ref{sec:compiler-dmem}).
+\item[\textsf{C-sw} (Single-writer allocation for remote destinations).]
+  Partition each PE's DMEM into \emph{receive buffers}, the addresses named
+  as \texttt{target\_addr} by some \texttt{SEND} from another PE, and
+  \emph{local temporaries}, the rest. For every PE $p$ and every receive
+  buffer $a \neq 0$, the emitted image contains exactly one write to
+  $(p,a)$, and that write is remote. Local temporaries are exempt: the
+  allocator reuses them (\S\ref{sec:compiler-dmem}), and their safety comes
+  from in-order issue rather than from single assignment --- see the remark
+  below. The two classes are disjoint by construction.
 \item[\textsf{C-bind} (Operand binding, Def.~\ref{def:opbind}).] Every
   \texttt{COMPUTE} for internal node $v$ binds the operand pair by
   definition. Verified by a post-generation assertion
@@ -684,15 +727,43 @@ compiler or user must discharge them), and \emph{fabric invariants}
   checked acyclic by a channel-dependency pass (\sv{validate\_routing.py}).
 \end{description}
 
+\begin{remark}[Why address reuse does not break the gate]
+\label{rem:recycle}
+The allocator of \S\ref{sec:compiler-dmem} returns a child's slot to a
+free list once the parent has consumed it, so a local temporary can be
+written more than once per program. Read against a scoreboard bit that is
+never cleared, that looks unsafe: a second writer would find the bit already
+set, and a reader could not distinguish the new value from the old.
+
+It is safe, and the reason is worth stating because it is what the two
+invariants above are really carving out. A recycled slot has exactly one
+remaining reader at the moment it is reused --- the very \texttt{COMPUTE}
+that overwrites it --- and on an in-order pipeline that instruction reads its
+operands in \textsf{DE} strictly before it writes back in \textsf{EX}. The
+ordering is supplied by program order on a single PE, not by the scoreboard.
+The scoreboard exists for the one case program order cannot cover: a value
+written by a \emph{different} PE, whose arrival time is a function of routing
+and contention. Those destinations are precisely the receive buffers, and
+those are never recycled.
+
+The separation is structural rather than incidental. The allocator assigns
+receive buffers in a second pass, from fresh addresses above the local
+high-water mark, and never from the free list. We verified the disjointness
+directly on the emitted images: across instances spanning $N \in [32, 2048]$
+and $G \in [4, 128]$, the set of recycled addresses and the set of
+remotely-written addresses do not intersect in a single case.
+\end{remark}
+
 \subsubsection*{Fabric invariants}
 \begin{description}[leftmargin=2.2em,style=nextline]
 \item[\textsf{F-id} (Identity slot).] \texttt{DMEM[0]} is the identity
   element of the selected ALU operation; $\texttt{scoreboard[0]}$ is
   set to $1$ at reset and never cleared until the next program start.
-\item[\textsf{F-sb-mono} (Scoreboard monotonicity).] Each
-  $\texttt{scoreboard[a]}$ bit transitions $0 \to 1$ at most once per
-  program, at the clock edge of the unique write to address $a$, and
-  stays set until the next program-level reset.
+\item[\textsf{F-sb-mono} (Scoreboard monotonicity).] For every receive
+  buffer $a$, $\texttt{scoreboard[a]}$ transitions $0 \to 1$ at most once
+  per program, at the clock edge of the unique remote write to $a$, and
+  stays set until the next program-level reset. The bit is never cleared
+  mid-program, so the gate is monotone and cannot oscillate.
 \item[\textsf{F-sb-gate} (Scoreboard gating).] \texttt{COMPUTE} stalls
   \textsf{DE}$\to$\textsf{EX} until both $\texttt{scoreboard[addr\_a]}$
   and $\texttt{scoreboard[addr\_b]}$ are $1$.
@@ -845,7 +916,7 @@ each resting on a specific subset of assumptions.
 
 % Ensure Property 2 is vertically aligned with Claim 1, centered over its cluster
 \path ($(fMi.north)!0.5!(fWd.north)$) coordinate (pr_x);
-\node[claim] (pr) at (pr_x |- cl) {Property 2: fail-stop};
+\node[claim] (pr) at (pr_x |- cl) {Property: fail-stop};
 
 % ==========================================
 % ROW 0: Unconnected Leaves (Tucked neatly at the bottom)
@@ -958,7 +1029,7 @@ topology, the worker-to-physical mapping, and the routing and timing
 only change \emph{where} and \emph{when} data flows, not the operand
 binding at any COMPUTE. We make this formal.
 
-\begin{theorem}[Mapping/topology orthogonality]\label{thm:orth}
+\begin{proposition}[Mapping/topology orthogonality]\label{thm:orth}
 Fix $N$, $L$, assignment $\asgn$, refinement $r$, and the fabric's FADD
 unit. For any two valid mappings $\map_1, \map_2$ and any two valid
 routing tables $T_1, T_2$ for (possibly different) topologies in $\T$,
@@ -967,9 +1038,9 @@ the observed root result satisfies
   R_\mathrm{observed}(\map_1, T_1) \;=\; R_\mathrm{observed}(\map_2, T_2)
   \;=\; \Rcan(N, L).
 \end{equation}
-\end{theorem}
+\end{proposition}
 
-\begin{proof}
+\begin{structuralargument}
 By inspection of \sv{build\_schedule} and \sv{generate\_instructions}
 (\S\ref{sec:compiler-codegen}): the \texttt{COMPUTE} instructions'
 $(\texttt{addr\_a}, \texttt{addr\_b}, \texttt{dest})$ triples depend only
@@ -983,9 +1054,9 @@ the receiving PE's \texttt{COMPUTE}. Under \textsf{F-sb-gate}, the
 receiving PE's \texttt{COMPUTE} reads the DMEM values by address, not by
 arrival time, arrival port, or arrival VC. Therefore $R_\mathrm{observed}$
 is independent of $(\map, T)$.
-\end{proof}
+\end{structuralargument}
 
-Theorem~\ref{thm:orth} is the cleanest statement of what the ABI buys.
+Proposition~\ref{thm:orth} is the cleanest statement of what the ABI buys.
 The topology and the physical mapping --- the two things that change
 most obviously under cluster reshape --- are structurally orthogonal to
 the bit result. This is not a consequence to be validated empirically;
@@ -1443,7 +1514,12 @@ flow control prevents buffer overflow: the $\sv{link\_tx}$ module
 decrements a per-link credit counter on each transmission and
 increments it on each credit-return pulse, with counter conservation
 $\sum \text{pulses} = \sum \text{reads}$ (\textsf{F-credit}). The
-counter-serialised credit return (the credit-return counter in \sv{noc\_router.sv})
+counter-serialised credit return (the credit-return counter in
+\sv{noc\_router.sv}). This per-cycle read-tally counter is distinct from the
+eight-bit per-link credit \emph{balance} register; the tally only has to count
+simultaneous read events across VCs, which is why two bits suffice at
+$\sv{NUM\_VCS}=2$ even though the balance itself ranges to
+$\sv{BUF\_DEPTH}=8$
 fixes a multi-VC credit-loss bug in which a single-bit credit pulse
 collapsed multi-VC reads into one return; the fixed implementation
 counts $\text{new\_reads} = \sum_v \texttt{ibuf\_ren}[p][v]$ and drains
@@ -1593,7 +1669,7 @@ All three algorithmic search stages (S2, S3, S4) preserve the ABI by
 Argument A1 (\S\ref{sec:abi-args}); every valid triple $(\asgn, \map, r)$
 yields an ABI-compliant IMEM, and every configuration in the
 ${\sim}22{,}000$-point space therefore produces the same 64-bit root result by
-Theorem~\ref{thm:orth} --- a structural consequence, of which
+Proposition~\ref{thm:orth} --- a structural consequence, of which
 \S\ref{sec:results-invariance} verifies $2{,}822$ instances directly.
 
 
@@ -1786,7 +1862,7 @@ not as a runtime feature.
 
 \subsection{Orthogonality of the Compiler Variation Space}\label{sec:compiler-orth}
 
-By Argument A1 and Theorem~\ref{thm:orth}, compiler variation --- the
+By Argument A1 and Proposition~\ref{thm:orth}, compiler variation --- the
 choice among 18 S2, 10 S3, and 122 S4 algorithms --- affects
 \emph{which PE hosts a node} and \emph{when a \texttt{COMPUTE} fires},
 not \emph{which operand pair is bound}. The tournament
@@ -1816,17 +1892,27 @@ We compute a composite lower bound $\Omega$ on any schedule on the
 fabric (\sv{compute\_lower\_bound}, \sv{sprs\_core.py:1015}):
 \begin{equation}\label{eq:omega}
 \begin{split}
-\Omega \,=\, \max_{K \in [K_{\min}, K_{\max}]} \max \bigl( 
-    & \text{lb}_{\text{span}}, \; 
-      \text{lb}_{\text{gen}}(K), \; 
-      \text{lb}_{\text{instr}}(K), \\
-    & \text{lb}_{\text{comm}}, \; 
-      \text{lb}_{\text{gather}}, \; 
-      \text{lb}_{\text{bis}} 
+\Omega \,=\, \max \bigl(
+    & \text{lb}_{\text{span}}, \;
+      \text{lb}_{\text{comm}}, \;
+      \text{lb}_{\text{gather}}, \;
+      \text{lb}_{\text{bis}}, \\
+    & \min_{K \in [K_{\min}, K_{\max}]}
+      \max \bigl( \text{lb}_{\text{gen}}(K), \, \text{lb}_{\text{instr}}(K) \bigr)
 \bigr),
 \end{split}
 \end{equation}
-whose six constituents are, informally:
+where $K$ is the number of PEs a schedule actually populates: $K_{\min} = 1$
+and $K_{\max} = \min(G, 2N-1)$, since no schedule can use more PEs than the
+fabric has or than the tree has nodes. Two of the six terms depend on $K$ ---
+both $\text{lb}_{\text{gen}}$ and $\text{lb}_{\text{instr}}$ shrink as work
+spreads over more PEs --- so a bound valid against \emph{every} schedule must
+take the most favourable $K$ available, hence the inner minimisation. Taking
+a maximum there would assert a bound that some legal schedule beats, which is
+not a lower bound at all. The four $K$-independent terms bind regardless and
+enter the outer maximum directly.
+
+The six constituents are, informally:
 $\text{lb}_{\text{span}}$, the zero-communication critical-path depth;
 $\text{lb}_{\text{gen}}(K)$, the GCI serialisation bottleneck;
 $\text{lb}_{\text{instr}}(K)$, the instruction-throughput bottleneck;
@@ -1852,6 +1938,16 @@ traversal whose reduction order follows the physical ring, and
 stages.
 
 \textbf{We did not build these baselines, and we report no measured $\eta$.}
+We also decline to substitute an analytical one. We built such a model --- the
+same cost constants that produce $\Omega$, applied to a ring and to recursive
+doubling --- and it returns $\hat\eta \approx 1$ on every instance in the
+suite, because at that granularity $\FBT(N)$ and recursive doubling are both
+log-depth and the model cannot see what separates them. What separates them is
+\emph{which} operands pair at each level, not how many levels there are, and a
+cost model indexed by depth and hop count is structurally blind to that. A
+number produced this way would read as evidence that the ABI is free, which
+contradicts the structural argument two paragraphs below, so we report the
+absence rather than the artefact.
 Constructing them is not a small change: relaxing \textsf{C-bind} means
 re-deriving the DMEM allocator's single-writer discipline and the scoreboard
 gating around a schedule that no longer has a canonical operand pairing, and
@@ -1891,6 +1987,22 @@ invariance claim (Table~\ref{tab:invariance}). Per-$(N$-bucket,
 topology) cell counts are in Appendix~\ref{app:coverage}; some cells
 are thin due to convenience sampling, a limitation we discuss in
 \S\ref{sec:limitations}.
+
+\emph{Feasibility bound.} IMEM and DMEM are fixed at 512 entries per PE, so
+a configuration compiles only if no PE is assigned more instructions than fit.
+Writing $\asgn^{-1}(p)$ for the nodes on PE $p$, the binding requirement is
+$\max_p |\asgn^{-1}(p)| \le 512$ after refinement, which the S5 memory pass
+checks and rejects rather than truncating. This is not a hypothetical: $278$
+of the $7{,}200$ compilations were rejected this way, and they cluster at both
+ends of the $N/G$ range rather than at one. High $N/G$ fails because leaves
+pile onto too few PEs ($N/G = 64$ on \sv{large\_extreme\_1d} and
+\sv{vlarge\_extreme\_1d}, $120$ rejected configurations each). Low $N/G$ fails
+on the giants for the opposite reason: at $N/G = 2$ the per-PE instruction
+count is small but the \emph{receive-buffer} count is not, since a PE with few
+local nodes has many remote children to land ($10$ rejections on
+\sv{max\_mod\_fat}, $8$ on \sv{maxp\_mod\_fat}). A reader reproducing the
+suite should expect these rejections; they are a property of the 512-entry
+budget, not of the ABI.
 
 Leaf values are generated by \sv{make\_leaf\_val}
 (\sv{make\_leaf\_val} in \sv{sprs\_core.py}):
@@ -2206,14 +2318,37 @@ sharpest transition in the table ($3.28$ on $(6,8]$ falling to $1.91$ on
 $(8,32]$, a $42\%$ drop); above it the curve flattens again toward $1.37$.
 The location of the knee was fixed in advance by $\sv{gci\_gap} = 6$, a
 hardware constant, not fitted to these measurements --- so the agreement is a
-successful prediction rather than a description. We take this as evidence
+successful prediction rather than a description.
+
+We are careful about how much this shows. The bands are not a controlled
+experiment: topology mix, $G$, and the winning algorithm family all co-vary
+with $N/G$ across this suite, and any of them could independently produce a
+declining trend. The top band holds only two instances. What we can say is
+that a knee predicted in advance from a hardware constant appears where it was
+predicted, which is corroboration of the mechanism rather than isolation of
+it; separating the GCI term from the covariates would need instances that hold
+topology and $G$ fixed while sweeping $N/G$, which this suite was not designed
+to provide. We take this as evidence
 that the structural decomposition identifies the right terms, which is the
 most we can claim without the baseline of \S\ref{sec:method-nd}.
 
 Two secondary readings follow. First, the topology ordering in
-Table~\ref{tab:omegaratio} tracks bisection width as term~5 implies: linear
+Table~\ref{tab:omegaratio} orders with bisection width, but in the
+direction term~4 implies rather than the naive one: linear
 sits closest to the bound ($1.39$) and ring furthest ($4.48$), with the
-higher-bisection topologies in between. Second, no instance reaches $\Omega$
+higher-bisection topologies in between.
+
+The direction deserves a word, because it inverts the naive reading. Linear
+has the \emph{worst} bisection width of the six and yet the \emph{best}
+$\mathrm{cycles}/\Omega$; ring is also low-bisection and has the worst. The
+ratio is not a speed measure. $\Omega$ already prices the bisection
+constraint through $\mathrm{lb}_{\text{bis}}$, so a low-bisection topology is
+compared against an already-elevated bound and there is correspondingly less
+achievable slack between the compiler's schedule and that bound. What
+Table~\ref{tab:omegaratio} orders is therefore tightness-to-bound, not
+throughput, and the two need not agree. Ring is the outlier in both
+directions: its bound is elevated \emph{and} the compiler lands furthest from
+it, which is consistent with contention the bound does not model. Second, no instance reaches $\Omega$
 --- the best is $1.35\times$ --- which is expected, since $\Omega$ is a
 lower bound assembled from seven separately-derived constraints and is not
 claimed to be tight.
@@ -2256,8 +2391,8 @@ tree DP (Lukes, Frederickson) takes the low-$G$ cells where its polynomial
 complexity yields exact optima; graph partitioning (MLfm, RecBisect, DKway)
 takes balanced topologies whose bisection structure aligns with recursive
 partitioning; list scheduling (HEFT, CPOP) takes tall narrow trees where the
-critical path dominates. At S3, \sv{\TournTopMap} wins \TournTopMapShare{} of
-instances, which is itself informative: for most instances the assignment's
+critical path dominates. At S3, \sv{\TournTopMap} wins $24$ of the $39$
+HW-validated instances ($62\%$), which is itself informative: for most instances the assignment's
 GPU indexing already suits the physical topology, and non-trivial placement
 pays only where S2 produced a good partition under a bad labelling.
 
@@ -2270,7 +2405,7 @@ our implementation: exhaustive search is not a viable baseline here.
 The observation that matters for this paper is orthogonal to any of it. Every
 HW-validated configuration --- across every winner family, every assignment,
 every mapping --- produces the same 64-bit root on each instance. This
-corroborates Theorem~\ref{thm:orth} empirically: the compiler variation space,
+corroborates Proposition~\ref{thm:orth} empirically: the compiler variation space,
 however richly explored, is structurally incapable of affecting the bit
 result. The tournament is, from the ABI's point of view, $2{,}822$ attempts
 to break Claim~\ref{claim:1} that all failed.
@@ -2441,10 +2576,26 @@ yields the invariance property \emph{regardless} of which
 search-algorithm-winning schedule the compiler emits.
 
 Tree-construction algorithms for communication --- Huffman
-trees~\cite{jeannot2014treematch}, TreeMatch's topology-aware trees ---
+trees~\cite{huffman1952}, TreeMatch's topology-aware
+trees~\cite{jeannot2014treematch} ---
 give communication-cost-optimal trees at fixed $(G, \text{topology})$.
 Like the scheduling compilers, they do not yield cross-reshape
 invariance.
+
+Reproducible-accumulation work approaches the same problem from the
+arithmetic side rather than the interface side. Order-independent
+accumulators --- binned summation in ReproBLAS~\cite{demmel2013reproBLAS},
+long-accumulator schemes in ExBLAS~\cite{iakymchuk2016exblas}, and the
+parallel-reduction analysis of Collange
+et~al.~\cite{collange2015reproducible} --- make the \emph{result} independent
+of summation order by making the operator effectively associative. That is a
+strictly stronger guarantee than ours in one respect (it holds across
+implementations, not just across reshapes of one implementation) and weaker
+in another (it changes the arithmetic, so the answer is not the IEEE-754
+FP64 sum any particular order would produce). Our ABI leaves the arithmetic
+alone and constrains the order instead; the two are complementary, and a
+binned accumulator obeying the same operand-binding contract would inherit
+Claim~\ref{claim:1} unchanged.
 
 \subsection{In-Network Reduction}
 
@@ -2456,7 +2607,16 @@ invariance would require matching switch hierarchies across
 deployments, and no SHARP paper we know of makes this claim. Our
 fabric-level contribution is ideologically adjacent --- pin the order
 in hardware --- but the framing as a size-indexed ABI, and the
-orthogonality theorem that follows, are new.
+orthogonality proposition that follows, are new.
+
+We should be precise about what kind of novelty that is. It is framing
+novelty, not results novelty: SHARP already achieves per-deployment
+determinism, and we do not claim to reduce faster, more cheaply, or at larger
+scale than in-network aggregation does. What the ABI framing buys is a
+guarantee SHARP does not offer and, as far as we can tell, cannot offer
+without standardising switch hierarchies across deployments --- that the
+answer is stable when the deployment itself changes. Whether that is worth
+the cost is a deployment question our evaluation does not settle.
 
 \subsection{Deterministic Accelerators}
 
@@ -2511,6 +2671,37 @@ pipeline rankings preserved in about $80\%$ of cases. Absolute cycle figures
 should therefore be read as a lower envelope of the clocked-configuration
 machine, and we draw no conclusion from cycle differences smaller than that
 margin.
+
+\emph{L0c --- The FADD is combinational, and we report no timing closure.}
+\sv{fp64\_add} is unpipelined: mantissa alignment, a 54-bit add,
+leading-zero detection, normalisation and rounding all resolve within one
+cycle. That is a simulation convenience, and it is the right one for this
+paper --- a stateless, history-free adder is what makes the arithmetic a pure
+function of its operand pair, which Claim~\ref{claim:1} needs. It is not a
+realistic synthesis target. On the Artix-7 part our wrappers name, a
+combinational FP64 add would be a deep carry-and-shift path and would cap the
+achievable clock well below what a pipelined unit reaches; we have run no
+synthesis and report no $F_{\max}$, no worst negative slack, and no
+utilisation, so we make no frequency claim anywhere in this paper.
+
+Pipelining the adder would not disturb the results reported here, and it is
+worth being precise about why. Adding stages changes \emph{when} a
+\texttt{COMPUTE} releases its scoreboard bit, not \emph{which} operand pair it
+reads or what value the pair produces --- the operand binding is fixed by the
+ABI and the rounding is fixed by the FADD policy of \S\ref{sec:fadd}. Cycle
+counts would change; the 64-bit roots in Table~\ref{tab:invariance} would not.
+A reader should treat every cycle figure in this paper as belonging to the
+one-cycle-ALU model and not transfer it to a pipelined implementation.
+
+\emph{L0d --- One reduction per program.} Scoreboard bits are monotone
+within a program and are cleared only at \sv{program\_start}. The fabric
+therefore executes one reduction per reset, which is what our evaluation
+measures. A production workload running thousands of training steps would
+need either a reset between steps --- correct but wasteful, since it discards
+the loaded instruction image --- or epoch-tagged scoreboard bits that
+alternate per iteration. The latter is a small change and does not touch the
+ABI: operand binding is unaffected by how the presence bit is versioned. We
+have not implemented it, and we do not claim multi-pass throughput numbers.
 
 \emph{L1 --- Research-prototype silicon envelope.}
 \ifdefined\fpgadata
@@ -2635,17 +2826,32 @@ to future work.
 \section{ISA and Packet Format}\label{app:isa}
 % =====================================================================
 
-The 32-bit instruction word is:
+The instruction word is 64 bits:
 \[
   \underbrace{\mathtt{opcode}}_{\text{4 b}}
-  \,\|\, \underbrace{\mathtt{aux}}_{\text{8 b}}
-  \,\|\, \underbrace{\mathtt{dest}}_{\text{10 b}}
-  \,\|\, \underbrace{\mathtt{addr}}_{\text{10 b}}.
+  \,\|\, \underbrace{\mathtt{aux}}_{\text{4 b}}
+  \,\|\, \underbrace{\mathtt{dest}}_{\text{16 b}}
+  \,\|\, \underbrace{\mathtt{addr\_a}}_{\text{16 b}}
+  \,\|\, \underbrace{\mathtt{addr\_b}}_{\text{16 b}}
+  \,\|\, \underbrace{\mathtt{reserved}}_{\text{8 b}}.
 \]
-The \sv{opcode} field is Table~\ref{tab:isa}. The \sv{aux} field carries
-a \sv{link} selector for \texttt{SEND} (3 bits used at \sv{MAX\_PORTS}=8)
-or an \sv{alu\_op} selector for \texttt{COMPUTE} (1 bit used; the rest
-reserved). The \sv{dest} and \sv{addr} fields are DMEM addresses (PE-local).
+The \sv{opcode} field is Table~\ref{tab:isa}. Two source fields are
+required: \texttt{COMPUTE} reads $\texttt{DMEM[addr\_a]}$ and
+$\texttt{DMEM[addr\_b]}$, which is the operand pair the ABI binds. For
+\texttt{SEND}, \sv{dest} is the \emph{destination-side} DMEM address
+(\texttt{target\_addr} in the packet), \sv{addr\_a} is the local source, and
+\sv{addr\_b} carries the destination PE identifier.
+
+The \sv{aux} field is four bits: $\sv{aux}[3{:}1]$ selects the ALU operation
+and $\sv{aux}[0]$ is a legacy link hint. Egress port selection is \emph{not}
+an instruction field --- a single bit could not address the eight ports
+\sv{MAX\_PORTS} permits. The port is resolved in hardware by the emitting
+router's $\texttt{route\_table}[\sv{dest\_gpu}]$ lookup, which is what makes
+topology a configuration input rather than a property of the emitted code.
+
+This 64-bit encoding is what Table~\ref{tab:resource} costs
+($512 \times 64$ per PE for IMEM) and what the companion document
+specifies field-for-field.
 
 The 96-bit packet format is Fig.~\ref{fig:packet}. The
 \sv{dest\_node\_id} field is cluster-wide at 16 bits, supporting
@@ -2724,7 +2930,7 @@ every leaf to its own PE; \texttt{SEND}s fan leaves to internal nodes;
 \texttt{SEND}s fan internal-node sub-roots to the root. Operand bindings
 at internal \texttt{COMP}s are identical by construction: the
 \sv{tree.children(v)} function is topology-agnostic.
-\emph{Root result:} $10.0$ (the same 64 bits, by Theorem~\ref{thm:orth}).
+\emph{Root result:} $10.0$ (the same 64 bits, by Proposition~\ref{thm:orth}).
 
 What changes between A and B: (i) the number and identity of the PEs;
 (ii) the number of \texttt{SEND}s; (iii) the cycle count; (iv) which

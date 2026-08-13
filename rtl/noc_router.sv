@@ -10,7 +10,10 @@
 //
 // Virtual Channel Design:
 //   - NUM_VCS input FIFOs per port (default 2)
-//   - VC assignment: packet bit [63] selects VC (software-controlled)
+//   - VC assignment: packet bit [64] selects VC (software-controlled).
+//     This is the low bit of the reserved header field, ABOVE the 64-bit
+//     payload [63:0] -- deliberately NOT payload bit 63, which is the FP64
+//     sign bit. VC choice must not depend on the transported value.
 //     This allows the compiler to assign VCs for deadlock-free routing.
 //   - Arbitration: two-level — per-VC round-robin, then per-output-port RR
 //   - Output: single egress FIFO per port (VCs only on input side)
@@ -72,7 +75,7 @@ module noc_router #(
     // Stage 1: Input Buffers — per-port, per-VC FIFOs
     //
     // Each port has NUM_VCS FIFOs. Incoming packets are steered to a VC
-    // based on packet bit [63] (allows software VC assignment).
+    // based on packet header bit [64] (allows software VC assignment).
     // =========================================================================
     logic [95:0]  ibuf_rdata  [0:NUM_PORTS-1][0:NUM_VCS-1];
     logic         ibuf_rrdy   [0:NUM_PORTS-1][0:NUM_VCS-1];
@@ -100,7 +103,7 @@ module noc_router #(
     endgenerate
 
     // VC steering: direct incoming packets to correct VC FIFO
-    // VC selection uses bit [63] of payload (software-configurable)
+    // VC selection uses header bit [64], not payload (software-configurable)
     always_comb begin
         for (int p = 0; p < NUM_PORTS; p++) begin
             for (int v = 0; v < NUM_VCS; v++) begin
@@ -109,7 +112,9 @@ module noc_router #(
                     ibuf_wen[p][v] = rx_valid[p] && ibuf_wrdy[p][v];
                 end else begin
                     // Use bit [64] for VC 0/1 selection (2 VCs)
-                    // For >2 VCs, use bits [64 -: VC_W]
+                    // For >2 VCs this reads [64 -: VC_W], which extends DOWN
+                    // into payload bit 63 at NUM_VCS=4. Move the field before
+                    // raising NUM_VCS, or VC choice becomes value-dependent.
                     if (v[VC_W-1:0] == rx_data[p][64 -: VC_W])
                         ibuf_wen[p][v] = rx_valid[p] && ibuf_wrdy[p][v];
                     else
