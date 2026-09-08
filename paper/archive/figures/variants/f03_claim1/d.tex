@@ -1,0 +1,83 @@
+% f03_claim1 variant d -- the negative control: a compliant reduction beside an
+% order-violating one, at the same N, on the same bytes.
+% Data: computed from src/sprs_core.py's own leaf generator (make_leaf_val,
+%       alu_op=0b111) over the canonical heap-indexed tree. The canonical root
+%       reproduces tables/invariance.tex row N=128 EXACTLY (0x415F7E8FF9581062),
+%       which validates the model; left-to-right sequential summation over the
+%       identical leaves then yields 0x415F7E8FF9581063 -- one ulp, one hex digit.
+% Strategy: variants a-c argue that the root is INVARIANT across fabrics. This one
+%       argues the converse half, which is what makes the claim non-vacuous: an
+%       order that is not the canonical one gives a DIFFERENT answer. Without this
+%       the invariance result could be read as measuring nothing.
+%       (Both roots were re-derived independently before publication: the
+%       canonical heap-indexed evaluation of the N=128 leaf vector reproduces
+%       0x415F7E8FF9581062 exactly, and left-to-right summation of the same
+%       leaves gives 0x415F7E8FF9581063.)
+%       The leaf row is schematic -- eight leaves are drawn, while both roots
+%       are computed over the full N=128 leaf vector.
+% Colour: the compliant canonical tree is spBlue and its published root is the
+% confirmed invariant (spGreen); the order-violating left-to-right chain and its
+% one-ulp-different root are spVerm. Tree shape (log depth against linear chain)
+% and the differing final hex digit carry the contrast without colour.
+% Target: IEEE double column, 7.16in = 18.2cm. The body is drawn 9.2cm wide and
+%       scaled 1.7x with transform shape, so it occupies 15.6cm.
+\begin{tikzpicture}[
+  scale=1.7, transform shape,
+  font=\footnotesize,
+  lf/.style={draw=spSky!80!spInk, rounded corners=1pt, minimum width=4.4mm,
+             minimum height=3.6mm, inner sep=0pt, font=\tiny, fill=spSkyF, text=spInk},
+  op/.style={draw=spBlue, circle, inner sep=0pt, minimum size=3.4mm, font=\tiny,
+             fill=spBlueF, text=spInk},
+  opv/.style={draw=spVerm, circle, inner sep=0pt, minimum size=3.4mm, font=\tiny,
+              fill=spVermF, text=spInk},
+  hdr/.style={font=\scriptsize\bfseries},
+  arw/.style={-{Stealth[length=1.5mm]}, spBlue!75, thin},
+  arv/.style={-{Stealth[length=1.5mm]}, spVerm!80, thin, densely dashed},
+]
+% ---------------- compliant: canonical tree ----------------
+\node[hdr, anchor=west, text=spBlue] at (0,2.35) {compliant --- $\FBT(N)$};
+\node[op] (r1) at (1.95,1.62) {$+$};
+\node[op] (l1) at (0.85,1.02) {$+$};
+\node[op] (l2) at (3.05,1.02) {$+$};
+\node[op] (m1) at (0.30,0.42) {$+$};
+\node[op] (m2) at (1.40,0.42) {$+$};
+\node[op] (m3) at (2.50,0.42) {$+$};
+\node[op] (m4) at (3.60,0.42) {$+$};
+\foreach \i/\x in {0/0.05, 1/0.55, 2/1.15, 3/1.65, 4/2.25, 5/2.75, 6/3.35, 7/3.85}
+  \node[lf] (f\i) at (\x,-0.18) {$L_{\i}$};
+\foreach \a/\b in {f0/m1,f1/m1,f2/m2,f3/m2,f4/m3,f5/m3,f6/m4,f7/m4,
+                   m1/l1,m2/l1,m3/l2,m4/l2,l1/r1,l2/r1} \draw[arw] (\a) -- (\b);
+\node[font=\tiny, anchor=west, text=spBlue] at (2.25,1.90) {depth $\lceil\log_2 N\rceil$};
+
+% ---------------- violating: left-to-right chain ----------------
+\node[hdr, anchor=west, text=spVerm] at (4.9,2.35) {order-violating --- left to right};
+\foreach \i/\x in {0/5.05, 1/5.55, 2/6.05, 3/6.55, 4/7.05, 5/7.55, 6/8.05, 7/8.55}
+  \node[lf] (g\i) at (\x,-0.18) {$L_{\i}$};
+\foreach \i/\x in {1/5.30, 2/5.80, 3/6.30, 4/6.80, 5/7.30, 6/7.80, 7/8.30}
+  \node[opv] (c\i) at (\x,{0.30+0.26*\i}) {$+$};
+\draw[arv] (g0) -- (c1); \draw[arv] (g1) -- (c1);
+\foreach \i [evaluate=\i as \j using int(\i+1)] in {1,...,6} {
+  \draw[arv] (c\i) -- (c\j); \draw[arv] (g\j) -- (c\j); }
+\node[font=\tiny, anchor=north west, text=spVerm] at (4.95,2.10) {depth $N-1$};
+
+% ---------------- the roots ----------------
+\node[anchor=north west, font=\tiny\ttfamily, inner sep=1.5pt, text=spGreen]
+  at (-0.05,-0.62) {0x415F7E8FF958106\textbf{2}};
+\node[anchor=north west, font=\tiny\ttfamily, inner sep=1.5pt, text=spVerm]
+  at (4.95,-0.62) {0x415F7E8FF958106\textbf{3}};
+\node[anchor=north west, font=\tiny, text=spGreen, inner sep=1.5pt] at (-0.05,-1.02)
+  {published root, $N{=}128$};
+\node[anchor=north west, font=\tiny, text=spVerm, inner sep=1.5pt] at (4.95,-1.02)
+  {same leaves, one ulp apart};
+\draw[spSky!80!spInk, thin, <->] (4.15,-0.80) -- (4.90,-0.80);
+\node[font=\tiny, anchor=south, inner sep=1.5pt, text=spSky!60!spInk] at (4.52,-0.66)
+  {identical $L$};
+% ---------------- what the contrast buys ----------------
+\node[anchor=north, align=center, font=\tiny, text width=9.0cm, text=spInk] at (4.3,-1.42)
+  {The left root is the one every fabric returns: over the whole campaign
+   (\WallTBs{} settled simulations, \InvNonSettling{} non-settling) no
+   configuration produced a finite root differing from $\Rcan(N,L)$, and at
+   $N{=}128$ alone it survives six $(G,\text{topology})$ points over 371
+   passing hardware configurations. The right root shows what that would have
+   looked like had the order not been fixed.};
+\end{tikzpicture}

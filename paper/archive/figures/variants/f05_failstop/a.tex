@@ -1,0 +1,85 @@
+% f05_failstop variant a -- the PE pipeline state machine, with the three
+% detectors as guarded transitions.
+% Data: rtl/btree_fsm_fast.sv -- the pipe_state_t enum (P_IDLE/P_RUN/P_DRAIN/
+%       P_DONE/P_ERROR, l.88-94), the P_RUN and P_DRAIN error checks
+%       (l.803-856: invalid_opcode, stall_timer >= TIMEOUT_MAX,
+%       watchdog >= WATCHDOG_MAX), invalid_opcode = ex_opcode > 4'h3 (l.758),
+%       the watchdog reset on any_retired (l.783), scoreboard_hazard in DE
+%       (l.514-521), and error_state <= 4'd3 (EX stage) on every trap.
+%       TIMEOUT_MAX = 10,000 is the RTL default (l.40); WATCHDOG_MAX is
+%       \WatchdogMax. Property 2 in main.tex supplies the converse bound.
+% Strategy: the mechanism as the hardware actually implements it -- one state
+% machine, so a reader can see that P_DONE and P_ERROR are the only terminal
+% states and that every path to P_DONE passes the presence gate. Variant b
+% follows a single packet, c shows two runs in time, d tabulates fault classes.
+% Colour: the healthy state path is spBlue; \textsf{F-sb-gate}, the presence
+% gate that holds a COMPUTE, is a named invariant and so is spGreen, as it is in
+% f04 variant a, and P_DONE -- the state in which a correct root exists -- is
+% spGreen too. The three detectors and the whole path into P_ERROR are spVerm,
+% drawn on the heaviest rules in the figure so the halt is the first thing the
+% eye lands on. The converse bound at the foot is the one caution in the
+% drawing, spAmber, matching the marked exceptions in f04 variant b. Rule
+% weight (terminal states heavy, transient light) and the dashed caveat frame
+% carry the same three-way split with the colour stripped.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  st/.style={draw=spBlue, line width=0.4pt, rounded corners=3pt,
+             minimum width=13mm, minimum height=6mm, font=\scriptsize,
+             inner sep=1pt, fill=spBlueF, text=spInk},
+  term/.style={st, draw=spGreen, fill=spGreen!22, line width=0.8pt},
+  err/.style={st, draw=spVerm, fill=spVerm!22, line width=1.0pt},
+  det/.style={draw=spVerm, line width=0.5pt, rounded corners=2pt,
+              fill=white, font=\tiny, align=left, inner sep=2.5pt, text=spInk},
+  ar/.style={-{Latex[length=1.6mm,width=1.2mm]}, draw=spBlue, line width=0.4pt},
+  arG/.style={ar, draw=spGreen},
+  arV/.style={-{Latex[length=1.8mm,width=1.35mm]}, draw=spVerm, line width=0.6pt},
+  lbl/.style={font=\tiny, inner sep=1pt, text=spInk},
+]
+% ---- states -----------------------------------------------------------
+\node[st]   (IDLE)  at (0.10,0)  {\sv{P\_IDLE}};
+\node[st]   (RUN)   at (2.35,0)  {\sv{P\_RUN}};
+\node[st]   (DRAIN) at (4.65,0)  {\sv{P\_DRAIN}};
+\node[term] (DONE)  at (7.15,0)  {\sv{P\_DONE}};
+\node[err]  (ERR)   at (3.50,-2.80) {\sv{P\_ERROR}};
+
+% ---- normal path ------------------------------------------------------
+\draw[ar] (IDLE) -- node[lbl, above, pos=0.5]{\sv{start}} (RUN);
+\draw[ar] (RUN)  -- node[lbl, above, align=center, yshift=0.3mm, inner sep=0.5pt]{\sv{pc\_at\_end}}
+                    node[lbl, below, align=center, pos=0.42, yshift=-1.3mm, inner sep=0.5pt]{\&\ \sv{!if\_valid}} (DRAIN);
+\draw[arG] (DRAIN)-- node[lbl, above, pos=0.45]{\sv{all\_retired}} (DONE);
+\node[font=\tiny, align=right, anchor=north east, text=spGreen] at (8.15,-0.42)
+      {\sv{done}$=1$; the root is\\the last \sv{COMPUTE} result};
+
+% ---- the presence gate: a stall, not a transition ---------------------
+\draw[arG, rounded corners=2pt]
+  (RUN.north) ++(-0.30,0) -- ++(0,0.42) -- ++(0.60,0) -- ($(RUN.north)+(0.30,0)$);
+\node[font=\tiny, align=center, anchor=south, text=spInk] at (2.35,0.80)
+  {\textcolor{spGreen}{\textsf{F-sb-gate}}: \textsf{DE} holds \sv{COMPUTE} while\\
+   \sv{scoreboard[a]} or \sv{scoreboard[b]} is $0$;\\ nothing retires, so the watchdog runs};
+
+% ---- detector block ---------------------------------------------------
+\node[det] (DET) at (3.50,-1.50)
+  {three detectors, live in \sv{P\_RUN} \emph{and} \sv{P\_DRAIN}:\\[1pt]
+   \textsf{F-watchdog}\ \ \sv{watchdog} $\geq$ \WatchdogMax{} cycles with no retire\\
+   \textsf{F-watchdog}\ \ \sv{stall\_timer} $\geq 10{,}000$ cycles of \textsf{EX} stall\\
+   \phantom{\textsf{F-watchdog}}\ \ \sv{ex\_opcode} $>$ \sv{4'h3} --- invalid, traps at once};
+\draw[arV] (RUN.south)   -- ++(0,-0.55) -| (DET.west);
+\draw[arV] (DRAIN.south) -- ++(0,-0.55) -| (DET.east);
+\draw[arV, line width=0.9pt] (DET) -- node[lbl, right, align=left, xshift=0.5mm]
+      {latch \sv{error\_pc},\\\sv{error\_state}$=$\sv{4'd3}} (ERR);
+
+% ---- terminal note ----------------------------------------------------
+\node[font=\tiny, anchor=north, align=center, text=spVerm] at (3.50,-3.18)
+  {terminal: \sv{all\_done} is never asserted and no root is produced};
+
+% ---- the converse bound ----------------------------------------------
+\node[draw=spAmber, dashed, line width=0.4pt, rounded corners=2pt,
+      fill=spAmberF, text=spInk,
+      font=\tiny, align=left, inner sep=2.5pt, anchor=north west]
+  at (-0.45,-3.58)
+  {\emph{The gate checks presence, not identity.} A \sv{COMPUTE} whose two\\
+   bits are set executes whatever the slots contain: a corrupted leaf, an\\
+   operand misbound to a live slot, or an over-budget image aliasing two\\
+   addresses onto one slot reaches \sv{P\_DONE} with a wrong root. Those are\\
+   discharged by the compiler post-conditions and by the oracle, not here.};
+\end{tikzpicture}

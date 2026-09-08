@@ -1,0 +1,35 @@
+% f10_selection variant b -- estimator comparison at the chosen k=4.
+% Data: experiments/w_final/W9_selection/RESULT.json, RESULT_ksweep.json.
+% Strategy: make the INVERSION the headline -- conditioning the choice on topology
+% is WORSE than a topology-agnostic portfolio, which is the counter-intuitive
+% result and the one a reader should leave with. Intervals are 95% bootstrap CIs
+% where the bootstrap was run; estimators without a band have none computed.
+\begin{tikzpicture}
+\begin{axis}[
+  width=8.6cm, height=5.0cm,
+  xlabel={mean held-out regret \ \ (1.000 $=$ per-instance optimal)},
+  xmin=0.995, xmax=1.095,
+  ytick={1,2,3,4,5},
+  yticklabels={oracle, portfolio $k{=}4$ (LOO), portfolio $k{=}4$ (unseen topo.),
+               conditioned on topology, best single algorithm},
+  ymin=0.4, ymax=5.6,
+  yticklabel style={font=\scriptsize, align=right, text=spInk},
+  xticklabel style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  grid=major, grid style={spGrid, very thin},
+  clip=false,
+]
+\addplot[only marks, mark=o, mark size=2.2pt, line width=1.0pt, spGreen] coordinates {(1.0000,5.0)};
+\addplot[spBlue, line width=0.9pt, mark=|, mark size=3pt] coordinates {(1.0000,4) (1.0076,4)};
+\addplot[only marks, mark=*, mark size=2pt, spBlue] coordinates {(1.0025,4)};
+\addplot[spVerm, line width=1.4pt, mark=|, mark size=4pt] coordinates {(1.0025,3) (1.0885,3)};
+\addplot[only marks, mark=square*, mark size=2.6pt, spVerm] coordinates {(1.0391,3)};
+\addplot[only marks, mark=triangle*, mark size=2.8pt, spAmber] coordinates {(1.0488,2)};
+\addplot[only marks, mark=diamond*, mark size=2.6pt, spMute] coordinates {(1.0797,1)};
+\node[font=\tiny, anchor=west, text=spAmber] at (axis cs:1.0505,2)
+  {worse than ignoring topology};
+\draw[spMute, dashed, thin] (axis cs:1.0025,0.4) -- (axis cs:1.0025,4.6);
+\node[font=\tiny, anchor=north, text=spMute, inner sep=2pt]
+  at (axis cs:1.0025,0.55) {bars: 95\% bootstrap CI};
+\end{axis}
+\end{tikzpicture}

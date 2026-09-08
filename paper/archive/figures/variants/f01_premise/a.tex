@@ -1,0 +1,107 @@
+% f01_premise variant a -- two reduction trees over the SAME leaf vector.
+% Data: experiments/w_final/W1/v003/raw/A_gloo_G{2,4}_fp64.json, case
+%       N=1000, M=1024, fp64, profile=signed; the 64-bit result is the leading
+%       64 bits of the SHA-256 the harness records over the reduced vector
+%       ("hash" field). Scope wording from \GpuHardware/\GpuStack and the
+%       scope paragraph of sec:results-premise: above G=2 the reshape sweep is
+%       the gloo/CPU backend, because NCCL needs one rank per device.
+%       The count of cross-rank additions per element is G-1, exact; the
+%       leaf row is schematic (8 boxes stand for the N=1000 leaves).
+% Strategy: the mechanism, at the smallest possible scale -- one leaf vector,
+% two partitions, two association orders, two different 64-bit results printed
+% side by side with the first divergent nibble boxed. b argues by count, c by
+% dataflow, d by magnitude; this one shows the object itself.
+% Colour: the G=2 tree is the reference order (spBlue); the G=4 tree is the
+% reshaped, divergent order (spVerm). The shared leaf row is spGreen -- it is
+% the one thing confirmed identical. Shape still carries the encoding: the two
+% trees differ in depth and the two digests differ in glyphs, so greyscale
+% loses nothing.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  lf/.style={draw=spGreen, fill=spGreenF, line width=0.35pt,
+             minimum width=0.30cm, minimum height=0.26cm, inner sep=0pt},
+  ndB/.style={draw=spBlue, fill=white, circle, line width=0.4pt,
+              minimum size=0.30cm, inner sep=0pt, font=\tiny},
+  rtB/.style={draw=spBlue, fill=spBlueF, circle, line width=0.6pt,
+              minimum size=0.36cm, inner sep=0pt, font=\tiny},
+  ndV/.style={draw=spVerm, fill=white, circle, line width=0.4pt,
+              minimum size=0.30cm, inner sep=0pt, font=\tiny},
+  rtV/.style={draw=spVerm, fill=spVermF, circle, line width=0.6pt,
+              minimum size=0.36cm, inner sep=0pt, font=\tiny},
+  edB/.style={draw=spBlue, line width=0.35pt},
+  edV/.style={draw=spVerm, line width=0.35pt, densely dashed},
+  cpt/.style={font=\tiny, align=center, inner sep=1pt, text=spInk},
+  hx/.style={font=\tiny\ttfamily, inner sep=0.5pt},
+]
+% ---------------- panel grounds --------------------------------------------
+\begin{scope}[on background layer]
+  \fill[spBlueF, rounded corners=2pt] (0.02,0.16) rectangle (3.62,2.20);
+  \fill[spVermF, rounded corners=2pt] (5.02,0.04) rectangle (8.58,2.20);
+\end{scope}
+% ---------------- shared leaf vector caption -------------------------------
+\node[cpt, anchor=south, text=spGreen] at (4.3,2.42)
+  {identical input bytes: leaf $i$'s value is a pure function of $i$};
+\draw[spGreen, line width=0.3pt] (0.05,2.36) -- (8.55,2.36);
+
+% ================= LEFT PANEL: G = 2 =======================================
+\node[cpt, anchor=north, text=spBlue] at (1.80,2.30) {$G{=}2$ \ (NCCL and gloo agree here)};
+\foreach \i in {0,...,7}{
+  \pgfmathsetmacro{\x}{0.30+\i*0.42}
+  \node[lf] at (\x,1.70) {};
+}
+% partition brackets
+\draw[spBlue, line width=0.35pt] (0.13,1.51) -- (0.13,1.44) -- (1.71,1.44) -- (1.71,1.51);
+\draw[spBlue, line width=0.35pt] (1.81,1.51) -- (1.81,1.44) -- (3.39,1.44) -- (3.39,1.51);
+\node[ndB] (LA) at (0.92,1.14) {};
+\node[ndB] (LB) at (2.60,1.14) {};
+\draw[edB] (0.92,1.44) -- (LA);
+\draw[edB] (2.60,1.44) -- (LB);
+\node[rtB] (LR) at (1.76,0.62) {};
+\draw[edB] (LA) -- (LR);
+\draw[edB] (LB) -- (LR);
+\node[cpt, anchor=north, text=spBlue] at (1.76,0.42) {1 cross-rank add / elem};
+
+% ================= RIGHT PANEL: G = 4 ======================================
+\node[cpt, anchor=north, text=spVerm] at (6.80,2.30) {$G{=}4$ \ (gloo/CPU backend)};
+\foreach \i in {0,...,7}{
+  \pgfmathsetmacro{\x}{5.30+\i*0.42}
+  \node[lf] at (\x,1.70) {};
+}
+\foreach \g in {0,1,2,3}{
+  \pgfmathsetmacro{\xa}{5.13+\g*0.84}
+  \pgfmathsetmacro{\xb}{5.13+\g*0.84+0.71}
+  \draw[spVerm, line width=0.35pt] (\xa,1.51) -- (\xa,1.44) -- (\xb,1.44) -- (\xb,1.51);
+}
+\node[ndV] (RA) at (5.51,1.14) {};
+\node[ndV] (RB) at (6.35,1.14) {};
+\node[ndV] (RC) at (7.19,1.14) {};
+\node[ndV] (RD) at (8.03,1.14) {};
+\draw[edV] (5.51,1.44) -- (RA);
+\draw[edV] (6.35,1.44) -- (RB);
+\draw[edV] (7.19,1.44) -- (RC);
+\draw[edV] (8.03,1.44) -- (RD);
+\node[ndV] (RE) at (5.93,0.86) {};
+\node[ndV] (RF) at (7.61,0.86) {};
+\draw[edV] (RA) -- (RE);
+\draw[edV] (RB) -- (RE);
+\draw[edV] (RC) -- (RF);
+\draw[edV] (RD) -- (RF);
+\node[rtV] (RR) at (6.77,0.50) {};
+\draw[edV] (RE) -- (RR);
+\draw[edV] (RF) -- (RR);
+\node[cpt, anchor=north, text=spVerm] at (6.77,0.30) {3 cross-rank adds / elem};
+
+% ================= the two results =========================================
+\draw[spMute, line width=0.25pt] (0.05,-0.02) -- (8.55,-0.02);
+\node[cpt, anchor=north east, text=spMute] at (1.75,-0.09) {64-bit result:};
+\node[hx, anchor=north west, text=spInk] at (1.80,-0.08)
+  {{\setlength{\fboxsep}{0.4pt}\colorbox{spBlueF}{\textcolor{spBlue}{\textbf{7}}}}D8FB3A631AEFF2C};
+\node[hx, anchor=north west, text=spInk] at (1.80,-0.38)
+  {{\setlength{\fboxsep}{0.4pt}\colorbox{spVermF}{\textcolor{spVerm}{\textbf{4}}}}9E7AC0CD48A1D2F};
+\node[cpt, anchor=north west, text=spBlue] at (4.05,-0.08) {$\leftarrow G{=}2$};
+\node[cpt, anchor=north west, text=spVerm] at (4.05,-0.38) {$\leftarrow G{=}4$};
+\node[cpt, anchor=north, text=spInk] at (4.30,-0.70)
+  {they diverge in the leading nibble; all \GpuWorldSizes{} rank counts
+   give \GpuRootsDistinct{} distinct results};
+\end{tikzpicture}

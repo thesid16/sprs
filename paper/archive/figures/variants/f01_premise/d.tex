@@ -1,0 +1,68 @@
+% f01_premise variant d -- how FAR apart the results are, not merely that they differ.
+% Data: computed from experiments/w_final/W1/v003/raw/A_gloo_G*_fp64.json,
+%       field "bits_all" (the full 1,024-element result vector as raw 64-bit
+%       words), case N=1000, M=1024, fp64. Each point is the maximum ulp
+%       distance, over the 1,024 elements, between the result at that rank
+%       count and the single-process (G=1) result in the same file. The dashed
+%       reference is \GpuUlpMax{} ulp, the maximum PAIRWISE spread over all
+%       configurations reported in experiments/w_final/W1/RESULT.json
+%       (magnitude, N1000_M1024_fp64_signed) -- a different statistic, so it is
+%       drawn as a reference and not as a curve maximum.
+%       Scope from sec:results-premise: above G=2 this is the gloo/CPU backend.
+% Strategy: argue MAGNITUDE and its dependence on the value profile. The three
+% profiles are the same code and the same shape sweep; only the data change, and
+% the signed profile -- where cancellation makes the Higham bound loose -- sits
+% three orders of magnitude above the positive one. a, b and c argue existence;
+% only this variant says how much.
+% Colour: the signed profile is the costly, worst case the figure is about
+% (spVerm); the two benign profiles are ordinary series (spBlue, spPurple); the
+% pairwise-spread reference is an annotation, not data (spMute); the backend
+% scope band is a caveat (spAmber tint). Marker shape and dash pattern are
+% unchanged, so the three curves remain separable in greyscale.
+% Target: IEEE single column, 3.5in = 8.9cm.
+\begin{tikzpicture}
+\begin{axis}[
+  width=8.6cm, height=5.8cm,
+  xmode=log, log basis x=2, ymode=log,
+  xlabel={rank count $G$ \ (identical input bytes at every point)},
+  ylabel={max ulp distance from the $G{=}1$ result},
+  xmin=1.7, xmax=76, ymin=1, ymax=60000,
+  xtick={2,4,8,16,32,64},
+  xticklabels={2,4,8,16,32,64},
+  ytick={1,10,100,1000,10000},
+  yticklabels={1,10,100,{1{,}000},{10{,}000}},
+  tick label style={font=\scriptsize}, label style={font=\scriptsize},
+  grid=major, grid style={spGrid, very thin},
+  axis line style={spMute}, tick style={spMute},
+  every axis label/.append style={text=spInk},
+  every tick label/.append style={text=spInk},
+  legend style={font=\tiny, at={(0.985,0.40)}, anchor=east,
+                draw=spGrid, fill=white, fill opacity=0.93, text opacity=1,
+                row sep=0.5pt, inner sep=2pt},
+  every axis plot/.append style={thick},
+  clip=false,
+]
+% ---- scope band: everything right of G=2 is the gloo/CPU backend ----------
+\addplot[draw=none, fill=spAmberF, fill opacity=0.5, forget plot] coordinates
+  {(2.4,1) (76,1) (76,60000) (2.4,60000)} \closedcycle;
+\node[font=\tiny, text=spAmber!75!spInk, anchor=north east, align=right]
+  at (axis cs:72,45000) {gloo / CPU backend above $G{=}2$};
+% ---- reference: max pairwise spread over all configurations ---------------
+\addplot[spMute, dotted, thick, forget plot] coordinates {(1.7,5120) (76,5120)};
+\node[font=\tiny, text=spMute, anchor=south west] at (axis cs:1.85,6200)
+  {\GpuUlpMax{}~ulp: max pairwise spread over all configurations};
+% ---- the three value profiles --------------------------------------------
+\addplot[spVerm, mark=*, mark size=1.6pt, line width=1.0pt] coordinates {
+  (2,2048) (3,3072) (4,1536) (5,1536) (6,4096) (7,3840) (8,3584)
+  (12,2048) (16,4096) (24,2816) (32,2048) (48,1152) (64,2304)};
+\addlegendentry{signed values (cancellation)}
+\addplot[spBlue, densely dashed, mark=square*, mark size=1.5pt, line width=1.0pt] coordinates {
+  (2,3) (3,3) (4,2) (5,3) (6,3) (7,3) (8,3)
+  (12,3) (16,4) (24,4) (32,4) (48,5) (64,5)};
+\addlegendentry{wide dynamic range}
+\addplot[spPurple!85!spInk, dotted, mark=triangle*, mark size=1.9pt, line width=1.0pt] coordinates {
+  (2,2) (3,2) (4,2) (5,2) (6,2) (7,2) (8,3)
+  (12,3) (16,3) (24,4) (32,4) (48,5) (64,5)};
+\addlegendentry{positive values only}
+\end{axis}
+\end{tikzpicture}

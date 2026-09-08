@@ -1,0 +1,85 @@
+% f05_failstop variant d -- fault class against the mechanism that catches it.
+% Data: the assumption list in main.tex (App. A) for the eleven named
+%       invariants; Property 2 and its converse bound for the row split;
+%       rtl/btree_fsm_fast.sv for the three fabric mechanisms (DE presence
+%       gate l.514-521; watchdog l.775-785 and its trap l.823-827;
+%       invalid_opcode l.758). The measured column is the injected-fault
+%       campaign: \MutAddrStall{} of \MutAddrSub{} address substitutions
+%       fail-stopped with P_ERROR, at most \MutLiveSlotMax{} reached a live
+%       slot, and all \MutLeaf{} leaf corruptions terminated normally and were
+%       caught by the value comparison (\claimref macros, data/claim_macros.tex).
+% Strategy: coverage, and its boundary. a, b and c all show the halting
+% mechanism; only this one shows the complement -- which fault classes the
+% fabric does NOT catch and what catches them instead -- and pins each block
+% to a measured count rather than to an argument.
+% Colour: the upper block is the P_ERROR outcome, so it is spVerm throughout --
+% band, heading, column heads and marks -- exactly as the halt is drawn in
+% variants a, b and c. The lower block is the converse bound, the caution the
+% fabric cannot see, so it is spAmber, matching the marked exceptions in f04
+% variant b. Nothing here is spGreen: no row in this figure is a correct
+% retirement. Marker SHAPE carries the same split without colour -- the fabric
+% mechanisms take a filled circle, the off-machine column a filled square --
+% and the two blocks stay separated by the rule and by their headings.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  hdr/.style={font=\tiny, rotate=90, anchor=west, inner sep=1pt, text=spInk},
+  rw/.style={font=\tiny, anchor=west, inner sep=1pt, text=spInk},
+  gl/.style={draw=spMute!45, line width=0.3pt},
+  rl/.style={draw=spMute, line width=0.35pt},
+]
+% column centres for the four mechanisms
+\def\ca{5.30} \def\cb{5.92} \def\cc{6.54} \def\cd{7.60}
+% ---- headers ----------------------------------------------------------
+\node[hdr, text=spVerm] at (\ca,-0.10) {presence gate \textsf{F-sb-gate}};
+\node[hdr, text=spVerm] at (\cb,-0.10) {watchdog \textsf{F-watchdog}};
+\node[hdr, text=spVerm] at (\cc,-0.10) {opcode trap};
+\node[hdr, text=spAmber!80!spInk] at (\cd,-0.10) {\emph{outside} the fabric};
+\draw[rl] (0.05,-0.22) -- (8.05,-0.22);
+
+% ---- block 1: the fabric halts ---------------------------------------
+\fill[spVermF] (0.05,-0.30) rectangle (8.05,-2.48);
+\node[rw, font=\tiny\bfseries, text=spVerm] at (0.10,-0.50)
+  {the run HALTS --- \sv{P\_ERROR}, no root, no \sv{all\_done}};
+\foreach \y/\t in {
+  -0.86/{misrouted packet dropped \ \textsf{F-misroute}},
+  -1.16/{lost credit, or NI FIFO overflow \ \textsf{F-credit}},
+  -1.46/{unreachable destination \ \textsf{C-route}},
+  -1.76/{operand bound to an unwritten slot \ \textsf{C-bind}},
+  -2.06/{deadlock on a cyclic CDG}}
+  {\node[rw] at (0.20,\y) {\t};}
+\foreach \y in {-0.86,-1.16,-1.46,-1.76,-2.06}{
+  \fill[spVerm] (\ca,\y) circle (1.5pt);
+  \fill[spVerm] (\cb,\y) circle (1.5pt);}
+\node[rw] at (0.20,-2.36) {invalid opcode \ (\sv{ex\_opcode} $>$ \sv{4'h3})};
+\fill[spVerm] (\cc,-2.36) circle (1.5pt);
+\draw[rl] (0.05,-2.54) -- (8.05,-2.54);
+
+% ---- block 2: not detected by the fabric ------------------------------
+\fill[spAmberF] (0.05,-2.60) rectangle (8.05,-4.16);
+\node[rw, font=\tiny\bfseries, text=spAmber!80!spInk] at (0.10,-2.74)
+  {the run TERMINATES NORMALLY with a wrong root};
+\foreach \y/\t in {
+  -3.10/{corrupted leaf value \ \textsf{C-leaf}},
+  -3.40/{operand misbound to a \emph{live} slot \ \textsf{C-bind}},
+  -3.70/{over-budget image: two addresses alias \ \textsf{C-mem}},
+  -4.00/{violation of a safety \textsf{F-*} invariant}}
+  {\node[rw] at (0.20,\y) {\t};
+   \fill[spAmber!85!spInk]
+     (\cd-0.055,\y-0.055) rectangle (\cd+0.055,\y+0.055);}
+\draw[rl] (0.05,-4.16) -- (8.05,-4.16);
+
+% ---- column separators ------------------------------------------------
+\foreach \x in {5.00,5.61,6.23,6.90}{\draw[gl] (\x,-0.22) -- (\x,-4.16);}
+
+% ---- the measured evidence -------------------------------------------
+\node[font=\tiny, anchor=north west, align=left, inner sep=1pt, text=spInk]
+  at (0.05,-4.28)
+  {\emph{Observed, not argued.} Of \MutAddrSub{} injected address\\
+   substitutions \textcolor{spVerm}{\MutAddrStall{} fail-stopped}, with a recorded\\
+   \sv{error\_pc} on every PE in each one re-simulated; at most\\
+   \MutLiveSlotMax{} landed on a live slot. \textcolor{spAmber!80!spInk}{All
+   \MutLeaf{} leaf corruptions}\\
+   terminated normally with a wrong root and were caught by\\
+   the value comparison instead --- the split falls exactly on\\
+   the line above.};
+\end{tikzpicture}

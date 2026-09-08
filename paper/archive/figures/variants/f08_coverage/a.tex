@@ -1,0 +1,65 @@
+% f08_coverage variant a -- coverage grid as a heatmap of cell counts.
+% Data: tables/coverage.tex (the generated cell counts; 5 N-buckets x 6
+%   topologies = 30 cells, of which \SuiteEmptyCells{} are empty and
+%   \SuiteThinCells{} hold two instances or fewer). Totals from the same table.
+%   Macros: \SuiteSize, \SuiteEmptyCells, \SuiteThinCells (data/coverage_macros.tex).
+%   NOTE: these are the 30-cell coverage-table counts, NOT the selection-rule
+%   grid; the two grids differ and must never be mixed.
+% Strategy: encode the table itself so it can be read at a glance -- empty cells
+%   struck through, thin cells hatched, only the four cells with three or more
+%   instances shown solid. Variants b and d argue the confound instead; c argues
+%   sparsity by area. This one is the table, made visual.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[
+  x=1.16cm, y=0.62cm,
+  cell/.style={draw=spMute, line width=0.3pt, minimum width=1.12cm,
+               minimum height=0.58cm, inner sep=0pt, font=\scriptsize,
+               anchor=center, text=spInk},
+  hdr/.style={font=\scriptsize, inner sep=1pt, text=spInk},
+  key/.style={draw=spMute, line width=0.3pt, minimum width=0.34cm,
+              minimum height=0.30cm, inner sep=0pt},
+]
+% --- column headers (topologies)
+\foreach \c/\lab in {0/Lin., 1/Ring, 2/Mesh, 3/Torus, 4/{Fat-tr.}, 5/Hyp.}
+  \node[hdr] at (\c,0.85) {\lab};
+% --- row headers (N-buckets)
+\foreach \r/\lab in {0/{8--32}, 1/{33--256}, 2/{257--1K}, 3/{1K--4K}, 4/{8K}}
+  \node[hdr, anchor=east] at (-0.68,-\r) {\lab};
+% --- cells: count 0 = empty (struck through), 1-2 = thin (hatched), >=3 = solid
+\foreach \c/\r/\n in {%
+  0/0/1, 1/0/2, 2/0/1, 3/0/1, 4/0/1, 5/0/1,
+  0/1/1, 1/1/1, 2/1/1, 3/1/3, 4/1/2, 5/1/1,
+  0/2/2, 1/2/2, 2/2/1, 3/2/3, 4/2/2, 5/2/2,
+  1/3/1, 2/3/1, 3/3/2, 4/3/3, 5/3/2,
+  3/4/1, 4/4/1, 5/4/1}
+{
+  \ifnum\n>2
+    \node[cell, draw=spBlue, fill=spBlue!30] at (\c,-\r) {\n};
+  \else
+    \node[cell, fill=spAmberF, draw=spAmber] at (\c,-\r) {};
+    \node[cell, pattern=north east lines, pattern color=spAmber, draw=spAmber]
+      at (\c,-\r) {};
+    \node[cell, draw=none, text=spInk] at (\c,-\r) {\n};
+  \fi
+}
+% --- the four empty cells (shown as $-$, exactly as tables/coverage.tex prints them)
+\foreach \c/\r in {0/3, 0/4, 1/4, 2/4}
+{
+  \node[cell, draw=spVerm, fill=spVermF, text=spVerm] at (\c,-\r) {$-$};
+  \draw[spVerm, line width=0.35pt]
+    (\c-0.44,-\r-0.20) -- (\c+0.44,-\r+0.20);
+}
+% --- key, placed below the grid so it never overlaps a cell
+\node[key, draw=spBlue, fill=spBlue!30] at (-0.20,-5.35) {};
+\node[font=\tiny, anchor=west, text=spInk] at (0.02,-5.35) {$\ge 3$};
+\node[key, fill=spAmberF, draw=spAmber] at (1.25,-5.35) {};
+\node[key, pattern=north east lines, pattern color=spAmber, draw=spAmber]
+  at (1.25,-5.35) {};
+\node[font=\tiny, anchor=west, text=spInk] at (1.47,-5.35)
+  {thin ($\le 2$): \SuiteThinCells{} cells};
+\node[key, draw=spVerm, fill=spVermF, text=spVerm] at (3.72,-5.35) {\tiny$-$};
+\draw[spVerm, line width=0.35pt] (3.60,-5.45) -- (3.84,-5.25);
+\node[font=\tiny, anchor=west, text=spInk] at (3.94,-5.35) {empty: \SuiteEmptyCells{}};
+\node[font=\tiny, anchor=west, text=spMute] at (-0.42,-6.05)
+  {30 cells, \SuiteSize{} instances -- no cell-level claim is derivable (L5)};
+\end{tikzpicture}

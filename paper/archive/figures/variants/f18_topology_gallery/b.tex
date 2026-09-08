@@ -1,0 +1,217 @@
+% f18_topology_gallery variant b -- the six families at ONE leaf count, each
+% carrying a worked route, against the one reduction DAG they all evaluate.
+% Data: the SUITE manifest in scripts/gen_coverage.py. N=512 is the only leaf
+%       count at which the suite instantiates all six families:
+%       large_extreme_1d (linear, G=8), large_mod_ring (ring, G=256),
+%       large_bal_mesh (mesh, G=64), large_dense_2d (torus, G=16),
+%       large_bal_fat (fat-tree, G=64), large_dense_hc (hypercube, G=32).
+%       The N=512 row of tables/invariance.tex: 6 compiled (G,topology) points,
+%       6 hardware-validated, 456 passing hardware configurations, one 64-bit
+%       root 0x419F4FA404418938, 0 divergent. The per-instance longest route
+%       (7, 128, 14, 4, 4, 5 hops between compute nodes) is the diameter of the
+%       distance matrix sprs_core.build_topology computes -- the same call the
+%       emitter used to write the routing tables. FBT(512) node count 2N-1 =
+%       1,023 is Definition 1 (def:fbt). Campaign total \WallTBs{} from
+%       data/coverage_macros.tex. The drawings are schematic: the smallest
+%       member of each family, with the drawn hop count labelled as such.
+% Strategy: hold N FIXED and vary only the wiring. Variant a is a census and
+%       says nothing about what the shapes do to the answer; this one puts a
+%       worked route on each shape, shows the longest route ranges over a factor
+%       of 32 across the six, and prints the single root underneath. c re-scales
+%       the panels by instance count; d plots radix against cost. The argument
+%       here is that route length is the thing topology controls and the root is
+%       not it.
+% Colour: routers and links are structural (spBlue); the ROUTE -- the quantity
+%       that varies from panel to panel -- is spPurple and heavy, exactly as in
+%       f03_claim1; the invariant DAG and the single root are spGreen. Line
+%       weight separates route from link and the six shapes differ by drawing,
+%       so greyscale carries the whole argument.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn on a fixed 16.9cm canvas --
+%       the standalone wrapper is varwidth=17cm, so a wider canvas is cropped in
+%       the guide preview (the same constraint f04_fabric records).
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  rt/.style ={draw=spBlue, fill=spBlueF, circle, line width=0.35pt,
+              minimum size=0.20cm, inner sep=0pt},
+  sw/.style ={draw=spBlue, fill=spBlue!32, rectangle, line width=0.35pt,
+              minimum width=0.28cm, minimum height=0.17cm, inner sep=0pt},
+  lk/.style ={draw=spBlue!55, line width=0.4pt},
+  wr/.style ={draw=spBlue!55, line width=0.4pt, densely dotted},
+  rte/.style={draw=spPurple!85!spInk, line width=1.05pt, line cap=round},
+  nd/.style ={draw=spGreen, fill=spGreenF, circle, line width=0.35pt,
+              minimum size=0.16cm, inner sep=0pt},
+  ed/.style ={draw=spGreen!80, line width=0.35pt},
+  ttl/.style={font=\scriptsize\bfseries, text=spInk, inner sep=1pt},
+  gsz/.style={font=\scriptsize, text=spInk, inner sep=0.5pt},
+  hop/.style={font=\tiny, text=spPurple!85!spInk, inner sep=0.5pt},
+  dia/.style={font=\tiny, text=spMute, inner sep=0.5pt},
+  hx/.style ={font=\scriptsize\ttfamily, inner sep=2.5pt, draw=spGreen,
+              fill=white, line width=0.6pt, text=spInk},
+]
+% Fixed canvas: pins the bounding box so the preview equals the typeset size.
+\path (0,0.02) rectangle (16.9,7.36);
+
+\node[anchor=north west, font=\scriptsize, text=spInk, inner sep=1pt]
+  at (0.15,7.30)
+  {$N = 512$ --- the one leaf count at which the suite instantiates all six
+   families. Only the wiring and the worker count change.};
+
+% ---- panel grounds ---------------------------------------------------------
+\begin{scope}[on background layer]
+  \foreach \cx in {1.45,4.25,7.05,9.85,12.65,15.45}{
+    \fill[spGrid!55, rounded corners=2.5pt] (\cx-1.35,3.06) rectangle (\cx+1.35,6.86);
+  }
+\end{scope}
+\foreach \cx in {1.45,4.25,7.05,9.85,12.65,15.45}{
+  \draw[spMute!55, line width=0.3pt] (\cx-1.20,4.22) -- (\cx+1.20,4.22);
+}
+
+% =========================== 1. LINEAR, G = 8 ===============================
+\node[ttl] at (1.45,6.62) {linear};
+\begin{scope}[shift={(1.45,5.50)}]
+  \foreach \i in {0,...,4}{ \node[rt] (L\i) at (-0.88+\i*0.44,0) {}; }
+  \foreach \i/\j in {0/1,1/2,2/3,3/4}{ \draw[lk] (L\i) -- (L\j); }
+  \draw[rte] (L0) -- (L1) -- (L2) -- (L3) -- (L4);
+\end{scope}
+\node[gsz] at (1.45,3.99) {$G = 8$};
+\node[dia] at (1.45,3.72) {\sv{large\_extreme\_1d}};
+\node[hop] at (1.45,3.46) {route: 4 hops};
+\node[dia] at (1.45,3.20) {longest route: \textbf{7} hops};
+
+% =========================== 2. RING, G = 256 ===============================
+\node[ttl] at (4.25,6.62) {ring};
+\begin{scope}[shift={(4.25,5.50)}]
+  \foreach \i in {0,...,7}{
+    \node[rt] (R\i) at ({0.58*cos(90-\i*45)},{0.58*sin(90-\i*45)}) {};
+  }
+  \foreach \i/\j in {0/1,1/2,2/3,3/4,4/5,5/6,6/7,7/0}{ \draw[lk] (R\i) -- (R\j); }
+  \draw[rte] (R5) -- (R6) -- (R7) -- (R0);
+\end{scope}
+\node[gsz] at (4.25,3.99) {$G = 256$};
+\node[dia] at (4.25,3.72) {\sv{large\_mod\_ring}};
+\node[hop] at (4.25,3.46) {route: 3 hops};
+\node[dia] at (4.25,3.20) {longest route: \textbf{128} hops};
+
+% =========================== 3. MESH, G = 64 ================================
+\node[ttl] at (7.05,6.62) {2D mesh};
+\begin{scope}[shift={(7.05,5.50)}]
+  \foreach \i in {0,1,2}{ \foreach \j in {0,1,2}{
+    \node[rt] (M\i\j) at (-0.52+\i*0.52,-0.52+\j*0.52) {};
+  }}
+  \foreach \j in {0,1,2}{ \draw[lk] (M0\j) -- (M1\j) -- (M2\j); }
+  \foreach \i in {0,1,2}{ \draw[lk] (M\i0) -- (M\i1) -- (M\i2); }
+  \draw[rte] (M00) -- (M10) -- (M20) -- (M21) -- (M22);
+\end{scope}
+\node[gsz] at (7.05,3.99) {$G = 64$};
+\node[dia] at (7.05,3.72) {\sv{large\_bal\_mesh}};
+\node[hop] at (7.05,3.46) {route: 4 hops, dim.-ord.};
+\node[dia] at (7.05,3.20) {longest route: \textbf{14} hops};
+
+% =========================== 4. TORUS, G = 16 ===============================
+\node[ttl] at (9.85,6.62) {2D torus};
+\begin{scope}[shift={(9.85,5.50)}]
+  \foreach \i in {0,1,2}{ \foreach \j in {0,1,2}{
+    \node[rt] (T\i\j) at (-0.48+\i*0.48,-0.48+\j*0.48) {};
+  }}
+  \foreach \j in {0,1,2}{ \draw[lk] (T0\j) -- (T1\j) -- (T2\j); }
+  \foreach \i in {0,1,2}{ \draw[lk] (T\i0) -- (T\i1) -- (T\i2); }
+  \foreach \j in {0,1,2}{ \draw[wr] (T0\j) to[out=150,in=30,looseness=1.1] (T2\j); }
+  \foreach \i in {0,1,2}{ \draw[wr] (T\i0) to[out=240,in=120,looseness=1.1] (T\i2); }
+  \draw[rte] (T00) to[out=240,in=120,looseness=1.1] (T02);
+  \draw[rte] (T02) -- (T12);
+\end{scope}
+\node[gsz] at (9.85,3.99) {$G = 16$};
+\node[dia] at (9.85,3.72) {\sv{large\_dense\_2d}};
+\node[hop] at (9.85,3.46) {route: 2 hops, via wrap};
+\node[dia] at (9.85,3.20) {longest route: \textbf{4} hops};
+
+% =========================== 5. FAT-TREE, G = 64 ============================
+\node[ttl] at (12.65,6.62) {fat-tree};
+\begin{scope}[shift={(12.65,5.50)}]
+  \node[sw] (FC) at (-0.30,0.56) {};
+  \node[sw] (FP0) at (-0.72,0.00) {};
+  \node[sw] (FP1) at ( 0.12,0.00) {};
+  \draw[lk] (FP0) -- (FC) -- (FP1);
+  \foreach \i in {0,...,5}{ \node[rt] (FL\i) at (-0.98+\i*0.27,-0.58) {}; }
+  \foreach \i in {0,1,2}{ \draw[lk] (FL\i) -- (FP0); }
+  \foreach \i in {3,4,5}{ \draw[lk] (FL\i) -- (FP1); }
+  \draw[rte] (FL0) -- (FP0) -- (FC) -- (FP1) -- (FL5);
+  \node[font=\tiny, text=spMute, anchor=west, inner sep=1pt] at (-0.12,0.56) {core};
+  \node[font=\tiny, text=spMute, anchor=west, inner sep=1pt] at ( 0.30,0.00) {pod};
+  \node[font=\tiny, text=spMute, anchor=west, inner sep=1pt] at ( 0.52,-0.58) {leaf};
+\end{scope}
+\node[gsz] at (12.65,3.99) {$G = 64$};
+\node[dia] at (12.65,3.72) {\sv{large\_bal\_fat}};
+\node[hop] at (12.65,3.46) {route: 4 hops, up--down};
+\node[dia] at (12.65,3.20) {longest route: \textbf{4} hops};
+
+% =========================== 6. HYPERCUBE, G = 32 ===========================
+\node[ttl] at (15.45,6.62) {hypercube};
+\begin{scope}[shift={(15.45,5.46)}]
+  \foreach \i/\x/\y in {0/-0.60/-0.48, 1/0.20/-0.48, 2/0.20/0.32, 3/-0.60/0.32}{
+    \node[rt] (H\i) at (\x,\y) {};
+  }
+  \foreach \i/\x/\y in {4/-0.24/-0.14, 5/0.56/-0.14, 6/0.56/0.66, 7/-0.24/0.66}{
+    \node[rt] (H\i) at (\x,\y) {};
+  }
+  \foreach \i/\j in {0/1,1/2,2/3,3/0}{ \draw[lk] (H\i) -- (H\j); }
+  \foreach \i/\j in {4/5,5/6,6/7,7/4}{ \draw[lk] (H\i) -- (H\j); }
+  \foreach \i/\j in {0/4,1/5,2/6,3/7}{ \draw[wr] (H\i) -- (H\j); }
+  \draw[rte] (H0) -- (H1) -- (H5) -- (H6);
+\end{scope}
+\node[gsz] at (15.45,3.99) {$G = 32$};
+\node[dia] at (15.45,3.72) {\sv{large\_dense\_hc}};
+\node[hop] at (15.45,3.46) {route: 3 hops, 1 per dim.};
+\node[dia] at (15.45,3.20) {longest route: \textbf{5} hops};
+
+% ================= the band the six panels share =============================
+\begin{scope}[on background layer]
+  \fill[spGreenF, rounded corners=3pt] (0.15,1.34) rectangle (16.75,2.80);
+\end{scope}
+\draw[spGreen, line width=0.5pt, rounded corners=3pt] (0.15,1.34) rectangle (16.75,2.80);
+
+% the reduction DAG, drawn once
+\begin{scope}[shift={(1.30,2.13)}]
+  \node[nd] (Q0) at (0,0.44) {};
+  \node[nd] (Q1) at (-0.42,0.10) {};
+  \node[nd] (Q2) at ( 0.42,0.10) {};
+  \node[nd] (Q3) at (-0.63,-0.24) {};
+  \node[nd] (Q4) at (-0.21,-0.24) {};
+  \node[nd] (Q5) at ( 0.21,-0.24) {};
+  \node[nd] (Q6) at ( 0.63,-0.24) {};
+  \draw[ed] (Q1) -- (Q0) -- (Q2);
+  \draw[ed] (Q3) -- (Q1) -- (Q4);
+  \draw[ed] (Q5) -- (Q2) -- (Q6);
+  \foreach \x in {-0.63,-0.21,0.21,0.63}{
+    \node[font=\tiny, text=spGreen!75!spInk] at (\x,-0.46) {$\vdots$};
+  }
+\end{scope}
+
+\node[anchor=west, align=left, font=\tiny, text=spInk, text width=5.5cm]
+  at (2.35,2.07)
+  {\textbf{One DAG, drawn once because there is only one.} $\FBT(512)$ has
+   $2N{-}1 = 1{,}023$ nodes and operand binding is a function of tree-node
+   identity alone --- it names no $G$, no topology and no route.};
+
+\node[hx] at (10.50,2.28) {0x419F4FA404418938};
+\node[anchor=north, font=\tiny, text=spGreen!75!spInk, align=center]
+  at (10.50,1.98)
+  {the 64-bit root returned by all six};
+
+\node[anchor=west, align=left, font=\tiny, text=spInk, text width=3.5cm]
+  at (12.95,2.07)
+  {\textbf{456} passing hardware configurations at $N{=}512$ across the six
+   $(G,\text{topology})$ points, \textbf{0} divergent.};
+
+% ================= footer =====================================================
+\node[anchor=north west, align=left, font=\tiny, inner sep=1pt, text=spInk,
+      text width=16.6cm] at (0.15,1.14)
+  {Read the panels left to right and the only quantity that moves is the route.
+   The longest route the fabric must carry spans a factor of 32 over these six
+   instances --- 4 hops on the torus and the fat-tree, 128 on the ring --- and
+   the worker count spans 8 to 256, yet the six agree bit for bit. That is the
+   content of the orthogonality proposition: routing, assignment, mapping and
+   schedule are free variables of the compilation, and the ABI binds none of
+   them. Over the whole campaign (\WallTBs{} settled simulations) no
+   configuration produced a finite root differing from $\Rcan(N,L)$.};
+\end{tikzpicture}

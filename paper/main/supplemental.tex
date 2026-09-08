@@ -46,6 +46,11 @@
 \usepackage{cite}
 \usepackage[hidelinks]{hyperref}
 \usepackage{url}
+% Long documentation URLs in the reference list overflow an IEEE column
+% unless url.sty is allowed to break them; \Urlmuskip adds the stretch.
+\def\UrlBreaks{\do\/\do-\do.\do:\do\_}
+\Urlmuskip=0mu plus 1mu\relax
+
 \usepackage[table]{xcolor}
 \input{figures/_palette.tex}
 \usepackage{colortbl}

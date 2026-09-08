@@ -1,0 +1,65 @@
+% f01_premise variant b -- the ladder: distinct 64-bit results against rank count.
+% Data: experiments/w_final/W1/RESULT.json (reshape_axis: world_sizes
+%       [1,2,3,4,5,6,7,8,12,16,24,32,48,64], configurations 14,
+%       distinct_64bit_roots 14; repeatability: 5 repeats, 1 distinct) and
+%       experiments/w_final/W1/v003/raw/A_gloo_G*_fp64.json for the printed
+%       digests (case N=1000, M=1024, fp64, signed; the 64-bit result is the
+%       leading 64 bits of the recorded SHA-256 over the reduced vector).
+%       Scope from sec:results-premise: above G=2 the sweep is the gloo/CPU
+%       backend, because NCCL needs one rank per device and the node has two
+%       GPUs (\GpuHardware).
+% Strategy: argue by COUNT. The cumulative distinct-result curve lies exactly on
+% the diagonal, so 14/14 is read off the picture, and the flat repeat curve
+% underneath separates reshape from noise on the same axes. Variant a shows one
+% pair of trees; this shows the whole sweep at once.
+% Colour: the reshape ladder is the divergent behaviour under study (spVerm);
+% the flat repeat curve is the confirmed invariant (spGreen); the backend-scope
+% band is a caveat on the measurement (spAmber tint). Marker shape and dash
+% pattern still separate the two curves in greyscale.
+% Target: IEEE single column, 3.5in = 8.9cm.
+\begin{tikzpicture}
+\begin{axis}[
+  width=8.6cm, height=5.6cm,
+  xlabel={rank count $G$ \ (14 configurations, identical input bytes)},
+  ylabel={distinct 64-bit results so far},
+  xmin=0.3, xmax=14.7, ymin=0, ymax=15.4,
+  xtick={1,2,3,4,5,6,7,8,9,10,11,12,13,14},
+  xticklabels={1,2,3,4,5,6,7,8,12,16,24,32,48,64},
+  ytick={0,2,4,6,8,10,12,14},
+  tick label style={font=\scriptsize}, label style={font=\scriptsize},
+  grid=major, grid style={spGrid, very thin},
+  axis line style={spMute}, tick style={spMute},
+  every axis label/.append style={text=spInk},
+  every tick label/.append style={text=spInk},
+  legend style={font=\tiny, at={(0.02,0.98)}, anchor=north west,
+                draw=spGrid, fill=white, fill opacity=0.93, text opacity=1,
+                row sep=0.5pt, inner sep=2pt},
+  clip=false,
+]
+% ---- scope band: everything right of G=2 is the gloo/CPU backend ----------
+\addplot[draw=none, fill=spAmberF, fill opacity=0.5, forget plot] coordinates
+  {(2.5,0) (14.7,0) (14.7,15.4) (2.5,15.4)} \closedcycle;
+\node[font=\tiny, text=spAmber!75!spInk, anchor=north east, align=right] at (axis cs:14.5,5.2)
+  {gloo / CPU backend above $G{=}2$:\\NCCL needs one rank per device\\and the node carries two GPUs};
+\node[font=\tiny, text=spMute, rotate=90] at (axis cs:1.6,9.0) {NCCL + gloo};
+% ---- the ladder ----------------------------------------------------------
+\addplot[spVerm, mark=*, mark size=1.5pt, line width=1.0pt] coordinates {
+  (1,1) (2,2) (3,3) (4,4) (5,5) (6,6) (7,7) (8,8)
+  (9,9) (10,10) (11,11) (12,12) (13,13) (14,14)};
+\addlegendentry{reshape: every $G$ a new result}
+% ---- repeats at a fixed shape -------------------------------------------
+\addplot[spGreen, densely dashed, mark=square*, mark size=1.5pt, line width=1.0pt,
+         mark options={fill=spGreenF, draw=spGreen}]
+  coordinates {(1,1) (2,1) (3,1) (4,1) (5,1)};
+\addlegendentry{\GpuRepeats{} repeats at one fixed shape}
+\node[font=\tiny, anchor=west, text=spGreen] at (axis cs:5.5,1.75)
+  {bitwise identical \GpuRepeats{}/\GpuRepeats{} -- noise does not move it};
+% ---- three sampled digests ----------------------------------------------
+\node[font=\tiny\ttfamily, text=spVerm!85!spInk, anchor=north west, inner sep=1pt] at (axis cs:3.15,2.85)
+  {87BD17C0BD539F6A};
+\node[font=\tiny\ttfamily, text=spVerm!85!spInk, anchor=south east, inner sep=1pt] at (axis cs:8.9,9.10)
+  {FE5477294C4FB058};
+\node[font=\tiny\ttfamily, text=spVerm!85!spInk, anchor=south east, inner sep=1pt] at (axis cs:13.9,14.15)
+  {D0940EF86E580D2A};
+\end{axis}
+\end{tikzpicture}

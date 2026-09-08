@@ -1,0 +1,57 @@
+% f08_coverage variant c -- coverage as a bubble grid, disc AREA proportional to
+%   the instance count in that (N-bucket, topology) cell.
+% Data: tables/coverage.tex, the same 30-cell grid as variant a (5 buckets x 6
+%   topologies; \SuiteEmptyCells{} empty, \SuiteThinCells{} holding <= 2).
+%   Radii are 0.100*sqrt(count) cm, so area is linear in count. Macros from
+%   data/coverage_macros.tex. NOT the selection-rule grid.
+% Strategy: make sparsity PRE-ATTENTIVE. Variant a still asks the reader to read
+%   digits; here the whole grid is almost uniformly small discs, and the four
+%   three-instance cells are the only ones that stand out -- the argument that
+%   there is no cell-level signal is made by the picture, not by the numbers.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[
+  x=1.16cm, y=0.68cm,
+  hdr/.style={font=\scriptsize, inner sep=1pt, text=spInk},
+  bub/.style={draw=spAmber, fill=spAmber!30, line width=0.4pt},
+  bubs/.style={draw=spBlue, fill=spBlue!35, line width=0.5pt},
+]
+\draw[spGrid, line width=0.3pt] (-0.58,0.5) rectangle (5.58,-4.5);
+\foreach \r in {0,1,2,3}
+  \draw[spGrid, line width=0.3pt] (-0.58,-\r-0.5) -- (5.58,-\r-0.5);
+\foreach \c in {0,1,2,3,4}
+  \draw[spGrid, line width=0.3pt] (\c+0.5,0.5) -- (\c+0.5,-4.5);
+\foreach \c/\lab in {0/Lin., 1/Ring, 2/Mesh, 3/Torus, 4/{Fat-tr.}, 5/Hyp.}
+  \node[hdr] at (\c,0.85) {\lab};
+\foreach \r/\lab in {0/{8--32}, 1/{33--256}, 2/{257--1K}, 3/{1K--4K}, 4/{8K}}
+  \node[hdr, anchor=east] at (-0.68,-\r) {\lab};
+% radius in cm = 0.100*sqrt(n):  n=1 -> 0.100, n=2 -> 0.141, n=3 -> 0.173
+\foreach \c/\r/\rad in {%
+  0/0/0.100, 1/0/0.141, 2/0/0.100, 3/0/0.100, 4/0/0.100, 5/0/0.100,
+  0/1/0.100, 1/1/0.100, 2/1/0.100, 3/1/0.173, 4/1/0.141, 5/1/0.100,
+  0/2/0.141, 1/2/0.141, 2/2/0.100, 3/2/0.173, 4/2/0.141, 5/2/0.141,
+  1/3/0.100, 2/3/0.100, 3/3/0.141, 4/3/0.173, 5/3/0.141,
+  3/4/0.100, 4/4/0.100, 5/4/0.100}
+  \draw[bub] (\c,-\r) circle (\rad cm);
+% the four three-instance cells, redrawn in the primary hue and a heavier rule
+\foreach \c/\r in {3/1, 3/2, 4/3}
+  \draw[bubs] (\c,-\r) circle (0.173cm);
+% the four empty cells: struck through, so absence is as loud as presence
+\foreach \c/\r in {0/3, 0/4, 1/4, 2/4}
+{
+  \draw[spVerm, line width=0.4pt] (\c-0.16,-\r-0.16) -- (\c+0.16,-\r+0.16);
+  \draw[spVerm, line width=0.4pt] (\c-0.16,-\r+0.16) -- (\c+0.16,-\r-0.16);
+}
+% --- key, below the grid, clear of every cell
+\draw[bub] (-0.05,-5.25) circle (0.100cm);
+\node[font=\tiny, anchor=west, text=spInk] at (0.12,-5.25) {1};
+\draw[bub] (0.72,-5.25) circle (0.141cm);
+\node[font=\tiny, anchor=west, text=spInk] at (0.92,-5.25) {2};
+\draw[bubs] (1.52,-5.25) circle (0.173cm);
+\node[font=\tiny, anchor=west, text=spInk] at (1.74,-5.25) {3 (area $\propto$ count)};
+\draw[spVerm, line width=0.4pt] (4.36,-5.41) -- (4.68,-5.09);
+\draw[spVerm, line width=0.4pt] (4.36,-5.09) -- (4.68,-5.41);
+\node[font=\tiny, anchor=west, text=spVerm] at (4.76,-5.25) {empty};
+\node[font=\tiny, anchor=west, text=spMute] at (-0.55,-5.90)
+  {\SuiteSize{} instances over 30 cells: \SuiteThinCells{} hold $\le 2$,
+   \SuiteEmptyCells{} are empty (L5)};
+\end{tikzpicture}

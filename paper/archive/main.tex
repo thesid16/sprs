@@ -18,7 +18,10 @@
 
 
 \usepackage{tikz}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
+\usepackage{colortbl}
+\input{figures/_palette.tex}
+\input{figures/_tablestyle.tex}
 \usetikzlibrary{arrows.meta, positioning}
 \usetikzlibrary{shadows}
 
@@ -51,6 +54,11 @@
 \usepackage{cite}
 \usepackage[hidelinks]{hyperref}
 \usepackage{url}
+% Long documentation URLs in the reference list overflow an IEEE column
+% unless url.sty is allowed to break them; \Urlmuskip adds the stretch.
+\def\UrlBreaks{\do\/\do-\do.\do:\do\_}
+\Urlmuskip=0mu plus 1mu\relax
+
 \usepackage{xcolor}
 
 % ---------- listings for code excerpts ----------
@@ -315,6 +323,12 @@ financial model replay --- the inability to reproduce a computation bitwise
 across hardware generations is increasingly disqualifying.
 
 \subsection{Two Sources of Non-Determinism, One Bad Outcome}
+
+\begin{figure*}[!t]\centering
+\input{figures/variants/f19_reshape/a}
+\caption{What cluster reshape does to a reduction, and where an answer can act. Only the grouping changes; because floating-point addition is not associative, the bit pattern changes with it. Existing answers act above the fabric and pay for it in elasticity or in cost.}\label{fig:reshape}
+\end{figure*}
+
 
 The cluster-reshape non-determinism we target has two distinct sources,
 which current software tools confuse.
@@ -583,6 +597,12 @@ ablation, and a reproducibility checklist.
 
 \subsection{IEEE 754 Non-Associativity}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f01_premise/a}
+\caption{The premise, measured rather than assumed. Identical bytes reduced at different world sizes yield different 64-bit roots. Above $G{=}2$ the sweep runs on the gloo/CPU backend, because NCCL requires one rank per device.}\label{fig:premise}
+\end{figure}
+
+
 Let $x_0, x_1, \ldots, x_{N-1}$ be $N$ binary64 values and let $\sigma$ be
 a summation order induced by a binary reduction tree $\tau$. Denote by
 $\Sigma_\tau(x)$ the 64-bit result of evaluating $\tau$ with RNE rounding
@@ -712,6 +732,12 @@ of runtime checks and a path to mechanisation
 
 \subsection{The Canonical Tree}\label{sec:abi-tree}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f02_canonical_tree/a}
+\caption{$\FBT(N)$: heap-indexed, leaves at $N{-}1 \ldots 2N{-}2$ ascending. The tree, not the machine, defines the result.}\label{fig:canontree}
+\end{figure}
+
+
 \begin{definition}[Canonical full binary tree]\label{def:fbt}
 For $N \geq 1$, the \emph{canonical full binary tree} $\FBT(N)$ is the
 heap-indexed binary tree with $2N-1$ nodes: root at index $0$, left child of
@@ -830,6 +856,12 @@ class name is historical, the implementation constructs a full binary
 tree.
 
 \subsection{The ABI: Operand Binding and Leaf Binding}\label{sec:abi-def}
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f13_worked_example/a}
+\caption{A worked reduction at $N{=}8$ with the real leaf values, reaching the canonical root the campaign reports for that leaf count.}\label{fig:worked}
+\end{figure}
+
 
 The ABI is a contract between compiler and fabric comprising two
 disciplines.
@@ -1101,6 +1133,12 @@ violated an invariant (a bug in the RTL), but not both.
 \end{remark}
 
 \subsection{Claim 1 and the Fail-Stop Property}\label{sec:abi-claim}
+
+\begin{figure*}[!t]\centering
+\input{figures/variants/f03_claim1/a}
+\caption{Claim 1. The same reduction DAG mapped onto different topologies yields the identical 64-bit root: routes differ, the root does not.}\label{fig:claim1}
+\end{figure*}
+
 
 \begin{claim}[Cross-topology bitwise invariance]\label{claim:1}
 Let $N \in \mathbb{N}$, let $L \in (\mathrm{bits}_{64})^N$ be a fixed
@@ -1633,6 +1671,12 @@ custom topologies at $O(G)$ per source.
 
 \subsection{Packet Format}\label{sec:fabric-packet}
 
+\begin{figure*}[!t]\centering
+\input{figures/variants/f14_isa_encoding/a}
+\caption{The two encodings the ABI rides on. Operand binding is two address fields in the instruction word; \textsf{C-mem} is the gap between the 16-bit \sv{dest} and the \SendAddrBits{} bits that carry it.}\label{fig:isa}
+\end{figure*}
+
+
 The 96-bit single-flit packet format carries exactly one FP64 value per
 packet: a 16-bit \texttt{dest\_node\_id}, a 10-bit \texttt{target\_addr},
 five reserved bits, the VC-steering bit $[64]$, and the 64-bit payload
@@ -1710,6 +1754,12 @@ identity-preserving half-reductions; the slot is unread in the reported
 workload (\S\ref{sec:abi-edge}).
 
 \subsection{Pipeline and DMEM Forwarding}\label{sec:fabric-pipe}
+
+\begin{figure*}[!t]\centering
+\input{figures/variants/f04_fabric/a}
+\caption{The fabric: PE, DMEM, scoreboard and the NoC router the packet crosses.}\label{fig:fabricfull}
+\end{figure*}
+
 
 Each PE hosts a three-stage pipeline:
 
@@ -1836,6 +1886,12 @@ delivered the data. This is what makes the scoreboard-gated
 reads structurally race-free (Fig.~\ref{fig:pipeline}).
 
 \subsection{Fail-Stop Discipline}\label{sec:fail-stop}
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f05_failstop/a}
+\caption{Property 2. A missing or misrouted operand halts the run; it never silently produces a different root.}\label{fig:failstop}
+\end{figure}
+
 
 The fabric implements a three-way safety net that makes Property~\ref{prop:2}
 provable rather than asserted.
@@ -1974,6 +2030,12 @@ ready.
 
 \subsection{Resource Envelope}\label{sec:resource}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f15_dmem_cmem/a}
+\caption{Peak DMEM occupancy against the hard depth. The campaign came within \DmemMargin{} slots of a ceiling that does not announce itself.}\label{fig:dmem}
+\end{figure}
+
+
 Router cost is dominated by radix, and radix is a property of the
 topology, not a constant of the design. \sv{MAX\_PORTS} is declared in
 \sv{noc\_pkg.sv} (and again, with a different value, in \sv{btree\_pkg.sv})
@@ -2049,6 +2111,12 @@ it is an RTL-level count, not a synthesis result, from a design whose ALU is
 combinational (L0c).
 
 \subsection{Known Limitations}\label{sec:fabric-lim}
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f12_fp64_defect/a}
+\caption{The effective-subtraction defect, the three-part repair, and the control that establishes it. A clean sweep alone is not evidence.}\label{fig:fp64}
+\end{figure}
+
 
 To set the scope of the present implementation honestly:
 
@@ -2159,6 +2227,12 @@ heuristic ensembles whose algorithmic choices matter for cycle counts but
 not for the bit result.
 
 \subsection{Compilation Pipeline}\label{sec:compiler-pipeline}
+
+\begin{figure*}[!t]\centering
+\input{figures/variants/f06_compiler/a}
+\caption{The compiler pipeline and where each obligation is discharged. Assignment carries the whole decision.}\label{fig:compiler}
+\end{figure*}
+
 
 \sprs{} compiles a triple $(N, G, \text{topology})$ into a per-PE IMEM
 image plus per-router adjacency and routing tables. Every image reported in
@@ -2397,6 +2471,12 @@ simulation pipeline (Vivado xsim 2025.2).
 
 \subsection{Lower Bound $\Omega$ as a Secondary Metric}\label{sec:method-lb}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f17_omega_decomp/a}
+\caption{How $\Omega$ is assembled, and which constituent binds. Every binding term is reducer-independent, which is why distance to $\Omega$ cannot price the ABI.}\label{fig:omegadecomp}
+\end{figure}
+
+
 We compute a composite lower bound $\Omega$ on any schedule on the
 fabric (\sv{compute\_lower\_bound}, \sv{sprs\_core.py:1015}):
 \begin{equation}\label{eq:omega}
@@ -2540,6 +2620,12 @@ not this baseline; it is the software export of
 
 \subsection{Instance Suite}\label{sec:method-suite}
 
+\begin{figure*}[!t]\centering
+\input{figures/variants/f18_topology_gallery/a}
+\caption{The six topologies the suite spans, with instance counts and the router radix that follows. Measured radix spans \RadixMin{} to \RadixMax{}.}\label{fig:topologies}
+\end{figure*}
+
+
 Forty instances span $N \in \{8, 10, 16, 32, 50, 100, 128, 200, 500,
 512, 1024, 1500, 2048, 3000, 4096, 8192\}$, $G \in \{2, 4, 5, 7, 8, 10,
 12, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096\}$, and six topologies
@@ -2588,6 +2674,12 @@ testing, not by the choice of leaf values.
 
 \subsection{Campaign Protocol}\label{sec:method-tour}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f07_campaign/a}
+\caption{The campaign funnel, from compilations attempted to passing hardware runs.}\label{fig:campaign}
+\end{figure}
+
+
 The per-instance configuration space is $18\times10\times122 = 21{,}960$
 $(\asgn, \map, r)$ triples; simulating it exhaustively is infeasible
 (${\approx}880{,}000$ xsim runs). We fix refinement at the identity and
@@ -2628,6 +2720,12 @@ core-hours: \WallTotalH{} on passing runs, $122.9$ on runs that did not settle
 (retries included), $\MaxpCoreHours$ on \sv{maxp\_mod\_fat}.
 
 \subsection{Mutation-Testing Protocol}\label{sec:method-mutation}
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f16_mutation/a}
+\caption{Mutation testing: what each injected fault class does and by which route it is caught. Reordering genuinely changes the root, which is what makes an agreeing run evidence.}\label{fig:mutation}
+\end{figure}
+
 
 To confirm that the oracle harness can detect bit divergence (i.e., that
 the zero-divergence result is non-vacuous), we inject two mutation
@@ -3089,6 +3187,12 @@ it is not a ranking of algorithms.
 
 \subsection{A Derived Selection Rule}\label{sec:selrule}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f10_selection/a}
+\caption{Held-out regret against portfolio size. The rule transfers to a topology it never saw, and conditioning on topology is worse than ignoring it.}\label{fig:selection}
+\end{figure}
+
+
 The tournament was built to answer a practitioner's question --- given an
 instance, which of the $\SelConfigsTotal$ compiler configurations should be
 run? --- and champion-class membership lets us answer it in a form that is
@@ -3282,6 +3386,12 @@ one collective with an internal combine, can be reproducible too.
 % (issues D002, D026, D026-priorart) and from TBIK's Appendix H.1
 % respectively.  See the handoff note.
 \subsection{Exporting the ABI: Pinned-FBT for Production Collectives}\label{sec:discussion-pinfbt}
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f11_export_cost/a}
+\caption{Measured overhead of the pinned-FBT export against stock \texttt{ncclAllReduce}. Pre-registered and unfavourable; the point estimate is provisional, measured under GPU contention.}\label{fig:exportcost}
+\end{figure}
+
 
 Can the ABI discipline be adopted without the \sprs{} fabric? It can, in
 software: replace a production collective's dynamic $G$-dependent reduction
@@ -4107,6 +4217,12 @@ scoreboard-gated adds commit, and therefore the final 64 bits.
 % =====================================================================
 \section{Instance Coverage and Per-Topology Cell Counts}\label{app:coverage}
 % =====================================================================
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f08_coverage/a}
+\caption{Instance-suite coverage across $N$-bucket and topology, including the unevenness that limitation L5 records.}\label{fig:coverage}
+\end{figure}
+
 
 Table~\ref{tab:coverage} reports per-$(N$-bucket, topology) cell counts
 in the \SuiteSize-instance suite, and Table~\ref{tab:walltime} the measured

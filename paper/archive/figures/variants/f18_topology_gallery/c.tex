@@ -1,0 +1,185 @@
+% f18_topology_gallery variant c -- the suite as a pictogram: one glyph per
+% instance, the glyph being the topology it runs on, so the row length IS the
+% instance count.
+% Data: the SUITE manifest in scripts/gen_coverage.py, one glyph per entry, 40
+%       glyphs in total (\SuiteSize{}); per-topology counts torus 10, fat-tree 9,
+%       hypercube 7, ring 6, linear 4, mesh 4, which are also the column totals
+%       of tables/coverage.tex. N and G spans are the min/max of that manifest
+%       per topology. Radix from tables/radix.tex (\RadixMin, \RadixLo,
+%       \RadixHc, \RadixMax). The even-split reference 40/6 = 6.7 is arithmetic
+%       over \SuiteSize{}. \RadixMaxInst{} (fat-tree, N=8192, G=4096) is the one
+%       instance the campaign excludes -- L0 -- and is drawn as the open glyph.
+%       Glyphs within a row are ordered by ascending G, from that manifest.
+% Strategy: SCALE, not census. Variant a gives every family the same panel and
+%       prints its count as a numeral, which reads as six equal families; here
+%       the drawing is the count, so the reader sees before reading that torus
+%       and fat-tree carry 19 of \SuiteSize{} instances and linear and mesh
+%       carry 8 between them. The dashed rule at 6.7 makes the imbalance
+%       quantitative rather than impressionistic. b argues invariance with
+%       routes; d argues cost with radix.
+% Colour: the glyphs are structural machinery (spBlue), as everywhere else in
+%       the set; the even-split reference is an annotation, not data (spMute);
+%       the excluded instance is a caution (spAmber, and drawn hollow with a
+%       dashed ring so it is the one glyph that reads differently in greyscale).
+%       Row length carries the entire quantitative claim without colour.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn on a fixed 16.9cm canvas --
+%       the standalone wrapper is varwidth=17cm, so a wider canvas is cropped in
+%       the guide preview (the same constraint f04_fabric records).
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  dot/.style ={draw=spBlue, fill=spBlueF, circle, line width=0.3pt,
+               minimum size=0.085cm, inner sep=0pt},
+  odot/.style={draw=spAmber!85!spInk, fill=white, circle, line width=0.3pt,
+               minimum size=0.085cm, inner sep=0pt},
+  el/.style  ={draw=spBlue!60, line width=0.3pt},
+  oel/.style ={draw=spAmber!85!spInk, line width=0.3pt},
+  fam/.style ={font=\scriptsize, text=spInk, anchor=east, inner sep=1pt},
+  num/.style ={font=\scriptsize\bfseries, text=spInk, anchor=east, inner sep=1pt},
+  ann/.style ={font=\tiny, text=spMute, anchor=west, inner sep=1pt},
+]
+% Fixed canvas: pins the bounding box so the preview equals the typeset size.
+\path (0,0.02) rectangle (16.9,8.30);
+
+\node[anchor=north west, font=\scriptsize, text=spInk, inner sep=1pt]
+  at (0.15,8.24)
+  {One glyph $=$ one instance of the \SuiteSize{}-instance suite, drawn as the
+   topology it runs on and ordered by ascending $G$ within the row.};
+
+% ---- glyph field geometry --------------------------------------------------
+% first glyph centre x = 3.05, pitch 0.90; rows at y = 6.95 .. 1.95, pitch 1.00
+\begin{scope}[on background layer]
+  \foreach \r in {0,...,5}{
+    \fill[spGrid!45, rounded corners=2pt] (0.15,6.95-\r-0.42) rectangle (16.75,6.95-\r+0.42);
+  }
+\end{scope}
+% counting guides every second glyph
+\foreach \k in {1,3,5,7,9}{
+  \draw[spGrid, line width=0.3pt] (3.05+\k*0.90+0.45,7.42) -- (3.05+\k*0.90+0.45,1.53);
+}
+% the even-split reference: 40/6 = 6.7 instances per family
+\draw[spMute, line width=0.5pt, densely dashed] (3.05+6.667*0.90-0.45,7.55) --
+                                                (3.05+6.667*0.90-0.45,1.42);
+\node[font=\tiny, text=spMute, anchor=south, inner sep=1.5pt]
+  at (3.05+6.667*0.90-0.45,7.55) {even split: $\SuiteSize/6 = 6.7$ per family};
+
+% =========================== row 1: TORUS, 10 ===============================
+\node[num] at (2.62,6.95) {10};
+\node[fam] at (2.06,6.95) {2D torus};
+\foreach \k in {0,...,9}{
+  \begin{scope}[shift={(3.05+\k*0.90,6.95)}]
+    \foreach \i in {0,1,2}{ \foreach \j in {0,1,2}{
+      \node[dot] (t\i\j) at (-0.20+\i*0.20,-0.20+\j*0.20) {};
+    }}
+    \foreach \j in {0,1,2}{ \draw[el] (t0\j) -- (t1\j) -- (t2\j); }
+    \foreach \i in {0,1,2}{ \draw[el] (t\i0) -- (t\i1) -- (t\i2); }
+    \foreach \j in {0,1,2}{
+      \draw[el, densely dotted] (-0.20,-0.20+\j*0.20) -- (-0.31,-0.20+\j*0.20);
+      \draw[el, densely dotted] ( 0.20,-0.20+\j*0.20) -- ( 0.31,-0.20+\j*0.20);
+    }
+    \foreach \i in {0,1,2}{
+      \draw[el, densely dotted] (-0.20+\i*0.20,-0.20) -- (-0.20+\i*0.20,-0.31);
+      \draw[el, densely dotted] (-0.20+\i*0.20, 0.20) -- (-0.20+\i*0.20, 0.31);
+    }
+  \end{scope}
+}
+\node[ann] at (11.95,7.10) {radix $P = \RadixLo$};
+\node[ann] at (11.95,6.82) {$N$ 32--8192, $G$ 10--2048};
+
+% =========================== row 2: FAT-TREE, 9 =============================
+\node[num] at (2.62,5.95) {9};
+\node[fam] at (2.06,5.95) {fat-tree};
+\foreach \k in {0,...,8}{
+  \begin{scope}[shift={(3.05+\k*0.90,5.95)}]
+    \node[dot] (fc) at (0,0.26) {};
+    \node[dot] (fa) at (-0.16,0.02) {};
+    \node[dot] (fb) at ( 0.16,0.02) {};
+    \draw[el] (fa) -- (fc) -- (fb);
+    \foreach \i in {0,1,2,3}{ \node[dot] (fl\i) at (-0.27+\i*0.18,-0.24) {}; }
+    \foreach \i in {0,1}{ \draw[el] (fl\i) -- (fa); }
+    \foreach \i in {2,3}{ \draw[el] (fl\i) -- (fb); }
+  \end{scope}
+}
+% the excluded instance: maxp_mod_fat, the largest fat-tree in the row
+\begin{scope}[shift={(3.05+8*0.90,5.95)}]
+  \draw[oel, densely dashed] (0,0) circle (0.38);
+\end{scope}
+\node[ann] at (11.95,6.10) {radix $P = \RadixLo$--$\RadixMax$};
+\node[ann] at (11.95,5.82) {$N$ 32--8192, $G$ 8--4096};
+
+% =========================== row 3: HYPERCUBE, 7 ============================
+\node[num] at (2.62,4.95) {7};
+\node[fam] at (2.06,4.95) {hypercube};
+\foreach \k in {0,...,6}{
+  \begin{scope}[shift={(3.05+\k*0.90,4.95)}]
+    \foreach \i/\x/\y in {0/-0.26/-0.24, 1/0.06/-0.24, 2/0.06/0.08, 3/-0.26/0.08}{
+      \node[dot] (h\i) at (\x,\y) {}; }
+    \foreach \i/\x/\y in {4/-0.08/-0.08, 5/0.24/-0.08, 6/0.24/0.24, 7/-0.08/0.24}{
+      \node[dot] (h\i) at (\x,\y) {}; }
+    \foreach \i/\j in {0/1,1/2,2/3,3/0,4/5,5/6,6/7,7/4}{ \draw[el] (h\i) -- (h\j); }
+    \foreach \i/\j in {0/4,1/5,2/6,3/7}{ \draw[el, densely dotted] (h\i) -- (h\j); }
+  \end{scope}
+}
+\node[ann] at (11.95,5.10) {radix $P = \RadixMin$--$\RadixHc$};
+\node[ann] at (11.95,4.82) {$N$ 32--8192, $G$ 4--1024};
+
+% =========================== row 4: RING, 6 =================================
+\node[num] at (2.62,3.95) {6};
+\node[fam] at (2.06,3.95) {ring};
+\foreach \k in {0,...,5}{
+  \begin{scope}[shift={(3.05+\k*0.90,3.95)}]
+    \foreach \i in {0,...,5}{
+      \node[dot] (r\i) at ({0.26*cos(90-\i*60)},{0.26*sin(90-\i*60)}) {}; }
+    \foreach \i/\j in {0/1,1/2,2/3,3/4,4/5,5/0}{ \draw[el] (r\i) -- (r\j); }
+  \end{scope}
+}
+\node[ann] at (11.95,4.10) {radix $P = \RadixMin$};
+\node[ann] at (11.95,3.82) {$N$ 8--2048, $G$ 4--512};
+
+% =========================== row 5: LINEAR, 4 ===============================
+\node[num] at (2.62,2.95) {4};
+\node[fam] at (2.06,2.95) {linear};
+\foreach \k in {0,...,3}{
+  \begin{scope}[shift={(3.05+\k*0.90,2.95)}]
+    \foreach \i in {0,...,3}{ \node[dot] (n\i) at (-0.27+\i*0.18,0) {}; }
+    \foreach \i/\j in {0/1,1/2,2/3}{ \draw[el] (n\i) -- (n\j); }
+  \end{scope}
+}
+\node[ann] at (11.95,3.10) {radix $P = \RadixMin$};
+\node[ann] at (11.95,2.82) {$N$ 8--1024, $G$ 2--16};
+
+% =========================== row 6: MESH, 4 =================================
+\node[num] at (2.62,1.95) {4};
+\node[fam] at (2.06,1.95) {2D mesh};
+\foreach \k in {0,...,3}{
+  \begin{scope}[shift={(3.05+\k*0.90,1.95)}]
+    \foreach \i in {0,1,2}{ \foreach \j in {0,1,2}{
+      \node[dot] (m\i\j) at (-0.20+\i*0.20,-0.20+\j*0.20) {};
+    }}
+    \foreach \j in {0,1,2}{ \draw[el] (m0\j) -- (m1\j) -- (m2\j); }
+    \foreach \i in {0,1,2}{ \draw[el] (m\i0) -- (m\i1) -- (m\i2); }
+  \end{scope}
+}
+\node[ann] at (11.95,2.10) {radix $P = \RadixLo$};
+\node[ann] at (11.95,1.82) {$N$ 16--2048, $G$ 5--256};
+
+% ---- key and footer --------------------------------------------------------
+\begin{scope}[shift={(0.45,1.20)}]
+  \draw[oel, densely dashed] (0,0) circle (0.19);
+  \node[dot] at (0,0) {};
+\end{scope}
+\node[font=\tiny, text=spAmber!80!spInk, anchor=west, inner sep=1pt] at (0.72,1.20)
+  {\RadixMaxInst{} --- fat-tree, $N{=}8192$, $G{=}4096$, $P{=}\RadixMax$,
+   \RadixMaxRouters{} routers --- is the one instance the campaign excludes.};
+
+\node[anchor=north west, align=left, font=\tiny, inner sep=1pt, text=spInk,
+      text width=16.6cm] at (0.15,0.96)
+  {The suite is not a balanced factorial design and the drawing says so. Torus
+   and fat-tree carry 19 of the \SuiteSize{} instances between them and linear
+   and mesh carry 8; only three families are exercised at $N{=}8192$ and only
+   fat-tree reaches $G{=}4096$. The emphasis is not arbitrary --- the two
+   longest rows are the two families whose radix is a function of $G$ rather
+   than a constant, so they are where the fabric is actually stressed --- but it
+   does mean the per-topology rows of the campaign are not equally weighted
+   evidence, and no cell-level contrast between families is available from
+   \SuiteSize{} instances spread this way.};
+\end{tikzpicture}

@@ -1,0 +1,89 @@
+% f11_export_cost variant d -- the paired chunking arms, and the sign flip.
+% Data: experiments/w_final/W2/v004/COST.json, cost_table rows backend=nccl,
+%   G=2, dtype=fp64, N=8, arms fbt_ch1 and fbt_ch2, field overhead.  Both arms
+%   share the same stock_us at each size, so the printed ratio is exactly
+%   fbt_us(two chunks) / fbt_us(one chunk).  Scalars: data/wround_macros.tex.
+% Mechanism, from the released driver (tree_allreduce in
+%   experiments/w_final/W2/*/libfreeze/w_worker.py): with C chunks the vector
+%   is cut into C pieces and the piece index selects which side of each
+%   internal node roots it, so at C=2, G=2 each rank roots one half.  That
+%   halves the bytes on the critical path and doubles the number of dependent
+%   send/broadcast pairs.
+% Strategy: this is the only variant that isolates the EFFECT of a change
+%   rather than the level of the overhead, and it is the evidence that
+%   separates the two cost terms.  The same algorithmic change costs 1.81x to
+%   2.78x below 1 MiB and pays back 0.94x to 0.84x at 32-128 MiB.  A cost that
+%   reverses sign with message size is dominated by per-call launches at the
+%   small end, not by the tree.  Variant a shows the same two series as levels
+%   and cannot make this argument.
+% Scope: NCCL only; gloo excluded as a broken baseline (\PinGlooBadRatio{}x
+%   inversion in message size at G=\PinGlooBadWorld).
+\begin{tikzpicture}
+\begin{axis}[
+  width=8.6cm, height=6.2cm,
+  xlabel={message size (K $=$ KiB, M $=$ MiB)},
+  ylabel={overhead vs stock ($\times$)},
+  xmode=log, log basis x=2, ymode=log,
+  xmin=3000, xmax=2.6e8, ymin=1.0, ymax=9.2,
+  xtick={8192,32768,131072,524288,2097152,8388608,33554432,134217728},
+  xticklabels={8\,K,32\,K,128\,K,512\,K,2\,M,8\,M,32\,M,128\,M},
+  ytick={1,1.5,2,3,4,6,9},
+  yticklabels={1.0,1.5,2.0,3.0,4.0,6.0,9.0},
+  minor tick num=0,
+  tick label style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  grid=major, grid style={spGrid, very thin},
+  clip=false,
+]
+\addplot[draw=none, fill=spBlueF, forget plot] coordinates {
+  (1.7e7,1.0) (2.6e8,1.0) (2.6e8,9.2) (1.7e7,9.2)} \closedcycle;
+\node[font=\tiny, anchor=north, text=spBlue] at (axis cs:6.6e7,8.6)
+  {two chunks faster};
+% Splitting into two chunks HURTS (arrow points up).
+\draw[spVerm, line width=1.1pt, -{Stealth[length=3.2pt]}]
+  (axis cs:8192,3.2881)   -- (axis cs:8192,5.9672);
+\draw[spVerm, line width=1.1pt, -{Stealth[length=3.2pt]}]
+  (axis cs:32768,2.9177)  -- (axis cs:32768,8.1053);
+\draw[spVerm, line width=1.1pt, -{Stealth[length=3.2pt]}]
+  (axis cs:131072,3.1203) -- (axis cs:131072,5.4287);
+\draw[spVerm, line width=1.1pt, -{Stealth[length=3.2pt]}]
+  (axis cs:524288,1.5932) -- (axis cs:524288,2.6641);
+\draw[spVerm, line width=1.1pt, -{Stealth[length=3.2pt]}]
+  (axis cs:2097152,2.6867) -- (axis cs:2097152,2.8020);
+\draw[spVerm, line width=1.1pt, -{Stealth[length=3.2pt]}]
+  (axis cs:8388608,1.4851) -- (axis cs:8388608,1.5659);
+% Splitting into two chunks HELPS (arrow points down).
+\draw[spBlue, line width=1.1pt, densely dashed, -{Stealth[length=3.2pt]}]
+  (axis cs:33554432,1.6679) -- (axis cs:33554432,1.5691);
+\draw[spBlue, line width=1.1pt, densely dashed, -{Stealth[length=3.2pt]}]
+  (axis cs:134217728,2.2067) -- (axis cs:134217728,1.8461);
+% Tails: the one-chunk arm each arrow starts from.
+\addplot[only marks, mark=*, mark size=1.6pt, spInk] coordinates {
+  (8192,3.2881) (32768,2.9177) (131072,3.1203) (524288,1.5932)
+  (2097152,2.6867) (8388608,1.4851) (33554432,1.6679) (134217728,2.2067)};
+% Ratio of the two arms at each size.
+\node[font=\tiny, anchor=east, text=spVerm] at (axis cs:7300,4.43)   {$1.81\times$};
+\node[font=\tiny, anchor=east, text=spVerm] at (axis cs:29200,4.86)  {$2.78\times$};
+\node[font=\tiny, anchor=east, text=spVerm] at (axis cs:1.17e5,4.12) {$1.74\times$};
+\node[font=\tiny, anchor=east, text=spVerm] at (axis cs:4.67e5,2.06) {$1.67\times$};
+\node[font=\tiny, anchor=east, text=spVerm] at (axis cs:1.87e6,2.74) {$1.04\times$};
+\node[font=\tiny, anchor=east, text=spVerm] at (axis cs:7.48e6,1.525) {$1.05\times$};
+\node[font=\tiny, anchor=east, text=spBlue] at (axis cs:2.99e7,1.617) {$0.94\times$};
+\node[font=\tiny, anchor=east, text=spBlue] at (axis cs:1.196e8,2.02) {$0.84\times$};
+\node[font=\tiny, anchor=south west, align=left, inner sep=1.5pt, text=spInk]
+  at (axis cs:3400,1.015)
+  {arrow: one chunk $\rightarrow$ two chunks, same tree and same stock
+   baseline;\\[-1pt]
+   labels are the ratio of the two pinned times.  Two chunks halve the bytes\\[-1pt]
+   on the critical path and double the dependent send/broadcast pairs.};
+\node[font=\tiny, anchor=north east, align=right, inner sep=2.5pt, text=spInk,
+      draw=spMute, fill=white, fill opacity=0.92, text opacity=1]
+  at (axis cs:2.45e8,7.9)
+  {the same change costs $1.8$--$2.8\times$\\[-1pt]
+   below $1$\,MiB and pays back at\\[-1pt]
+   $32$--$128$\,MiB ($\PinBigChunkTwo$ vs
+   $\PinBigChunkOne\times$):\\[-1pt]
+   the small-message term is launches,\\[-1pt]
+   not the tree};
+\end{axis}
+\end{tikzpicture}

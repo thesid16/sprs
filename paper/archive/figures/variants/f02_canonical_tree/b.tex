@@ -1,0 +1,103 @@
+% f02_canonical_tree variant b -- the drawn tree and the stored array are the
+% same object; every structural question is one expression in the heap index.
+% Data: Definitions 1-2 of main.tex (sec:abi-tree); the closed forms are the
+% released implementation (experiments/w_final/lib/pinned_fbt.py: is_leaf,
+% leaf_index, depth) and src/sprs_core.py's CBTree.
+% Strategy: argue the ADDRESSING rather than the picture. FBT(N) is never
+% built as a pointer structure -- it is an index range - which is why the
+% operand binding can be a pure function of node identity, emitted before G,
+% the topology or the placement is known. a states the definition, c the
+% evaluation order, d why the choice is not free.
+% Colour: internal nodes and cells are structure (spBlue); leaf cells are the
+% data slots (spSky); the one node marked in both representations is an
+% annotation tying the two pictures together (spPurple); the child-index arrows
+% are structure, so they stay spBlue. Cell shape and the brace labels carry the
+% internal/leaf split without colour.
+% Target: IEEE single column (3.5in = 8.9cm); drawn width approx 8.6cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  inode/.style={draw=spBlue, circle, thick, inner sep=0pt, minimum size=4.4mm,
+                font=\tiny, fill=spBlueF, text=spInk},
+  lnode/.style={draw=spSky!80!spInk, rounded corners=0.8pt, thick, inner sep=0pt,
+                minimum size=4.2mm, font=\tiny, fill=spSkyF, text=spInk},
+  edg/.style={draw=spBlue!70, thin},
+  cell/.style={draw, thick, minimum width=5.0mm, minimum height=3.6mm,
+               inner sep=0pt, font=\tiny, text=spInk},
+  fbtlbl/.style={font=\tiny, inner sep=1pt},
+]
+\def\ap{0.55}
+\def\tp{0.60}
+\def\ax{0.35}
+% ---------- the tree, small ---------------------------------------------------
+\foreach \i in {0,...,7} {
+  \pgfmathsetmacro{\x}{\ax+0.55+\i*\tp}
+  \node[lnode] (L\i) at (\x,3.00) {\pgfmathparse{int(\i+7)}\pgfmathresult};
+}
+\foreach \n/\a/\b in {3/0/1, 4/2/3, 5/4/5, 6/6/7} {
+  \pgfmathsetmacro{\x}{\ax+0.55+(\a+\b)*\tp/2}
+  \node[inode] (N\n) at (\x,3.60) {\n};
+  \draw[edg] (N\n) -- (L\a);  \draw[edg] (N\n) -- (L\b);
+}
+\node[inode] (N1) at ({\ax+0.55+1.5*\tp},4.20) {1};
+\node[inode] (N2) at ({\ax+0.55+5.5*\tp},4.20) {2};
+\draw[edg] (N1) -- (N3); \draw[edg] (N1) -- (N4);
+\draw[edg] (N2) -- (N5); \draw[edg] (N2) -- (N6);
+\node[inode, draw=spGreen, fill=spGreenF, line width=1.0pt] (N0) at ({\ax+0.55+3.5*\tp},4.80) {0};
+\draw[edg] (N0) -- (N1); \draw[edg] (N0) -- (N2);
+
+% ---------- the same thing as a heap array -----------------------------------
+\foreach \n in {0,...,6} {
+  \pgfmathsetmacro{\x}{\ax+\n*\ap}
+  \node[cell, draw=spBlue, fill=spBlueF] (A\n) at (\x,1.30) {\n};
+}
+\foreach \n in {7,...,14} {
+  \pgfmathsetmacro{\x}{\ax+\n*\ap}
+  \node[cell, draw=spSky!80!spInk, fill=spSkyF, rounded corners=1.2pt] (A\n) at (\x,1.30) {\n};
+}
+% the same node, marked in both representations
+\node[draw=spPurple!85!spInk, very thick, rounded corners=0.8pt,
+      minimum size=5.4mm, inner sep=0pt] at (L4) {};
+\node[draw=spPurple!85!spInk, very thick, minimum width=6.0mm, rounded corners=1.6pt,
+      minimum height=4.6mm, inner sep=0pt] at (A11) {};
+\node[fbtlbl, text=spPurple!85!spInk, anchor=north] at ($(A11.south)+(0,-0.10)$)
+  {one node, two forms};
+
+% ---------- the two index windows --------------------------------------------
+\draw[decorate, decoration={brace, amplitude=3.5pt}, spMute, semithick]
+  ($(A0.north west)+(0,0.12)$) -- ($(A6.north east)+(0,0.12)$);
+\draw[decorate, decoration={brace, amplitude=3.5pt}, spMute, semithick]
+  ($(A7.north west)+(0,0.12)$) -- ($(A14.north east)+(0,0.12)$);
+\node[fbtlbl, text=spBlue, anchor=south] at ($(A3.north)+(0,0.38)$)
+  {internal: $n\le N{-}2$};
+\node[fbtlbl, text=spSky!60!spInk, anchor=south] at ($(A10.north)+(0.28,0.38)$)
+  {leaves: $n\ge N{-}1$, holding $L[\,n-(N{-}1)\,]$};
+
+% ---------- the index arithmetic, drawn ---------------------------------------
+\draw[-{Stealth[length=1.5mm]}, spBlue, thick]
+  (A2.south) to[out=-90, in=-90, looseness=0.9] (A5.south);
+\draw[-{Stealth[length=1.5mm]}, spBlue, thick]
+  (A2.south) to[out=-95, in=-85, looseness=1.3] (A6.south);
+\node[fbtlbl, text=spBlue, fill=white, inner sep=0.7pt]
+  at (2.25,0.86) {$2n{+}1$};
+\node[fbtlbl, text=spBlue, fill=white, inner sep=0.7pt]
+  at (2.55,0.53) {$2n{+}2$};
+\node[fbtlbl, text=spBlue, anchor=west] at (4.25,0.58)
+  {children of $n{=}2$};
+
+% ---------- the closed forms --------------------------------------------------
+\node[anchor=north west, font=\tiny, align=left, inner sep=0pt] at (-0.34,0.38) {};
+\node[anchor=north west, font=\tiny, align=left, inner sep=0pt, text width=8.3cm, text=spInk]
+  at (-0.34,0.10)
+  {No pointers and no traversal:
+   every structural question about $\FBT(N)$ is a single expression in the heap
+   index $n$ ---
+   $\mathrm{children}(n)=(2n{+}1,\,2n{+}2)$, \
+   $\mathrm{parent}(n)=\lfloor (n{-}1)/2\rfloor$, \
+   $\mathrm{leaf}(n)\iff 2n{+}1\ge 2N{-}1\iff n\ge N{-}1$, \
+   $\mathrm{idx}(n)=n-(N{-}1)$, \
+   $\mathrm{depth}(n)=\lfloor\log_2(n{+}1)\rfloor$.\\[1.6pt]
+   So the compiler can emit
+   $(\mathtt{addr\_a},\mathtt{addr\_b})=(\mathrm{dmem}(2v{+}1),\mathrm{dmem}(2v{+}2))$
+   for every internal $v$ \emph{before} it knows $G$, the topology, or which PE
+   will host $v$ --- which is the whole content of Definition~3.};
+\end{tikzpicture}

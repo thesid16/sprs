@@ -1,0 +1,60 @@
+% f19_reshape variant a -- what reshape does to a reduction, and which layer each
+% available answer acts at.
+% Data: the reshape premise is measured in experiments/w_final/W1/RESULT.json (macros
+%       \Gpu* in data/wround_macros.tex); the layer stack and the ABI's position are the
+%       contribution as stated in main.tex.
+% Strategy: variants b-d give a training-run timeline, a stack-only view, and a
+%       practitioner's decision table. This one pairs the halves -- what goes wrong on
+%       the left, where one can intervene on the right. f01_premise is the EVIDENCE that
+%       reshape diverges; this is the ARGUMENT that the fix belongs at a particular
+%       layer, which is the actual contribution.
+% Note: the left panel shows GROUPING, not a tree drawing. What reshape changes is which
+%       operands pair; brackets show that directly where a schematic tree would not.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn inside 17.4cm.
+\begin{tikzpicture}[x=1cm, y=1cm, font=\footnotesize,
+  w/.style={draw=spBlue, line width=0.5pt, fill=spBlueF, rounded corners=1.5pt,
+            minimum width=7.2mm, minimum height=5mm, inner sep=1pt, font=\tiny},
+  lay/.style={draw=spMute, line width=0.5pt, fill=white, text width=44mm,
+              minimum height=11mm, inner sep=3.5pt, font=\scriptsize, anchor=west,
+              align=left},
+  hit/.style={lay, draw=spBlue, line width=1.2pt, fill=spBlueF},
+  ttl/.style={font=\scriptsize\bfseries, anchor=west, text=spInk},
+  ann/.style={font=\tiny, anchor=west, text=spMute},
+]
+% ================= left: what reshape changes =================
+\node[ttl] at (0,2.62) {the same bytes, two cluster shapes};
+\foreach \i in {0,...,7} \node[w] at ({0.42+\i*0.85},1.62) {$L_{\i}$};
+
+% G=2 grouping: two groups of four
+\node[font=\tiny, anchor=east, text=spInk] at (0.05,0.98) {$G{=}2$};
+\foreach \g in {0,1} {
+  \draw[spBlue, line width=0.7pt]
+    ({0.06+\g*3.40},1.20) -- ({0.06+\g*3.40},0.98) -- ({3.20+\g*3.40},0.98) -- ({3.20+\g*3.40},1.20);
+  \draw[spBlue, line width=0.7pt] ({1.63+\g*3.40},0.98) -- ({1.63+\g*3.40},0.76);}
+\node[font=\tiny, anchor=west, text=spBlue] at (7.05,0.86) {$\rightarrow R_a$};
+
+% G=4 grouping: four groups of two
+\node[font=\tiny, anchor=east, text=spInk] at (0.05,0.20) {$G{=}4$};
+\foreach \g in {0,1,2,3} {
+  \draw[spVerm, line width=0.7pt, dashed]
+    ({0.06+\g*1.70},0.42) -- ({0.06+\g*1.70},0.20) -- ({1.49+\g*1.70},0.20) -- ({1.49+\g*1.70},0.42);
+  \draw[spVerm, line width=0.7pt, dashed] ({0.78+\g*1.70},0.20) -- ({0.78+\g*1.70},-0.02);}
+\node[font=\tiny, anchor=west, text=spVerm] at (7.05,0.08) {$\rightarrow R_b \neq R_a$};
+
+\node[ann, text width=74mm, align=left] at (0,-0.62)
+  {Nothing about the data changed --- only which operands pair. Floating-point addition
+   is not associative, so the bit pattern changes with it. Measured across
+   \GpuWorldSizes{} world sizes on identical input: \GpuRootsDistinct{} distinct roots.};
+
+% ================= right: where an answer can act =================
+\node[ttl] at (9.3,2.62) {where an answer can act};
+\node[lay] at (9.3,1.72) {application\\[1pt]\textcolor{spMute}{\tiny pin the world size --- gives up elasticity}};
+\node[lay] at (9.3,0.42) {collective library\\[1pt]\textcolor{spMute}{\tiny sort or compensate --- costly, still order-dependent}};
+\node[hit] at (9.3,-0.88) {\textbf{compiler/fabric ABI}\\[1pt]\textcolor{spBlue}{\tiny fix the order and enforce it below the software --- this paper}};
+\node[lay] at (9.3,-2.18) {fabric\\[1pt]\textcolor{spMute}{\tiny unconstrained --- fast, not reproducible}};
+\draw[{Latex[length=1.6mm]}-, spBlue, line width=1.0pt] (9.05,-0.88) -- (8.30,-0.88);
+\node[ann, text width=66mm, align=left, text=spInk] at (9.3,-3.35)
+  {The order is named once, the compiler proves it emitted that order, and the fabric
+   refuses to execute anything else --- so the result stops depending on the shape of
+   the machine, rather than being repaired after it already did.};
+\end{tikzpicture}

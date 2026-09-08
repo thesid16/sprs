@@ -1,0 +1,85 @@
+% f06_compiler variant b -- the configuration space collapsing, stage by stage.
+% Data: per-instance space 18 x 10 x 122 = 21,960 (alpha,mu,r) triples and the
+%       0.82% figure are Methodology in main.tex; the enumerated face is
+%       \SelConfigsTotal{} = 18 x 10; the mapping collapse (ten mappings,
+%       byte-identical cycle counts on all \TournNInst{} instances conditional
+%       on ParSub) and \SelIdentityOpt/\SelIdentityMean/\SelIdentityWorst are
+%       the selection-rule results in main.tex; portfolio size \SelConfigsRun{}
+%       with \SelKFourOpt/\TournNInst{} optimal, mean regret \SelKFourMean{} and
+%       worst \SelKFourWorst; compile cost \SelCompileBefore{}s -> \SelCompileAfter{}s
+%       (\SelSpeedup$\times$) -- all from data/results_macros.tex and
+%       data/tournament_macros.tex. Stage names from src/sprs_core.py.
+%       The bar length is 2.9cm per decade of the count; no other geometry.
+% Strategy: the pipeline as a decision space rather than as a sequence of boxes.
+% It carries the paper's sharpest software claim -- that the mapping stage can
+% be deleted because assignment is the whole decision -- which variant a can
+% only footnote and variants c and d cannot state at all.
+% Colour: the top bar is the space the compiler can express and the campaign
+% mostly did not enter, so it is spMute; the two bars the campaign actually
+% enumerated are spBlue, and the collapse arrows between them are spBlue too,
+% so the real path narrows in one colour. The portfolio that ships, and the
+% claim it establishes, are spGreen -- confirmed, not merely run. The one
+% spVerm quantity is the cost of choosing badly among assignments. Bar length
+% is the data channel and is untouched; fill value and rule weight order the
+% four rows with the colour stripped.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn inside 17.0cm, which is
+%         also the standalone wrapper's varwidth, so nothing is clipped.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  barM/.style={draw=spMute, line width=0.4pt, fill=spGrid},
+  barB/.style={draw=spBlue, line width=0.4pt, fill=spBlue!28},
+  barG/.style={draw=spGreen!80!spInk, line width=0.8pt, fill=spGreen!62},
+  st/.style={font=\scriptsize, anchor=west, inner sep=2pt, fill=white, text=spInk},
+  ct/.style={font=\scriptsize, anchor=west, inner sep=2pt, text=spInk},
+  an/.style={font=\tiny, anchor=north west, align=left, inner sep=1pt, text=spMute},
+  dn/.style={-{Latex[length=1.5mm,width=1.1mm]}, draw=spBlue, line width=0.4pt},
+  dnM/.style={-{Latex[length=1.5mm,width=1.1mm]}, draw=spMute, line width=0.35pt},
+]
+% ---- collapse arrows ---------------------------------------------------
+\draw[dnM] (13.19,0.10) -- (7.14,-0.58);
+\draw[dn] (7.14,-1.00)  -- (4.24,-1.68);
+\draw[dn] (4.24,-2.10)  -- (2.35,-3.00);
+% x(v) = 0.60 + 2.9*log10(v):  21960 -> 13.19 | 180 -> 7.14 | 18 -> 4.24 | 4 -> 2.35
+% ---- row 1 -------------------------------------------------------------
+\node[st] at (0.60,0.62) {\textbf{S2}$\times$\textbf{S3}$\times$\textbf{S4}: every
+  $(\alpha,\mu,r)$ triple the compiler can express};
+\draw[barM] (0.60,0.10) rectangle (13.19,0.46);
+\node[ct] at (13.25,0.28) {$18\times10\times122 = 21{,}960$};
+% ---- row 2 -------------------------------------------------------------
+\node[st] at (0.60,-0.48) {\textbf{S4} fixed at the identity --- the axis the
+  campaign does not cover};
+\draw[barB] (0.60,-1.00) rectangle (7.14,-0.64);
+\node[ct] at (7.20,-0.82) {$18\times10 = \SelConfigsTotal$ per instance, $0.82\%$
+  of the space, enumerated \emph{exhaustively}};
+% ---- row 3 -------------------------------------------------------------
+\node[st] at (0.60,-1.58) {\textbf{S3} contributes nothing to choose between};
+\draw[barB] (0.60,-2.10) rectangle (4.24,-1.74);
+\node[ct] at (4.30,-1.92) {$18$ distinct decisions};
+\node[an, text width=110mm] at (4.30,-2.14)
+  {conditional on \sv{ParSub}, the ten mapping algorithms give \emph{byte-identical}
+   cycle counts on all \TournNInst{} instances; $\mu$ reaches the emitted image only
+   through NOP padding};
+% ---- row 4 -------------------------------------------------------------
+\node[st] at (0.60,-2.90) {selection: compile the portfolio, keep the best};
+\draw[barG] (0.60,-3.42) rectangle (2.35,-3.06);
+\node[ct] at (2.41,-3.24) {\textbf{\SelConfigsRun{} compilations}};
+\node[an, text width=118mm] at (2.41,-3.46)
+  {optimal on \SelKFourOpt{} of \TournNInst{} instances, mean held-out regret
+   \SelKFourMean, worst \SelKFourWorst; compile cost \SelCompileBefore\,s
+   $\rightarrow$ \SelCompileAfter\,s ($\SelSpeedup\times$)};
+% ---- the punchline -----------------------------------------------------
+\draw[draw=spGreen, line width=0.7pt, rounded corners=2pt, fill=spGreenF]
+  (0.60,-4.86) rectangle (16.90,-3.94);
+\node[font=\scriptsize, anchor=north west, align=left, text width=160mm,
+      text=spInk] at (0.85,-4.06)
+  {\textbf{The mapping stage can be deleted.} Fixing $\mu$ at \sv{Identity} and choosing
+   only the assignment attains the \emph{exact} optimum on \SelIdentityOpt{} of
+   \TournNInst{} instances, at mean cost \SelIdentityMean{} and worst case
+   \SelIdentityWorst.};
+\node[font=\tiny, anchor=north west, text=spMute, align=left, text width=163mm]
+  at (0.60,-4.98)
+  {\sv{Identity} is not the best mapping --- it is indistinguishable from the other
+   nine and the cheapest to compute. The spread across \emph{assignment} algorithms is
+   three orders of magnitude larger: \SelZeroCount{} of the eighteen are in the champion
+   class on zero instances and \textcolor{spVerm}{cost a median $\SelZeroRegretLo\times$ to
+   $\SelZeroRegretHi\times$ in cycles}.};
+\end{tikzpicture}

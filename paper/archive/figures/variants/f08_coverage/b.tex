@@ -1,0 +1,62 @@
+% f08_coverage variant b -- the 40 instances in (N, G) space, marker by topology.
+% Data: the instance manifest embedded in scripts/gen_coverage.py (SUITE: the
+%   (N, G, topology) triple for all 40 instances; the same list that generates
+%   tables/coverage.tex). The correlation is \SelRhoNG{} (p = $\SelRhoNGP$),
+%   computed over the 39 HW-validated instances -- maxp_mod_fat is drawn as an
+%   open marker because it is the one instance the campaign excludes.
+% Strategy: argue L5's FIRST consequence -- N and G are confounded by
+%   construction -- by showing it directly, instead of arguing sparsity from cell
+%   counts as variants a and c do. A reader sees that the suite occupies a narrow
+%   diagonal band, so no result can separate problem size from worker count.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn at 8.6cm.
+\begin{tikzpicture}
+\begin{axis}[
+  width=8.6cm, height=6.4cm,
+  xmode=log, log basis x=2, ymode=log, log basis y=2,
+  xlabel={leaf count $N$}, ylabel={worker count $G$},
+  xmin=6, xmax=16000, ymin=1.5, ymax=9000,
+  xtick={8,128,512,2048,8192},
+  ytick={2,8,32,128,512,2048},
+  xticklabels={8,128,512,2048,8192},
+  yticklabels={2,8,32,128,512,2048},
+  grid=major, major grid style={spGrid, very thin},
+  tick label style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  legend style={font=\tiny, at={(0.5,1.02)}, anchor=south, legend columns=3,
+                draw=none, fill=none, column sep=3pt},
+  mark options={scale=0.85},
+  clip=false,
+]
+% the diagonal band the suite actually occupies: G between N/64 and N/1
+\addplot[draw=spAmber, densely dashed, line width=0.4pt, fill=spAmberF,
+         forget plot] coordinates {
+  (8,0.125) (8192,128) (8192,8192) (8,8)} \closedcycle;
+\node[font=\tiny, text=spAmber, rotate=34, anchor=south west]
+  at (axis cs:11,3.4) {the band the suite occupies};
+\addplot[only marks, mark=*, spBlue] coordinates {
+  (32,16) (100,10) (128,16) (128,128) (500,32) (512,16) (1024,64) (2048,128) (4096,1024) (8192,2048)};
+\addlegendentry{torus}
+\addplot[only marks, mark=square*, spVerm] coordinates {
+  (32,8) (128,32) (200,12) (512,64) (1024,128) (2048,256) (3000,128) (4096,2048)};
+\addlegendentry{fat-tree}
+\addplot[only marks, mark=triangle*, spGreen] coordinates {
+  (32,4) (50,7) (512,32) (1024,32) (1500,64) (4096,512) (8192,1024)};
+\addlegendentry{hypercube}
+\addplot[only marks, mark=diamond*, spPurple] coordinates {
+  (8,4) (10,4) (128,64) (512,256) (1024,512) (2048,512)};
+\addlegendentry{ring}
+\addplot[only marks, mark=pentagon*, spAmber] coordinates {
+  (16,5) (128,8) (512,64) (2048,256)};
+\addlegendentry{mesh}
+\addplot[only marks, mark=x, mark size=2.4pt, line width=0.8pt, spInk] coordinates {
+  (8,2) (128,4) (512,8) (1024,16)};
+\addlegendentry{linear}
+% maxp_mod_fat: in the manifest, excluded from the campaign (see Methodology, L0)
+\addplot[only marks, mark=square, mark size=2.4pt, spMute, forget plot]
+  coordinates {(8192,4096)};
+\node[font=\tiny, anchor=east, text=spMute] at (axis cs:6000,4096) {excluded};
+\node[font=\tiny, anchor=south west, align=left, inner sep=2.5pt,
+      draw=spAmber, fill=white, fill opacity=0.9, text opacity=1, text=spAmber]
+  at (axis cs:9,700) {Spearman $\rho = \SelRhoNG$\\($p = \SelRhoNGP$, $n=39$)};
+\end{axis}
+\end{tikzpicture}

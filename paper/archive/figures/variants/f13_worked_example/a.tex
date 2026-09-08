@@ -1,0 +1,79 @@
+% f13_worked_example variant a -- the whole invariance claim made concrete at
+% N=8: real leaf values, the real partial sum at every internal node, and the
+% real 64-bit root word.
+% Data: leaf values are src/sprs_core.py make_leaf_val(k, alu_op=0b111=ALU_FADD),
+%   L[k] = 1000(k+1) + ((37k+13) mod 100)/100 + 0.007 evaluated in FP64.  The
+%   tree is FBT(8) (Def. 1): 2N-1 = 15 nodes, children of n at 2n+1 and 2n+2,
+%   leaves at heap indices 7..14 carrying idx 0..7 ascending.  Every internal
+%   value here was RECOMPUTED for this figure by evaluating that tree bottom-up
+%   in FP64, and the resulting root reproduces the N=8 row of
+%   tables/invariance.tex bit-exactly -- 0x40E1948E978D4FDF -- which is the
+%   same self-validation scripts/gen_claim_macros.py performs on all 16 roots.
+%   The configuration counts (28 passing HW configurations, 0 divergences) are
+%   that same table row.
+% Strategy: the ARTEFACT.  It answers "what are the numbers?" -- every node
+%   carries the value the machine actually holds, so the reader can check the
+%   root by hand.  b instead runs the same reduction on two real machines side
+%   by side; c opens up the FP64 rounding inside the seven adds; d strips
+%   everything away to the one sentence.
+% Colour: the tree is the canonical structure (spBlue); leaf slots are the free
+%   data the ABI does not constrain (spSky); the root word is the confirmed
+%   invariant (spGreen).  Shape carries the same distinction without colour --
+%   square leaves, rounded internal nodes, heavy rule on the root.
+% Target: IEEE single column (3.5in = 8.9cm); drawn width approx 8.5cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  inode/.style={draw=spBlue, rounded corners=1.6pt, thick, fill=spBlueF,
+                text=spInk, font=\tiny, align=center, inner sep=1.6pt,
+                minimum width=11.6mm, minimum height=5.6mm},
+  rnode/.style={inode, draw=spGreen, fill=spGreenF, line width=1.1pt},
+  lnode/.style={draw=spSky!80!spInk, thick, fill=spSkyF, text=spInk,
+                font=\tiny, inner sep=0pt, minimum size=4.9mm},
+  edg/.style={draw=spBlue!70, thin},
+  lbl/.style={font=\tiny, inner sep=0.6pt, text=spInk},
+  mut/.style={font=\tiny, inner sep=0.6pt, text=spMute},
+]
+\def\lp{1.088}
+% ---- the generator, stated so the leaves are reproducible -------------------
+\node[anchor=north west, font=\tiny, align=left, text width=8.20cm,
+      inner sep=1pt, text=spInk] at (-0.30,4.62)
+  {$L[k]=1000(k{+}1)+\bigl((37k{+}13)\bmod 100\bigr)/100+0.007$ in FP64
+   (\sv{make\_leaf\_val}, \sv{alu\_op}\,$=$\,\sv{ALU\_FADD}). All values below
+   are shown to three decimals; the machine holds the FP64 words.};
+% ---- leaves ----------------------------------------------------------------
+\foreach \i/\val in {0/1000.137, 1/2000.507, 2/3000.877, 3/4000.247,
+                     4/5000.617, 5/6000.987, 6/7000.357, 7/8000.727} {
+  \pgfmathsetmacro{\x}{\i*\lp}
+  \pgfmathtruncatemacro{\hh}{\i+7}
+  \node[lnode] (L\i) at (\x,0) {\hh};
+  \node[mut, below=0.4mm of L\i] (LI\i) {$L[\i]$};
+  \node[lbl, below=0.3mm of LI\i] {\val};
+}
+% ---- level 2: nodes 3..6 ---------------------------------------------------
+\foreach \n/\a/\b/\val in {3/0/1/3000.644, 4/2/3/7001.124,
+                           5/4/5/11001.604, 6/6/7/15001.084} {
+  \pgfmathsetmacro{\x}{(\a+\b)*\lp/2}
+  \node[inode] (N\n) at (\x,1.28) {$v_{\n}$\\\val};
+  \draw[edg] (N\n) -- (L\a);  \draw[edg] (N\n) -- (L\b);
+}
+% ---- level 1 ---------------------------------------------------------------
+\node[inode] (N1) at ({1.5*\lp},2.44) {$v_{1}$\\10001.768};
+\node[inode] (N2) at ({5.5*\lp},2.44) {$v_{2}$\\26002.688};
+\draw[edg] (N1) -- (N3); \draw[edg] (N1) -- (N4);
+\draw[edg] (N2) -- (N5); \draw[edg] (N2) -- (N6);
+% ---- root ------------------------------------------------------------------
+\node[rnode, minimum width=14mm] (N0) at ({3.5*\lp},3.60) {$v_{0}$ (root)\\36004.456};
+\draw[edg] (N0) -- (N1); \draw[edg] (N0) -- (N2);
+\node[mut, anchor=west, align=left] at ({3.5*\lp+0.80},3.60)
+  {seven \sv{COMPUTE}s,\\in internal post-order\\
+   $\pi_8=\langle3,4,1,5,6,2,0\rangle$};
+% ---- the root word, beneath ------------------------------------------------
+\node[draw=spGreen, line width=0.8pt, rounded corners=1.6pt, fill=spGreenF,
+      anchor=north west, font=\tiny, align=left, inner sep=3pt,
+      text width=7.98cm, text=spInk] at (-0.30,-1.30)
+  {\textbf{The 64-bit root.} \ \texttt{0x40E1948E978D4FDF} $=\Rcan(8,L)$.
+   Recomputing this tree in FP64 reproduces the $N{=}8$ row of the invariance
+   table bit-exactly, and that word is what all \textbf{28} RTL-validated
+   configurations at $N{=}8$ returned --- two $(G,\text{topology})$ points,
+   every assignment, mapping and schedule --- with \textbf{0} divergences.};
+\end{tikzpicture}

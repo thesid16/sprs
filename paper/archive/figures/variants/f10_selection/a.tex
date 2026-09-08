@@ -1,0 +1,58 @@
+% f10_selection variant a -- held-out regret against portfolio size k.
+% Data: experiments/w_final/W9_selection/RESULT_ksweep.json (k_sweep, bootstrap_ci).
+% Strategy: trend plus uncertainty. Shows the k=4 knee, and that the
+% topology-held-out curve sits above leave-one-out yet still far below the best
+% single algorithm -- i.e. the rule transfers to a topology it never saw.
+% Bands are 95% bootstrap CIs (B=2000, resampling the 39 instances); they exist
+% only for k=2..5, which is the range the bootstrap was run over.
+\begin{tikzpicture}
+\begin{axis}[
+  % IEEE single column is 3.5in = 8.9cm; fixed size so the guide preview
+  % is identical to what the paper typesets.
+  width=8.6cm, height=6.0cm,
+  xlabel={portfolio size $k$}, ylabel={mean held-out regret},
+  xmin=0.7, xmax=8.3, ymin=0.996, ymax=1.132,
+  xtick={1,2,3,4,5,6,7,8},
+  ytick={1.00,1.02,1.04,1.06,1.08,1.10,1.12},
+  yticklabel style={/pgf/number format/fixed, /pgf/number format/precision=2},
+  grid=major, grid style={spGrid, very thin},
+  tick label style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  legend style={font=\tiny, at={(0.985,0.965)}, anchor=north east,
+                draw=spMute, fill=white, fill opacity=0.92, text opacity=1,
+                row sep=0.5pt, inner sep=2pt},
+  every axis plot/.append style={thick},
+  clip=false,
+]
+% 95% CI band, topology held out: forward along the lower bound, back along the upper.
+\addplot[draw=none, fill=spVermF, forget plot] coordinates {
+  (2,1.0314) (3,1.0099) (4,1.0025) (5,1.0025)
+  (5,1.0885) (4,1.0885) (3,1.0955) (2,1.1245)} \closedcycle;
+% 95% CI band, leave-one-out.
+\addplot[draw=none, fill=spBlueF, forget plot] coordinates {
+  (2,1.0171) (3,1.0030) (4,1.0000) (5,1.0000)
+  (5,1.0076) (4,1.0076) (3,1.0209) (2,1.0454)} \closedcycle;
+\addplot[spMute, dashed, line width=0.6pt, domain=0.7:8.3, samples=2] {1.0797};
+\addlegendentry{best single algorithm}
+% The topology-held-out protocol is the honest one, so it carries the weight:
+% heaviest rule, largest marker, and the costlier of the two hues.
+\addplot[spVerm, mark=square*, mark size=2.1pt, densely dashed,
+         line width=1.3pt] coordinates {
+  (1,1.0797) (2,1.0708) (3,1.0461) (4,1.0391) (5,1.0391)
+  (6,1.0366) (7,1.0366) (8,1.0000)};
+\addlegendentry{unseen topology}
+\addplot[spBlue, mark=*, mark size=1.4pt, line width=0.8pt] coordinates {
+  (1,1.0797) (2,1.0305) (3,1.0111) (4,1.0025) (5,1.0025)
+  (6,1.0000) (7,1.0000) (8,1.0000)};
+\addlegendentry{leave-one-out}
+\addplot[spGreen, dotted, line width=1.0pt, domain=0.7:8.3, samples=2] {1.0};
+\addlegendentry{oracle}
+% the knee
+\draw[spMute, thin, dashed] (axis cs:4,1.0025) -- (axis cs:4,1.0391);
+\node[font=\tiny, anchor=west, align=left, inner sep=1.5pt, fill=white,
+      fill opacity=0.85, text opacity=1, text=spInk]
+  at (axis cs:4.15,1.058) {knee at $k{=}4$;\\$k{=}5$ is identical};
+\node[font=\tiny, anchor=south west, text=spMute, inner sep=1pt]
+  at (axis cs:0.78,1.0025) {shaded: 95\% bootstrap CI};
+\end{axis}
+\end{tikzpicture}

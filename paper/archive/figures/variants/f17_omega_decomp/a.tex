@@ -1,0 +1,55 @@
+% f17_omega_decomp variant a -- how the composite lower bound is assembled, and which
+% constituent actually binds.
+% Data: the Omega derivation in main.tex and its implementation in
+%       /home/rohit/sprs-fix/src/sprs_core.py (lb_gen, lb_hu_hlf, lb_gather, lb_span,
+%       lb_instr, lb_comm). Binding counts and \SlackBest from data/results_macros.tex.
+% Strategy: variants b-d draw the constituents as curves, a regime decision tree, and
+%       the bound against measured cycles. This one is about CONSTRUCTION: Omega is a
+%       max over separately-derived terms, and the figure's point is which term wins.
+%       f09_omega already shows per-instance values, so this deliberately does not.
+%       The load-bearing observation is the bottom row: the one FBT-specific term binds
+%       on nothing, which is exactly why distance to Omega cannot price the ABI.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn at 8.6cm.
+\begin{tikzpicture}[x=1cm, y=1cm, font=\footnotesize,
+  bar/.style={draw=spMute, line width=0.4pt},
+  lbl/.style={font=\scriptsize, anchor=east, text=spInk},
+  cnt/.style={font=\tiny, anchor=west, text=spMute},
+]
+% 39 instances over 4.4 cm
+% Expands BARE, without braces, so it composes inside a larger expression:
+% {2.65+\W{29}} must become {2.65+29*0.1128}, not a nested brace group.
+\def\W#1{#1*0.1128}
+\node[font=\scriptsize\bfseries, anchor=west, text=spInk] at (0,0.62)
+  {$\Omega=\max$ over separately-derived terms};
+\node[font=\tiny, anchor=west, text=spMute] at (0,0.30)
+  {bar length = instances on which that term is the binding one};
+
+% lb_hu_hlf -- the term that wins almost everywhere
+\node[lbl] at (2.5,0) {\sv{lb\_hu\_hlf}};
+\fill[spBlueF, bar, draw=spBlue] (2.65,-0.16) rectangle ({2.65+\W{29}},0.16);
+\node[cnt] at ({2.65+\W{29}+0.08},0) {29 of 39};
+\node[font=\tiny, anchor=north east, text=spMute] at (2.5,-0.16) {$6\lceil N/G\rceil$};
+
+% the other terms, which bind on the remainder
+\node[lbl] at (2.5,-0.62) {\sv{lb\_gen}, \sv{lb\_gather},};
+\node[lbl] at (2.5,-0.88) {\sv{lb\_instr}, \sv{lb\_comm}};
+\fill[spSkyF, bar, draw=spSky!70!spInk] (2.65,-0.91) rectangle ({2.65+\W{10}},-0.59);
+\node[cnt] at ({2.65+\W{10}+0.08},-0.75) {the remaining 10};
+
+% lb_span -- binds on nothing
+\node[lbl] at (2.5,-1.42) {\sv{lb\_span}};
+\draw[bar, draw=spVerm, dashed, line width=0.6pt] (2.65,-1.58) rectangle (2.75,-1.26);
+\node[cnt, text=spVerm] at (2.90,-1.42) {binds on 0 of 40};
+\node[font=\tiny, anchor=north east, text=spMute, align=right] at (2.5,-1.58)
+  {the only\\$\FBT$-specific term};
+
+% ---- the consequence ----
+\draw[spGrid, line width=0.5pt] (0,-1.92) -- (8.5,-1.92);
+\node[font=\tiny, anchor=north west, align=left, text width=84mm, text=spInk]
+  at (0,-2.02)
+  {Every term that ever binds is \emph{reducer-independent}: it constrains any schedule
+   on this fabric, not the canonical tree in particular. The one term that is specific
+   to $\FBT(N)$ never binds. So distance to $\Omega$ measures how tight the compiler's
+   schedule is --- the best instance reaches $\SlackBest\times$ --- and cannot, even in
+   principle, price what the ABI costs.};
+\end{tikzpicture}

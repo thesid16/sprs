@@ -1,0 +1,75 @@
+% f11_export_cost variant b -- decomposition: what part of the overhead is
+% algorithmic and what part is an artefact of exporting the tree in software.
+% Data: experiments/w_final/W2/v004/COST.json, cost_table rows with
+%   backend=nccl, G=2, dtype=fp64, N=8, arm=fbt_ch1 (fields overhead and
+%   stock_us); scalars from data/wround_macros.tex.
+% Strategy: argues WHY, not how much. The pinned tree moves 2M bytes at G=2
+%   against a bandwidth-optimal ring's M per rank -- a factor of two IN BYTES.
+%   That converts to a time ratio only where stock is bandwidth-bound, so the
+%   reference is drawn solid only above 1 MiB, where stock_us has become
+%   linear in size (162, 768, 2637, 10795 us at 2/8/32/128 MiB), and dashed
+%   below it, where stock_us is flat at 35-57 us regardless of size. The
+%   measurement STRADDLES the factor rather than sitting above it, and the
+%   figure says so: a reader must not take 2x as a floor the data respects.
+% Scope: NCCL only. The gloo rows of the same file are excluded as a broken
+%   baseline (\PinGlooBadRatio{}x inversion in message size at G=24).
+\begin{tikzpicture}
+\begin{axis}[
+  width=8.6cm, height=6.0cm,
+  xlabel={message size (K $=$ KiB, M $=$ MiB)},
+  ylabel={overhead vs stock ($\times$)},
+  xmode=log, log basis x=2,
+  xmin=4600, xmax=2.6e8, ymin=0.8, ymax=4.15,
+  xtick={8192,32768,131072,524288,2097152,8388608,33554432,134217728},
+  xticklabels={8\,K,32\,K,128\,K,512\,K,2\,M,8\,M,32\,M,128\,M},
+  ytick={1,1.5,2,2.5,3,3.5,4},
+  yticklabel style={/pgf/number format/fixed, /pgf/number format/precision=1},
+  tick label style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  grid=major, grid style={spGrid, very thin},
+  clip=false,
+]
+% Latency-bound region: stock_us is 57.4, 35.2, 43.3 us at 8/32/128 KiB.
+\addplot[draw=none, fill=spGrid, forget plot] coordinates {
+  (4600,0.8) (1.05e6,0.8) (1.05e6,4.15) (4600,4.15)} \closedcycle;
+% The algorithmic factor: 2M bytes on the wire against M per rank at G=2.
+\addplot[spInk, densely dashed, thin, forget plot] coordinates {(4600,2) (1.05e6,2)};
+\addplot[spInk, thick, forget plot] coordinates {(1.05e6,2) (2.6e8,2)};
+% Excess (or shortfall) of each measured cell against that factor.
+\draw[spVerm, line width=0.7pt] (axis cs:8192,2)     -- (axis cs:8192,3.2881);
+\draw[spVerm, line width=0.7pt] (axis cs:32768,2)    -- (axis cs:32768,2.9177);
+\draw[spVerm, line width=0.7pt] (axis cs:131072,2)   -- (axis cs:131072,3.1203);
+\draw[spVerm, line width=0.7pt] (axis cs:524288,2)   -- (axis cs:524288,1.5932);
+\draw[spVerm, line width=0.7pt] (axis cs:2097152,2)  -- (axis cs:2097152,2.6867);
+\draw[spVerm, line width=0.7pt] (axis cs:8388608,2)  -- (axis cs:8388608,1.4851);
+\draw[spVerm, line width=0.7pt] (axis cs:33554432,2) -- (axis cs:33554432,1.6679);
+\draw[spVerm, line width=0.7pt] (axis cs:1.34217728e8,2) -- (axis cs:1.34217728e8,2.2067);
+\addplot[only marks, mark=*, mark size=1.9pt, spVerm] coordinates {
+  (8192,3.2881) (32768,2.9177) (131072,3.1203) (524288,1.5932)
+  (2097152,2.6867) (8388608,1.4851) (33554432,1.6679) (134217728,2.2067)};
+% Parity: a reference line, not a goal line.
+\addplot[spMute, dotted, line width=0.9pt, forget plot] coordinates {(4600,1) (2.6e8,1)};
+% Labels.
+\node[font=\tiny, anchor=north west, align=left, inner sep=1.5pt, text=spInk]
+  at (axis cs:5400,1.90)
+  {\textbf{latency-bound.} stock is flat at\\[-1pt]
+   $35$--$57~\mu$s from \PinSmallSize{} to $128$\,KiB,\\[-1pt]
+   so the byte ratio sets no time floor\\[-1pt]
+   here: the gap is two dependent library\\[-1pt]
+   calls against one fused kernel};
+\node[font=\tiny, anchor=south east, align=right, inner sep=1.5pt, text=spInk]
+  at (axis cs:2.5e8,3.42)
+  {\textbf{bandwidth-bound.} stock scales with size;\\[-1pt]
+   cells \emph{straddle} the factor --- $\PinLargeLo$, $\PinLargeHi$,\\[-1pt]
+   $\PinBigChunkOne\times$ at \PinLargeSizeLo{}, \PinLargeSizeHi{},
+   \PinBigSize{} ---\\[-1pt] so it is not a floor the data respects};
+\node[font=\tiny, anchor=west, inner sep=1.5pt, fill=white, fill opacity=0.85,
+      text opacity=1, text=spInk] at (axis cs:1.30e6,2.11)
+  {$2\times$ in \emph{bytes moved} at $G{=}2$};
+\node[font=\tiny, anchor=west, inner sep=1pt, text=spMute] at (axis cs:5400,1.06)
+  {parity with stock};
+\node[font=\tiny, anchor=north east, inner sep=2pt, draw=spMute, fill=white,
+      align=right, text=spInk] at (axis cs:2.5e8,1.30)
+  {NCCL, $G{=}2$, FP64,\\[-1pt] one chunk};
+\end{axis}
+\end{tikzpicture}

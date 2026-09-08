@@ -1,0 +1,92 @@
+% f12_fp64_defect variant c -- error rate of three adder variants against
+% correctly-rounded IEEE-754 addition, resolved by exponent separation.
+% Data: data/wround/W3_fp64.json, record "variants" (tests/fp64/sweep.py,
+%   N_DE=4000 per binade, N_UNIF=20000).  All three arms are scored on the
+%   SAME vectors, which is what makes the comparison a comparison.  Totals:
+%   as-submitted 26,039/76,000 (34.3%); borrow-only \FpPartialErrors{} of
+%   \FpPartialVectors{} (\FpPartialPct); full repair 0/76,000.  The
+%   \FpBandLo--\FpBandHi{} plateau quoted in the annotation is the finer
+%   50,000-trial sweep (tests/logs/fp64_PRE_sweep.txt), named as such rather
+%   than mixed into the plotted curve.
+% Strategy: argues why ALL THREE edits were needed.  Borrowing the tail is the
+%   obvious one-line fix and removes 96% of the failures, which is exactly why
+%   it looked plausible; the zoom panel shows the \FpPartialPct{} it leaves,
+%   concentrated at $|\Delta e| = \FpPartialDeLo$--$\FpPartialDeHi$ where a
+%   cancellation triggers the renormalising left shift that the third edit
+%   rescales across.  Variants a and b argue the mechanism; this one prices
+%   the partial repair.
+\begin{tikzpicture}
+% ---- full range -----------------------------------------------------------
+\begin{axis}[
+  name=top,
+  % IEEE single column is 3.5in = 8.9cm; fixed size, not a relative width.
+  width=8.6cm, height=4.5cm,
+  xlabel={}, ylabel={failing vectors (\%)},
+  xmin=-2, xmax=84, ymin=-4, ymax=112,
+  xtick={0,10,20,30,40,50,53,60,70,80},
+  xticklabels={0,10,20,30,40,50,,60,70,80},
+  ytick={0,25,50,75,100},
+  tick label style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  grid=major, grid style={spGrid, very thin},
+  legend style={font=\tiny, at={(0.985,0.96)}, anchor=north east,
+                draw=spMute, fill=white, fill opacity=0.93, text opacity=1,
+                row sep=0.3pt, inner sep=2.2pt},
+  every axis plot/.append style={thick},
+  clip=false,
+]
+\addplot[spVerm, mark=square*, mark size=1.7pt, densely dashed, line width=1.4pt]
+  coordinates {(0,0) (1,0) (2,24.7) (3,37.3) (4,44.1) (5,48.0) (6,48.6)
+    (7,47.9) (10,48.8) (20,49.8) (30,51.3) (40,50.0) (50,50.8) (52,49.9)
+    (53,100.0) (54,0) (55,0) (60,0) (80,0)};
+\addlegendentry{as submitted}
+\addplot[spAmber, mark=triangle*, mark size=2.1pt, dotted, line width=1.2pt]
+  coordinates {(0,0) (1,0) (2,9.5) (3,7.0) (4,4.0) (5,2.3) (6,1.0) (7,0.6)
+    (10,0.1) (20,0) (30,0) (40,0) (50,0) (52,0) (53,0) (54,0) (55,0) (60,0)
+    (80,0)};
+\addlegendentry{borrow only (partial)}
+\addplot[spGreen, mark=*, mark size=1.4pt]
+  coordinates {(0,0) (1,0) (2,0) (3,0) (4,0) (5,0) (6,0) (7,0) (10,0) (20,0)
+    (30,0) (40,0) (50,0) (52,0) (53,0) (54,0) (55,0) (60,0) (80,0)};
+\addlegendentry{full repair (shipped)}
+\node[font=\tiny, anchor=east, align=right, text=spVerm] at (axis cs:50,100)
+  {$|\Delta e|{=}\FpFullDe$: every pair fails};
+\node[font=\tiny, anchor=north west, align=left, text=spVerm] at (axis cs:6,42)
+  {plateau near $50\%$, error always \FpCtrlUlp~ulp\\[-1pt]
+   ($\FpBandLo$--$\FpBandHi$ over $|\Delta e|{=}\FpBandDeLo$--$\FpBandDeHi$
+   on the finer sweep)};
+\node[font=\tiny, anchor=south west, text=spMute] at (axis cs:56,4)
+  {$|\Delta e|\ge54$: operand shifted out entirely};
+\end{axis}
+% ---- zoom on the region where the partial repair still fails --------------
+\begin{axis}[
+  name=bot, at={(top.below south west)}, anchor=north west, yshift=-0.62cm,
+  width=8.6cm, height=3.5cm,
+  xlabel={$|\Delta e|$, binades between the operand exponents},
+  ylabel={(\%)},
+  xmin=-0.4, xmax=12.4, ymin=-0.5, ymax=11.5,
+  xtick={0,1,2,3,4,5,6,7,8,9,10,11,12},
+  ytick={0,2.5,5,7.5,10},
+  yticklabel style={/pgf/number format/fixed, /pgf/number format/precision=1},
+  tick label style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  grid=major, grid style={spGrid, very thin},
+  every axis plot/.append style={thick},
+  clip=false,
+]
+\addplot[spAmber, mark=triangle*, mark size=2.1pt, dotted, line width=1.2pt]
+  coordinates {(0,0) (1,0) (2,9.5) (3,7.0) (4,4.0) (5,2.3) (6,1.0) (7,0.6)
+    (10,0.1)};
+\addplot[spGreen, mark=*, mark size=1.4pt]
+  coordinates {(0,0) (1,0) (2,0) (3,0) (4,0) (5,0) (6,0) (7,0) (10,0)};
+\node[font=\tiny, anchor=north east, align=right, inner sep=2.5pt,
+      draw=spAmber, fill=white, text=spAmber]
+  at (axis cs:12.2,11.2)
+  {zoom: the borrow alone still leaves\\[-1pt]
+   \FpPartialErrors{} of \FpPartialVectors{} ($\FpPartialPct$), all $-1$~ulp,\\[-1pt]
+   at $|\Delta e|{=}\FpPartialDeLo$--$\FpPartialDeHi$ --- the cancellations
+   that\\[-1pt] trigger the renormalising left shift};
+\node[font=\tiny, anchor=west, text=spGreen] at (axis cs:0.4,1.15)
+  {full repair: $0$ at every $|\Delta e|$};
+\end{axis}
+\end{tikzpicture}

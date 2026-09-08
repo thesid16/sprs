@@ -1,0 +1,105 @@
+% f16_mutation variant b -- the protocol as a flow: inject, compile, simulate,
+%   record, reconstruct, classify.
+% Data: the protocol is main.tex's "Mutation protocol" paragraph; the counts are
+%   data/claim_macros.tex (\MutAddrSub, \MutLeaf, \MutTotal, \MutAddrStall,
+%   \MutLiveSlotMax) and data/results_macros.tex (\MutVerdicts, \MutNoCompare,
+%   \MutOracleLo, \MutOracleHi, \InvLeafCounts). The population -- 20 mutated
+%   testbenches, \InvLeafCounts{} leaf counts, seeds 1000-1002, 108 runs -- is
+%   read from data/mutation_results.json. The collapse at the RECORD step and
+%   the static classifier that undoes it are recorded in
+%   data/council/T03_verify.json: the testbench prints [FAIL] both on a value
+%   mismatch and from its !all_done branch, the transcript is discarded, and the
+%   43 / 11 split was recovered by regenerating the images and testing each
+%   substituted address against the DE presence gate.
+% Strategy: mechanism, not accounting. Variant a shows WHAT the counts are; this
+%   shows WHY the interesting split is a reconstruction rather than a recorded
+%   field, which is the honest form of the claim and the thing a referee with the
+%   artefact will check first. Variants c and d re-cut by leaf count and argue
+%   the oracle's power from reordering statistics.
+% Colour: the protocol spine is spBlue (structural). The one lossy step is
+%   spAmber -- a caution, and the only box drawn dashed. The recovery step and
+%   the fail-stop outcome are spGreen (confirmed); the oracle outcome keeps the
+%   spBlue of the canonical comparison; the unclassifiable run is spAmber again.
+%   Rule weight and the dashed frame carry the same split without colour.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  stg/.style={draw=spBlue, line width=0.5pt, rounded corners=2.5pt,
+              fill=spBlueF, text=spInk, text width=75mm, inner sep=2.5pt,
+              align=center, font=\scriptsize},
+  lossy/.style={stg, draw=spAmber, dashed, fill=spAmberF, line width=0.7pt},
+  fix/.style={stg, draw=spGreen, fill=spGreenF, line width=0.7pt},
+  ar/.style={-{Latex[length=1.7mm,width=1.3mm]}, draw=spBlue, line width=0.5pt},
+  arG/.style={ar, draw=spGreen},
+  oc/.style={draw=spMute, line width=0.5pt, rounded corners=2pt, fill=white,
+             text width=22mm, inner sep=2pt, align=center, font=\tiny,
+             text=spInk},
+  lgd/.style={font=\tiny, align=center, inner sep=1pt},
+]
+% ---- 1. inject ---------------------------------------------------------
+\node[stg] (POP)
+  {\textbf{inject}\ \ 20 testbenches, \InvLeafCounts{} leaf counts, seeds
+   1000--1002\\[1pt]
+   {\tiny\textcolor{spMute}{\MutAddrSub{} \emph{address substitutions}
+    (\textsf{C-bind}: repoint \sv{addr\_a} of one \sv{COMPUTE}) $+$ \MutLeaf{}
+    \emph{leaf corruptions} (\textsf{C-leaf}: the smallest bit flip that
+    provably moves $\Rcan$) $=$ 108 runs}}};
+
+% ---- 2. compile --------------------------------------------------------
+\node[stg, below=3.4mm of POP] (CMP)
+  {\textbf{compile}\ \ emit the mutated \sv{IMEM}/\sv{GCI} image};
+\draw[ar] (POP) -- (CMP);
+
+% ---- 3. simulate -------------------------------------------------------
+\node[stg, below=3.4mm of CMP] (SIM)
+  {\textbf{simulate}\ \ one \sv{xsim} run $\to$ \sv{[PASS]} or \sv{[FAIL]}};
+\draw[ar] (CMP) -- (SIM);
+
+% ---- 4. the lossy record ----------------------------------------------
+\node[lossy, below=3.4mm of SIM] (REC)
+  {\textbf{record}\ \ one boolean per mutant --- and nothing else\\[1pt]
+   {\tiny\textcolor{spAmber}{\sv{[FAIL]} fires on a value mismatch \emph{and}
+    from the \sv{!all\_done} branch on any hang, and the transcript is deleted.
+    \MutTotal{} true, 1 null. A detection and a fail-stop are the same bit, so
+    the record cannot tell them apart.}}};
+\draw[ar] (SIM) -- (REC);
+
+% ---- 5. the reconstruction --------------------------------------------
+\node[fix, below=3.4mm of REC] (RC)
+  {\textbf{reconstruct}\ \ regenerate every image, classify statically\\[1pt]
+   {\tiny\textcolor{spGreen}{is the substituted address ever presence-set on
+    that PE before the mutated \sv{COMPUTE} can issue? \MutAddrStall{} of
+    \MutAddrSub{} are never written, so the \textsf{DE} stage stalls for
+    ever}}};
+\draw[ar, draw=spAmber] (REC) -- (RC);
+
+% ---- 6. the three outcomes --------------------------------------------
+\node[oc, draw=spBlue, fill=spBlue!12, line width=0.9pt, below=7mm of RC] (O2)
+  {\textbf{value oracle}\\ normal termination,\\ root $\neq\Rcan$\\
+   \textcolor{spBlue}{\textbf{non-vacuity}}};
+\node[oc, draw=spGreen, fill=spGreen!12, left=3.6mm of O2] (O1)
+  {\textbf{fail-stop}\\ \sv{P\_ERROR} on every\\ PE, \sv{error\_pc} kept\\
+   Property~2 (b)};
+\node[oc, draw=spAmber, fill=spAmberF, right=3.6mm of O2] (O3)
+  {\textbf{no verdict}\\ \sv{maxp\_dense\_hc},\\ $N{=}8192$, seed 1001\\
+   not classifiable};
+\coordinate (BAR) at ($(RC.south)+(0,-0.30)$);
+\draw[spGreen, line width=0.5pt] (RC.south) -- (BAR);
+\draw[spGreen, line width=0.5pt] (O1.north |- BAR) -- (O3.north |- BAR);
+\draw[arG] (O1.north |- BAR) -- (O1.north);
+\draw[arG] (O2.north |- BAR) -- (O2.north);
+\draw[arG] (O3.north |- BAR) -- (O3.north);
+\node[lgd, text=spGreen, below=1.2mm of O1] {at least \MutNoCompare};
+\node[lgd, text=spBlue,  below=1.2mm of O2]
+  {all \MutLeaf{} leaf, at most \MutLiveSlotMax{} addr.};
+\node[lgd, text=spAmber, below=1.2mm of O3] {1 run};
+
+% ---- the claim the flow supports --------------------------------------
+\node[draw=spBlue, line width=0.4pt, rounded corners=2pt, fill=white,
+      font=\tiny, align=left, text width=75mm, inner sep=3pt, text=spInk,
+      below=4.6mm of O2]
+  {Only the middle branch exercises the oracle, so ``the oracle is not
+   vacuous'' is carried by \MutOracleLo--\MutOracleHi{} of the \MutTotal{}
+   verdicts, not by all \MutTotal{}. The left branch is the compensation: it is
+   Property~2's halt outcome observed under injected fault rather than argued
+   from the RTL.};
+\end{tikzpicture}

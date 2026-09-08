@@ -1,0 +1,100 @@
+% f13_worked_example variant c -- the FP64 arithmetic of the same N=8 example
+% laid bare: where, in the seven adds, rounding actually enters.
+% Data: leaf values from src/sprs_core.py make_leaf_val(k, alu_op=ALU_FADD);
+%   the tree is FBT(8).  Every exponent, every tail bit and every rounding
+%   decision below was computed for this figure with exact rational arithmetic
+%   over the FP64 operands (Python Fraction), and the resulting root reproduces
+%   the N=8 row of tables/invariance.tex bit-exactly, 0x40E1948E978D4FDF -- the
+%   same 16/16 self-validation scripts/gen_claim_macros.py performs before it
+%   emits the \Order* macros quoted at the foot.  Permutation counts are those
+%   macros: \OrderPermsEight, \OrderRootsEight, \OrderCanonPctEight.
+% Strategy: the MECHANISM.  a and b treat fadd as a black box; this variant
+%   opens it, and is the only one that answers "why does association order
+%   matter at all?" -- because three of the seven adds are exact ties, and a
+%   tie is broken by a bit that a different association would not have made.
+%   d states the consequence with none of the machinery.
+% Colour: spBlue is the significand the result keeps; spVerm marks the bits
+%   that fall below the result's ULP, i.e. what is lost; spGreen the four adds
+%   that lose nothing.  A set bit is a FILLED cell against an empty one and
+%   carries its own digit, so every row reads with colour stripped.
+% Target: IEEE single column (3.5in = 8.9cm); drawn width approx 8.4cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  hdr/.style={font=\tiny, text=spMute, inner sep=0.6pt},
+  cel/.style={font=\tiny, text=spInk, inner sep=0.6pt, anchor=west},
+  keep/.style={draw=spBlue!70!spInk, fill=spBlueF, line width=0.35pt},
+  ok/.style={font=\tiny, text=spGreen!62!spInk, anchor=west, inner sep=0.6pt},
+  no/.style={font=\tiny, text=spVerm!88!spInk, anchor=west, inner sep=0.6pt},
+]
+\def\rl{5.12}   % the result-ULP rule
+\def\bw{0.27}   % one bit position
+\def\bl{2.74}   % left edge of the drawn significand
+\def\bitcell#1#2#3{%
+  \ifnum#3=1
+    \node[draw=spVerm!85!spInk, fill=spVerm!45, line width=0.4pt, anchor=west,
+          inner sep=0pt, minimum width=2.7mm, minimum height=1.95mm,
+          font=\tiny, text=spInk] at (#1,#2) {\ttfamily 1}%
+  \else
+    \node[draw=spMute, fill=white, line width=0.35pt, anchor=west,
+          inner sep=0pt, minimum width=2.7mm, minimum height=1.95mm,
+          font=\tiny, text=spMute] at (#1,#2) {\ttfamily 0}%
+  \fi;}
+% ------------------------------------------------------------------ header --
+\node[hdr, anchor=west] at (0.00,0.36) {$v$};
+\node[hdr, anchor=west] at (0.34,0.36) {operands};
+\node[hdr, anchor=west] at (1.52,0.36) {$e_a,e_b\!\to\!e_r$};
+\node[hdr, anchor=west] at (\bl,0.36) {significand, leading 51 bits elided};
+\node[hdr, anchor=south, text=spVerm!88!spInk, align=center]
+  at ({\rl+\bw},0.28) {lost};
+\node[hdr, anchor=west] at (5.82,0.36) {rounding};
+\draw[spMute, line width=0.5pt, dashed] (\rl,0.26) -- (\rl,-4.10);
+% -------------------------------------------------------------------- rows --
+% i / v / a / b / exponents / a-bit1 / a-bit2 / b-bit1 / verdict / style
+% a-bit2 = 2 means operand a has only one bit below the result's ULP.
+\foreach \i/\v/\pa/\pb/\ee/\aone/\atwo/\bone/\vd/\st in {%
+  0/3/7/8/{9,10\to11}/1/0/0/{tie $\to$ even, $+2^{-42}$}/no,
+  1/4/9/10/{11,11\to12}/1/2/1/{carry out: exact}/ok,
+  2/1/3/4/{11,12\to13}/0/0/0/{exact}/ok,
+  3/5/11/12/{12,12\to13}/1/2/0/{tie $\to$ even, $+2^{-40}$}/no,
+  4/6/13/14/{12,12\to13}/0/2/1/{tie $\to$ even, $-2^{-40}$}/no,
+  5/2/5/6/{13,13\to14}/0/2/0/{exact}/ok,
+  6/0/1/2/{13,14\to15}/1/0/1/{carry out: exact}/ok}{
+  \pgfmathsetmacro{\y}{-0.10-\i*0.63}
+  \node[cel] at (0.00,\y) {$v_{\v}$};
+  \node[cel] at (0.34,\y) {$(v_{\pa},v_{\pb})$};
+  \node[cel] at (1.52,\y) {$\ee$};
+  \pgfmathsetmacro{\ya}{\y+0.145}
+  \pgfmathsetmacro{\yb}{\y-0.145}
+  \draw[keep] (\bl,\ya-0.098) rectangle (\rl,\ya+0.098);
+  \draw[keep] (\bl,\yb-0.098) rectangle (\rl,\yb+0.098);
+  \node[font=\tiny, text=spMute, anchor=east, inner sep=1.2pt] at (\bl,\ya) {$\cdots$};
+  \node[font=\tiny, text=spMute, anchor=east, inner sep=1.2pt] at (\bl,\yb) {$\cdots$};
+  \bitcell{\rl}{\ya}{\aone}
+  \ifnum\atwo<2 \bitcell{\rl+\bw}{\ya}{\atwo}\fi
+  \bitcell{\rl}{\yb}{\bone}
+  \node[\st] at (5.82,\y) {\vd};
+}
+% operand labels, first row only
+\node[font=\tiny, text=spMute, anchor=east, inner sep=1.2pt] at (2.44,0.045) {$a$};
+\node[font=\tiny, text=spMute, anchor=east, inner sep=1.2pt] at (2.44,-0.245) {$b$};
+% ------------------------------------------------------------- the verdict --
+\node[draw=spVerm!85!spInk, line width=0.7pt, rounded corners=1.6pt,
+      fill=spVermF, anchor=north west, font=\tiny, align=left, inner sep=3pt,
+      text width=7.86cm, text=spInk] at (-0.06,-4.28)
+  {\textbf{Where rounding enters.} Both operands of every add here lie within
+   one binade, so the exact sum overhangs the result's ULP by at most two
+   bits --- the cells to the right of the rule, drawn at their true place
+   value. Four of the seven adds lose nothing: the overhang is zero, or it
+   carries cleanly into the last kept bit. The other three land \emph{exactly}
+   on the midpoint, with a tail of $\frac12$~ULP and nothing beneath it, and
+   round-to-nearest-even then decides by the last kept bit: up at $v_3$ and
+   $v_5$, whose last kept bit is 1, down at $v_6$, whose last kept bit is
+   already 0.\\[2pt]
+   \textbf{Why that makes the order a contract.} A tie broken by the last kept
+   bit is a fact about \emph{these} two summands, so a different association
+   makes different ties. Exhaustively at $N{=}8$: all \OrderPermsEight{} leaf
+   permutations of $\FBT(8)$ yield \OrderRootsEight{} distinct roots,
+   \OrderCanonPctEight{} of them
+   \texttt{0x40E1948E978D4FDF} $=\Rcan(8,L)$. $\fadd$ names one rounding rule
+   applied in one fixed order --- not IEEE addition in the abstract.};
+\end{tikzpicture}

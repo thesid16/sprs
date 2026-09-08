@@ -1,0 +1,23 @@
+% Shared figure palette. \input by main.tex, supplemental.tex, figures/_wrap.tex and
+% the talk preamble, so every figure in every artefact draws from one set of colours.
+%
+% Base is the Okabe-Ito colour-blind-safe palette: the eight hues are distinguishable
+% under deuteranopia, protanopia and tritanopia, and they stay separable when a printer
+% converts them to grey. Figures still carry marker shape and dash pattern as the primary
+% encoding -- colour is the second channel, never the only one -- so a greyscale print
+% loses nothing but richness.
+\definecolor{spBlue}{HTML}{0072B2}   % primary series, structure, canonical path
+\definecolor{spVerm}{HTML}{D55E00}   % contrast series, the violating or costly path
+\definecolor{spGreen}{HTML}{009E73}  % confirmed, passing, invariant
+\definecolor{spAmber}{HTML}{E69F00}  % caution, provisional, contended measurement
+\definecolor{spPurple}{HTML}{CC79A7} % third series
+\definecolor{spSky}{HTML}{56B4E9}    % fourth series, light fills
+\definecolor{spInk}{HTML}{14171C}    % text and rules
+\definecolor{spMute}{HTML}{5C6672}   % secondary text, gridlines, annotation leaders
+% Tints for fills and bands. Use these rather than \color!nn so a fill never drifts.
+\colorlet{spBlueF}{spBlue!12}
+\colorlet{spVermF}{spVerm!12}
+\colorlet{spGreenF}{spGreen!14}
+\colorlet{spAmberF}{spAmber!16}
+\colorlet{spSkyF}{spSky!18}
+\colorlet{spGrid}{spMute!22}

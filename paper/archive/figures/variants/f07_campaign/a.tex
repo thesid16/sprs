@@ -1,0 +1,64 @@
+% f07_campaign variant a -- the campaign funnel, tapered by count.
+% Data: data/campaign_macros.tex (\FunnelCompiles, \FunnelImages,
+%       \FunnelUnique, \CampAttempted, \CampPassing, \CampNonSettling);
+%       the 622 distinct assignments are from tables/dedup.tex (asgn_hash row).
+%       Band width is proportional to count (scale 1.75cm per 7,200).
+%       Reduction causes are the qualitative list in tables/dedup.tex and the
+%       maxp_mod_fat exclusion recorded in Methodology (L0); no cause COUNTS are
+%       printed because the three causes tabulated in dedup.tex sum to 701,
+%       which does not reconcile with the 7,200 -> 6,777 loss.
+% Strategy: geometry carries the argument -- one continuous taper, so a reader
+% sees at a glance that essentially the whole reduction happens at the dedup
+% step and that everything after it is loss-free. Variant c gives the exact
+% arithmetic; this one gives the shape.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[
+  band/.style={draw=spBlue, fill=spBlueF, line width=0.4pt},
+  fin/.style={draw=spGreen, fill=spGreenF, line width=0.6pt},
+  taper/.style={draw=spBlue!45, fill=spBlue!5, line width=0.3pt},
+  cnt/.style={font=\scriptsize, inner sep=0pt, text=spInk},
+  lft/.style={font=\tiny, anchor=east, align=right, inner sep=1pt, text=spInk},
+  rgt/.style={font=\tiny, anchor=west, align=left, inner sep=1pt, text=spVerm},
+  lead/.style={draw=spVerm!55, line width=0.3pt, dashed, dash pattern=on 1pt off 1pt},
+  qlead/.style={draw=spPurple!60, line width=0.3pt, dashed, dash pattern=on 1pt off 1pt},
+]
+% ---- stage bands: half-widths 1.750 1.647 0.710 0.691 0.686 (count/7200*1.75)
+\fill[band] (-1.750,0.00) rectangle (1.750,-0.62);
+\fill[band] (-1.647,-1.00) rectangle (1.647,-1.62);
+\fill[band] (-0.710,-2.00) rectangle (0.710,-2.62);
+\fill[band] (-0.691,-3.00) rectangle (0.691,-3.62);
+\fill[fin] (-0.686,-4.00) rectangle (0.686,-4.62);
+% ---- tapers between them
+\fill[taper] (-1.750,-0.62) -- (1.750,-0.62) -- (1.647,-1.00) -- (-1.647,-1.00) -- cycle;
+\fill[taper] (-1.647,-1.62) -- (1.647,-1.62) -- (0.710,-2.00) -- (-0.710,-2.00) -- cycle;
+\fill[taper] (-0.710,-2.62) -- (0.710,-2.62) -- (0.691,-3.00) -- (-0.691,-3.00) -- cycle;
+\fill[taper] (-0.691,-3.62) -- (0.691,-3.62) -- (0.686,-4.00) -- (-0.686,-4.00) -- cycle;
+% ---- counts, inside the bands
+\node[cnt] at (0,-0.31) {\FunnelCompiles};
+\node[cnt] at (0,-1.31) {\FunnelImages};
+\node[cnt] at (0,-2.31) {\FunnelUnique};
+\node[cnt] at (0,-3.31) {\CampAttempted};
+\node[cnt, text=spGreen] at (0,-4.31) {\textbf{\CampPassing}};
+% ---- stage names, left
+\node[lft] at (-1.85,-0.31) {compilations\\attempted};
+\node[lft] at (-1.75,-1.31) {feasible:\\image emitted};
+\node[lft] at (-0.82,-2.31) {unique\\testbenches};
+\node[lft] at (-0.80,-3.31) {queued to\\\sv{xsim}};
+\node[lft, text=spGreen] at (-0.80,-4.31) {\textbf{passed}};
+% ---- reduction causes, on the tapers
+\draw[lead] (1.70,-0.81) -- (2.05,-0.81);
+\node[rgt] at (2.08,-0.81) {size-gated, \sv{IMEM}\\overflow, timeout};
+\draw[lead] (1.00,-1.81) -- (2.05,-1.81);
+\node[rgt] at (2.08,-1.81) {\textbf{duplicate image}\\(SHA-256 over the\\emitted testbench)};
+\draw[lead] (0.70,-2.81) -- (2.05,-2.81);
+\node[rgt] at (2.08,-2.81) {\sv{maxp\_mod\_fat}\\not run (L0)};
+\draw[lead] (0.69,-3.81) -- (2.05,-3.81);
+\node[rgt] at (2.08,-3.81) {\CampNonSettling{} non-settling};
+% ---- the second quotient: not a stage of this funnel
+\draw[qlead] (-1.60,-1.31) -- (-2.30,-1.31) -- (-2.30,-5.15);
+\node[font=\tiny, anchor=west, align=left, text=spPurple] at (-2.26,-5.20)
+  {the same feasible set carries only \textbf{622} distinct\\
+   \emph{assignments} (\sv{asgn\_hash}, tables/dedup.tex) --- a\\
+   different quotient of the same population, not a\\
+   stage below \FunnelUnique{}};
+\end{tikzpicture}

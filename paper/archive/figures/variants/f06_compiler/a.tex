@@ -1,0 +1,105 @@
+% f06_compiler variant a -- the pipeline that ran, with each obligation pinned
+% to the pass that discharges it.
+% Data: src/sprs_core.py -- the stage sequence as the campaign drives it
+%       (experiments/w_final/W4/v001/w4_runner.py l.66-84: CBTree, then
+%       STAGE2_METHODS[s2], _validate_assignment, STAGE3_METHODS[s3],
+%       build_schedule, generate_instructions, emit_sv_testbench); the
+%       allocator is DMEMAllocator.allocate (l.5143-5177, SU post-order, free
+%       list, then a never-freed receive-buffer pass); NOP insertion and
+%       _peephole_nop_compress (l.5286-5332); routing and adjacency tables
+%       from Topology.generate_routing_tables / generate_adjacency_table
+%       (l.681-704) written by emit_sv_testbench (l.5602-5610).
+%       Pass inventory, alternative counts and run status: Table~\ref{tab:stages}
+%       in main.tex (\StagesRun{} of eight ran). Obligations: main.tex App. A.
+% Strategy: the pipeline as a sequence, obligations pinned where they are
+%       discharged, and the three passes that did not run drawn as skipped
+%       rather than omitted -- so the figure is the honest pipeline, not the
+%       one the released tool can express.
+% Colour: the passes that actually ran are spBlue and carry the spine, arrows
+% included, so the real path is one continuous blue chain; the three passes that
+% did not run are spMute on white and dashed, sitting on that chain as
+% pass-throughs. The obligations are annotations rather than structure -- a
+% white strip in spMute rules, hung on spMute leaders -- with the obligation
+% name itself in spGreen, the colour this paper uses for a discharged
+% invariant (as in the "establishes" column of f04 variant b). Dashed frames,
+% grey text and the italic \emph{not run} labels carry the ran/skipped split
+% with the colour stripped.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn inside 17.0cm, which is
+%         also the standalone wrapper's varwidth, so nothing is clipped.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  ran/.style={draw=spBlue, line width=0.6pt, rounded corners=2pt, fill=spBlueF,
+              minimum height=11mm, text width=19mm, align=center,
+              font=\scriptsize, inner sep=1.5pt, text=spInk},
+  skip/.style={ran, fill=white, draw=spMute, line width=0.4pt,
+               dash pattern=on 1.4pt off 1.2pt, text=spMute},
+  ar/.style={-{Latex[length=1.7mm,width=1.3mm]}, draw=spBlue, line width=0.6pt},
+  ob/.style={draw=spMute, line width=0.35pt, rounded corners=1.5pt, fill=white,
+             font=\tiny, align=center, inner sep=2pt, text=spInk},
+  lk/.style={draw=spMute, line width=0.3pt, dash pattern=on 1pt off 1pt},
+  ce/.style={font=\tiny, align=center, inner sep=1pt, text=spInk},
+  cp/.style={font=\tiny, align=center, text=spMute, inner sep=1pt},
+]
+% ---- stage row --------------------------------------------------------
+\node[ran]  (S1) at ( 1.15,0) {\textbf{S1}\\$\FBT(N)$\\\sv{CBTree(N)}};
+\node[ran]  (S2) at ( 3.45,0) {\textbf{S2} assignment\\$\alpha:$ node $\to$ PE\\18 algorithms};
+\node[skip] (S25) at (5.75,0) {\textbf{S2.5} repair\\connectivity\\\emph{not run}};
+\node[ran]  (S3) at ( 8.05,0) {\textbf{S3} mapping\\$\mu:$ PE $\to$ router\\10 algorithms};
+\node[skip] (S4) at (10.35,0) {\textbf{S4} refinement\\\emph{fixed at the}\\\emph{identity}};
+\node[skip] (S5) at (12.65,0) {\textbf{S5} memory\\enforcement\\\emph{not run}};
+\node[ran]  (S6) at (15.30,0) {\textbf{S6} schedule,\\allocate, emit\\\sv{build\_schedule}};
+\foreach \a/\b in {S1/S2,S2/S25,S25/S3,S3/S4,S4/S5,S5/S6}{\draw[ar] (\a) -- (\b);}
+
+\node[cp, anchor=south] at (1.15,0.68) {input $(N,G,\tau)$};
+\node[cp, anchor=south, align=left] at (15.30,0.68)
+  {output: per-PE IMEM image,\\routing and adjacency tables};
+
+% ---- obligations: a tiled strip, each cell under the pass that discharges it
+% cell boundaries (cm): 0.0 | 2.6 | 6.6 | 10.2 | 13.8 | 17.0
+\foreach \xa/\xb in {0.0/2.6, 2.6/6.6, 6.6/10.2, 10.2/13.8, 13.8/17.0}
+  {\draw[draw=spMute, line width=0.35pt, fill=white] (\xa,-1.30) rectangle (\xb,-3.10);}
+\node[ce, text width=24mm] at (1.30,-2.20)
+  {\textcolor{spGreen}{\textsf{C-leaf}}\\[2pt]
+   the leaf binding is\\fixed by $\FBT(N)$ at S1};
+\node[ce, text width=38mm] at (4.60,-2.20)
+  {\textcolor{spGreen}{\textsf{C-sw}} --- \emph{constructed, not assumed}\\[2pt]
+   \sv{DMEMAllocator.allocate} walks\\
+   the SU post-order: a child's slot\\
+   is freed only after its parent has\\
+   read it; receive buffers get a\\
+   separate, never-freed pass};
+\node[ce, text width=35mm] at (8.40,-2.20)
+  {\textcolor{spGreen}{\textsf{C-mem}}\\[2pt]
+   peak local occupancy $+$ receive\\
+   slots $=$ the distinct addresses\\
+   the image names on that PE: an\\
+   $O(N)$ read-off of the same walk,\\
+   checked as a post-condition};
+\node[ce, text width=34mm] at (12.00,-2.20)
+  {\textcolor{spGreen}{\textsf{C-bind}}\\[2pt]
+   \sv{addr\_map[gpu][c] for c in}\\
+   \sv{tree.children(v)} --- neither\\
+   $\mu$, nor the routing tables, nor\\
+   any timing quantity, is in scope\\
+   at that point in the emitter};
+\node[ce, text width=31mm] at (15.40,-2.20)
+  {\textcolor{spGreen}{\textsf{C-route}}\\[2pt]
+   \sv{generate\_routing\_tables}:\\
+   greedy minimal-distance search.\\
+   Destination-correct, loop-free;\\
+   \emph{not} dimension-ordered, so\\
+   no acyclic CDG is claimed};
+% leaders from the passes that discharge them
+\draw[lk] (S1.south) -- (1.15,-1.30);
+\draw[lk] (S6.south) -- (15.30,-0.95);
+\draw[lk] (4.60,-0.95) -- (15.30,-0.95);
+\foreach \x in {4.60,8.40,12.00,15.40}{\draw[lk] (\x,-0.95) -- (\x,-1.30);}
+
+% ---- the two facts a reader should leave with ------------------------
+\node[cp, anchor=north, align=center, text=spInk, text width=168mm] at (8.50,-3.24)
+  {\textcolor{spMute}{\emph{Why two of the skipped passes stay skipped:}} running \sv{repair\_connectivity}
+   moves a median \RepairMovedMed{} of all tree nodes and inflates peak per-PE load by a
+   median factor of \RepairLoadMed, so we report the unrepaired pipeline and check the
+   bound directly; and $\mu$ reaches the emitted image only through the NOP padding the
+   cost model places --- recompiling \MapPoints{} representative points under all ten
+   mappings yields \MapImagesLo--\MapImagesHi{} distinct images.};
+\end{tikzpicture}

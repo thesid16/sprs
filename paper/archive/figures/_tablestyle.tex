@@ -1,0 +1,15 @@
+% Shared table styling. \input after xcolor (loaded with the [table] option) so every
+% table in every edition gets the same treatment without editing a single generator --
+% scripts/verify_tables.py enforces byte-for-byte reproduction of tables/*.tex, so the
+% styling has to live here rather than in the generated files.
+%
+% Zebra banding starts at the first body row: booktabs supplies the rules, the band
+% supplies the row tracking, and the two together let a reader follow a long row across
+% many numeric columns without a vertical rule. The tint is the palette's own grid
+% colour, so tables and figures sit in the same visual family.
+\newcommand{\sprsTableBand}{\rowcolors{2}{}{spGrid!45}}
+% Apply to every tabular without touching the tables themselves.
+\let\sprsOldTabular\tabular
+\renewcommand{\tabular}{\sprsTableBand\sprsOldTabular}
+% Numbers in columns should line up; booktabs cannot do that on its own.
+\newcommand{\sprsTabularFigures}{\addfontfeatures{}}

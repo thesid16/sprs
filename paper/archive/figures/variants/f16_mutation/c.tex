@@ -1,0 +1,142 @@
+% f16_mutation variant c -- the 108 mutants stacked by leaf count, so the single
+%   no-verdict run is visible rather than buried in an aggregate.
+% Data: data/mutation_results.json, field by_N, cross-checked against the 108
+%   entries of runs. Per leaf count N, (leaf_corrupt, addr_sub with a verdict,
+%   addr_sub with no verdict):
+%     8:(6,6,0) 10:(3,3,0) 16:(3,3,0) 32:(6,6,0) 50:(3,3,0) 100:(3,3,0)
+%     128:(6,6,0) 200:(3,3,0) 500:(3,3,0) 512:(6,6,0) 1024:(2,2,0)
+%     1500:(2,2,0) 2048:(2,2,0) 3000:(2,2,0) 4096:(2,2,0) 8192:(2,1,1)
+%   Column sums 54 / 53 / 1 = \MutLeaf{} / \MutVerdicts{} / 1, total 108.
+%   The no-verdict run is maxp_dense_hc, N=8192, G=1024, seed 1001,
+%   error "no verdict in xsim output".
+% Strategy: coverage and its shape. Variants a and b give the aggregate route
+%   split; this one asks a different question -- where in the suite was the
+%   oracle actually exercised -- and answers two things at once: every one of
+%   \InvLeafCounts{} leaf counts carries mutants, so no row of the invariance
+%   table rests on an oracle that was never fired; and the effort is inverted
+%   relative to where the evidence is worth most, three seeds at the four small
+%   leaf counts against one or two at the large ones.
+%   The stack is deliberately by CLASS, not by detection route: the route is a
+%   static reconstruction over the whole campaign (\MutAddrStall{} fail-stops,
+%   at most \MutLiveSlotMax{} live-slot hits) and is not recorded per N, so a
+%   per-N route stack would be invented. The caption says so.
+% Colour: leaf corruption is spBlue -- it is the class the canonical-root
+%   comparison actually catches, all \MutLeaf{} of them. Address substitution is
+%   spGreen and hatched: mostly the confirmed fail-stop route, and hatched
+%   because its internal split is a bound, not a count. The one no-verdict run
+%   is spAmber. Fill pattern and edge weight separate the three in greyscale.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn at 8.6cm.
+\begin{tikzpicture}[
+  lb/.style={draw=spBlue!85, fill=spBlue!30, line width=0.6pt},
+  ab/.style={draw=spGreen!80, fill=spGreen!14, line width=0.5pt},
+  ah/.style={draw=none, pattern=north east lines, pattern color=spGreen!55},
+]
+\begin{axis}[
+  width=8.6cm, height=6.9cm,
+  xlabel={leaf count $N$}, ylabel={injected mutants},
+  xmin=0.4, xmax=16.6, ymin=0, ymax=20.4,
+  xtick={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
+  xticklabels={8,10,16,32,50,100,128,200,500,512,1024,1500,2048,3000,4096,8192},
+  xticklabel style={font=\tiny, rotate=90, anchor=east, text=spInk},
+  ytick={0,2,4,6,8,10,12},
+  yticklabel style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  ymajorgrids, major grid style={spGrid, very thin},
+  clip=false,
+]
+% The key is drawn by hand in the free band above the bars rather than with
+% \addlegendentry: a three-column pgfplots legend stretches the bounding box
+% well past the 8.6cm the column allows, and the band is empty anyway.
+
+% ---- the stacks. Bars are written out explicitly rather than looped: a
+% \foreach inside a pgfplots axis body is expanded after the loop variable
+% has gone out of scope. Writing them out also keeps every count auditable
+% against by_N (same reason f09 variant d draws its bins by hand).
+% lower band: leaf corruption (spBlue, solid)
+\filldraw[lb] (axis cs:0.68,0) rectangle (axis cs:1.32,6);
+\filldraw[lb] (axis cs:1.68,0) rectangle (axis cs:2.32,3);
+\filldraw[lb] (axis cs:2.68,0) rectangle (axis cs:3.32,3);
+\filldraw[lb] (axis cs:3.68,0) rectangle (axis cs:4.32,6);
+\filldraw[lb] (axis cs:4.68,0) rectangle (axis cs:5.32,3);
+\filldraw[lb] (axis cs:5.68,0) rectangle (axis cs:6.32,3);
+\filldraw[lb] (axis cs:6.68,0) rectangle (axis cs:7.32,6);
+\filldraw[lb] (axis cs:7.68,0) rectangle (axis cs:8.32,3);
+\filldraw[lb] (axis cs:8.68,0) rectangle (axis cs:9.32,3);
+\filldraw[lb] (axis cs:9.68,0) rectangle (axis cs:10.32,6);
+\filldraw[lb] (axis cs:10.68,0) rectangle (axis cs:11.32,2);
+\filldraw[lb] (axis cs:11.68,0) rectangle (axis cs:12.32,2);
+\filldraw[lb] (axis cs:12.68,0) rectangle (axis cs:13.32,2);
+\filldraw[lb] (axis cs:13.68,0) rectangle (axis cs:14.32,2);
+\filldraw[lb] (axis cs:14.68,0) rectangle (axis cs:15.32,2);
+\filldraw[lb] (axis cs:15.68,0) rectangle (axis cs:16.32,2);
+% upper band: address substitution (spGreen, hatched)
+\filldraw[ab] (axis cs:0.68,6) rectangle (axis cs:1.32,12);
+\filldraw[ah] (axis cs:0.68,6) rectangle (axis cs:1.32,12);
+\filldraw[ab] (axis cs:1.68,3) rectangle (axis cs:2.32,6);
+\filldraw[ah] (axis cs:1.68,3) rectangle (axis cs:2.32,6);
+\filldraw[ab] (axis cs:2.68,3) rectangle (axis cs:3.32,6);
+\filldraw[ah] (axis cs:2.68,3) rectangle (axis cs:3.32,6);
+\filldraw[ab] (axis cs:3.68,6) rectangle (axis cs:4.32,12);
+\filldraw[ah] (axis cs:3.68,6) rectangle (axis cs:4.32,12);
+\filldraw[ab] (axis cs:4.68,3) rectangle (axis cs:5.32,6);
+\filldraw[ah] (axis cs:4.68,3) rectangle (axis cs:5.32,6);
+\filldraw[ab] (axis cs:5.68,3) rectangle (axis cs:6.32,6);
+\filldraw[ah] (axis cs:5.68,3) rectangle (axis cs:6.32,6);
+\filldraw[ab] (axis cs:6.68,6) rectangle (axis cs:7.32,12);
+\filldraw[ah] (axis cs:6.68,6) rectangle (axis cs:7.32,12);
+\filldraw[ab] (axis cs:7.68,3) rectangle (axis cs:8.32,6);
+\filldraw[ah] (axis cs:7.68,3) rectangle (axis cs:8.32,6);
+\filldraw[ab] (axis cs:8.68,3) rectangle (axis cs:9.32,6);
+\filldraw[ah] (axis cs:8.68,3) rectangle (axis cs:9.32,6);
+\filldraw[ab] (axis cs:9.68,6) rectangle (axis cs:10.32,12);
+\filldraw[ah] (axis cs:9.68,6) rectangle (axis cs:10.32,12);
+\filldraw[ab] (axis cs:10.68,2) rectangle (axis cs:11.32,4);
+\filldraw[ah] (axis cs:10.68,2) rectangle (axis cs:11.32,4);
+\filldraw[ab] (axis cs:11.68,2) rectangle (axis cs:12.32,4);
+\filldraw[ah] (axis cs:11.68,2) rectangle (axis cs:12.32,4);
+\filldraw[ab] (axis cs:12.68,2) rectangle (axis cs:13.32,4);
+\filldraw[ah] (axis cs:12.68,2) rectangle (axis cs:13.32,4);
+\filldraw[ab] (axis cs:13.68,2) rectangle (axis cs:14.32,4);
+\filldraw[ah] (axis cs:13.68,2) rectangle (axis cs:14.32,4);
+\filldraw[ab] (axis cs:14.68,2) rectangle (axis cs:15.32,4);
+\filldraw[ah] (axis cs:14.68,2) rectangle (axis cs:15.32,4);
+\filldraw[ab] (axis cs:15.68,2) rectangle (axis cs:16.32,3);
+\filldraw[ah] (axis cs:15.68,2) rectangle (axis cs:16.32,3);
+
+% the one run that returned no verdict at all: N = 8192, seed 1001
+\filldraw[draw=spAmber, fill=spAmberF, line width=0.8pt]
+  (axis cs:15.68,3) rectangle (axis cs:16.32,4);
+
+% ---- key, drawn in the empty band above the bars ------------------------
+\filldraw[lb] (axis cs:0.62,18.5) rectangle (axis cs:1.05,19.4);
+\node[font=\tiny, anchor=west, text=spInk] at (axis cs:1.15,18.95)
+  {leaf corruption};
+\filldraw[ab] (axis cs:4.90,18.5) rectangle (axis cs:5.33,19.4);
+\filldraw[ah] (axis cs:4.90,18.5) rectangle (axis cs:5.33,19.4);
+\node[font=\tiny, anchor=west, text=spInk] at (axis cs:5.43,18.95)
+  {address substitution};
+\filldraw[draw=spAmber, fill=spAmberF, line width=0.7pt]
+  (axis cs:10.30,18.5) rectangle (axis cs:10.73,19.4);
+\node[font=\tiny, anchor=west, text=spInk] at (axis cs:10.83,18.95)
+  {no verdict};
+
+% ---- the one run that returned no verdict, called out -------------------
+\draw[spAmber, line width=0.5pt] (axis cs:16.0,4.15) -- (axis cs:16.0,4.95);
+\node[font=\tiny, anchor=south east, align=right, text=spAmber, inner sep=1.5pt,
+      fill=white, fill opacity=0.9, text opacity=1]
+  at (axis cs:16.35,4.95)
+  {\sv{maxp\_dense\_hc}, seed 1001:\\no verdict in the \sv{xsim} output};
+
+% ---- the reading --------------------------------------------------------
+\node[draw=spMute, line width=0.4pt, rounded corners=2pt, fill=white,
+      font=\tiny, align=left, text width=73mm, inner sep=3pt, text=spInk,
+      anchor=north west] at (axis cs:0.55,18.0)
+  {\MutLeaf{} leaf corruptions and \MutAddrSub{} address substitutions: three
+   seeds per class where a leaf count carries two instances, two elsewhere. All
+   \InvLeafCounts{} leaf counts are covered, so no row of the invariance table
+   rests on an oracle that was never fired --- but the effort is heaviest
+   exactly where agreement is cheapest. The stack is by class, not by route:
+   the fail-stop / live-slot split (\MutAddrStall{} and at most
+   \MutLiveSlotMax) is a campaign-wide reconstruction, not a per-$N$ record.};
+\end{axis}
+\end{tikzpicture}
