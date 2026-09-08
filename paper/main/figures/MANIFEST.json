@@ -10,124 +10,271 @@
     "Figures REPLACE prose. Each entry names the passage it displaces; the figure must carry that content so the text can be cut."
   ],
   "figures": [
-    {"id":"f01_premise","section":"Problem","doublecol":false,
-     "purpose":"Show that the same bytes reduced at different world sizes yield different bit patterns -- the motivating premise, measured in W1.",
-     "displaces":"the prose in the Problem section that asserts reshape divergence in words",
-     "data":"experiments/w_final/W1/RESULT.json; \\Gpu* macros in data/wround_macros.tex",
-     "variants":{
-       "a":"Two reduction trees side by side over the identical leaf vector, G=2 and G=4, with the differing 64-bit roots printed beneath and the first divergent bit highlighted.",
-       "b":"A ladder of world sizes on the x-axis against distinct-root count, making the 14/14 result immediate, with hex roots as annotations.",
-       "c":"A dataflow view: identical input bytes entering, the reassociation point circled, divergent outputs leaving -- argues WHERE the divergence is created rather than that it exists.",
-       "d":"An ulp-deviation plot across world sizes on a log axis, showing spread up to the measured maximum -- argues MAGNITUDE rather than existence."}},
-
-    {"id":"f02_canonical_tree","section":"Theory","doublecol":false,
-     "purpose":"Define FBT(N): heap indexing, leaves at N-1..2N-2 ascending, operand binding at each internal node.",
-     "displaces":"the definitional prose of the canonical tree and leaf enumeration",
-     "data":"Definitions in main.tex; no measured data required",
-     "variants":{
-       "a":"FBT(8) drawn with heap indices on every node and the (left,right) operand pair labelled at one internal node.",
-       "b":"The same tree beside its array layout, showing index arithmetic 2n+1 / 2n+2 explicitly -- argues the addressing.",
-       "c":"A construction sequence: leaves placed, then levels folded upward, showing the order is forced.",
-       "d":"A counterexample pairing: canonical tree next to a legal-but-different association, with the roots differing -- argues why the choice matters."}},
-
-    {"id":"f03_claim1","section":"Theory","doublecol":true,
-     "purpose":"Claim 1: the same reduction DAG mapped onto different topologies yields the identical root.",
-     "displaces":"the prose walking through why topology does not affect the result",
-     "data":"tables/invariance.tex",
-     "variants":{
-       "a":"One FBT drawn once, then its nodes mapped onto ring, torus and fat-tree, with routes drawn differently but the root annotated identically on all three.",
-       "b":"Three topology panels each with its own route colouring, converging on a single shared root box -- emphasises convergence.",
-       "c":"A commuting diagram: (compile, map) versus (map, compile), showing the square closes -- argues the orthogonality formally.",
-       "d":"A before/after contrast: an order-violating mapping producing a different root beside the compliant one -- argues by negative control."}},
-
-    {"id":"f04_fabric","section":"Hardware","doublecol":true,
-     "purpose":"The fabric: PE microarchitecture, DMEM, scoreboard, NoC router and links.",
-     "displaces":"the paragraph-level walkthrough of PE internals and the router datapath",
-     "data":"rtl/*.sv; data/fabric_macros.tex, data/resource_macros.tex",
-     "variants":{
-       "a":"One PE expanded (IMEM, DMEM, scoreboard, FADD, NI) inside a small NoC of routers, with the packet path traced.",
-       "b":"A layered stack view -- ISA over PE over NI over router over link -- with the invariant enforced at each layer named.",
-       "c":"A pipeline timing view: GENERATE, COMPUTE, SEND across cycles, showing the GCI gap and scoreboard gating.",
-       "d":"A router-internal detail: crossbar, credit counters, arbiter, with the fail-stop detectors marked."}},
-
-    {"id":"f05_failstop","section":"Hardware","doublecol":false,
-     "purpose":"Property 2: presence-gated fail-stop. A missing or misrouted operand halts rather than producing a wrong root.",
-     "displaces":"the prose enumerating the detectors and their gating conditions",
-     "data":"Property 2 in main.tex; the three detectors in rtl/",
-     "variants":{
-       "a":"A state machine: wait-on-presence, fire, or trap -- with the three detectors as guarded transitions.",
-       "b":"A decision tree from packet arrival to either COMPUTE or P_ERROR.",
-       "c":"Two traces side by side, one healthy and one with a dropped operand, showing where the trap fires.",
-       "d":"A coverage matrix of fault class against detecting invariant, showing nothing reaches the root silently."}},
-
-    {"id":"f06_compiler","section":"Software","doublecol":true,
-     "purpose":"The compiler: stages from tree to binary image, and where each obligation (C-alpha, C-conn, C-sw, C-bind, C-leaf, C-route, C-mem) is discharged.",
-     "displaces":"the stage-by-stage prose description of the pipeline",
-     "data":"src/sprs_core.py; the obligations list in main.tex",
-     "variants":{
-       "a":"A left-to-right pipeline with each obligation attached to the stage that discharges it.",
-       "b":"The same stages with the search space collapsing at each step (assignment then mapping), annotated with counts.",
-       "c":"A dependency graph of obligations showing which must hold before which stage can run.",
-       "d":"An artefact-centric view: what data structure exists after each stage, ending at the IMEM image and its hash."}},
-
-    {"id":"f07_campaign","section":"Co-run","doublecol":false,
-     "purpose":"The campaign funnel: compilations attempted, feasible, unique testbenches, unique assignments, passing hardware runs.",
-     "displaces":"the sentence listing the five campaign denominators in sequence",
-     "data":"data/campaign_macros.tex (7,200 / 6,785 / 2,920 / 622 / 2,822)",
-     "variants":{
-       "a":"A funnel with each stage's count and the reason for each reduction labelled on the taper.",
-       "b":"A Sankey-style flow where band width is proportional to count, showing where the mass goes.",
-       "c":"A waterfall bar chart of successive reductions -- easiest to read exact numbers from.",
-       "d":"A nested-set diagram showing the containment of each population in the last."}},
-
-    {"id":"f08_coverage","section":"Co-run","doublecol":false,
-     "purpose":"Instance-suite coverage across N-bucket and topology, including its unevenness -- the honest basis for L5.",
-     "displaces":"part of tables/coverage.tex and the prose describing thin cells",
-     "data":"tables/coverage.tex (30 cells, 4 empty, 26 populated, 23 holding <=2 instances)",
-     "variants":{
-       "a":"A heatmap of cell counts with empty cells struck through and thin cells hatched.",
-       "b":"A scatter of the 40 instances in (N, G) space, marker shape by topology, showing the N-G confound directly.",
-       "c":"A bubble grid, area proportional to instance count, making sparsity visually obvious.",
-       "d":"A dual panel: coverage grid beside the N-versus-G correlation that L5 reports."}},
-
-    {"id":"f09_omega","section":"Co-run","doublecol":false,
-     "purpose":"Distance to the composite lower bound Omega for every instance.",
-     "displaces":"nothing new -- replaces the existing figures/omega_by_instance.tex, which stays as one variant",
-     "data":"figures/omega_by_instance.tex; data/results_macros.tex",
-     "variants":{
-       "a":"The existing per-instance plot, kept as-is for continuity.",
-       "b":"Sorted by ratio rather than instance, with the 1.35 minimum annotated.",
-       "c":"Grouped by topology, showing ring as the outlier in both directions.",
-       "d":"A histogram of the ratio with the minimum and median marked -- argues the distribution rather than the per-instance detail."}},
-
-    {"id":"f10_selection","section":"Co-run","doublecol":false,
-     "purpose":"THE STRONGEST NEW RESULT. Held-out regret of the portfolio against k, showing the knee at k=4 and that it transfers to an unseen topology.",
-     "displaces":"the prose reciting the LOO and grouped-CV numbers",
-     "data":"experiments/w_final/W9_selection/RESULT.json and RESULT_ksweep.json. LOO k=4 = 1.0025, CI [1.0000,1.0076]; unseen-topology k=4 = 1.0391, CI [1.0025,1.0885]; best single algorithm 1.0797; k=5 identical to k=4; k=6 reaches 1.0000 LOO.",
-     "variants":{
-       "a":"Mean regret against k, two series (LOO and topology-held-out) with bootstrap CI bands, the single-algorithm baseline as a horizontal reference, and the k=4 knee marked.",
-       "b":"A dot-and-interval plot comparing estimators at k=4 -- oracle, portfolio, conditional-on-topology, best-single -- making the inversion (conditioning is WORSE) the headline.",
-       "c":"A per-instance regret strip at k=4 showing how many instances are exactly optimal (35 of 39 under the topology holdout).",
-       "d":"A cumulative distribution of regret across estimators, showing the whole distribution rather than the mean."}},
-
-    {"id":"f11_export_cost","section":"Co-run","doublecol":false,
-     "purpose":"Pinned-FBT overhead against stock NCCL by message size, including the reversal above 32 MiB that the text currently stops short of.",
-     "displaces":"the prose describing the cost decomposition and the chunking behaviour",
-     "data":"experiments/w_final/W2/v004/COST.json and data/wround_macros.tex. fp64 G=2 headline geomean 2.57x, best 1.49x, worst 3.91x; 128 MiB one-chunk 2.207x; two-chunk 1.85x at 128 MiB and much worse below 1 MiB.",
-     "variants":{
-       "a":"Overhead against message size on a log x-axis, one-chunk and two-chunk series, with the 1.0 line marked and the crossover annotated.",
-       "b":"A decomposition: the algorithmic factor-of-two floor at G=2 shown as a shaded band, with the launch-overhead excess above it -- argues WHY, not just how much.",
-       "c":"Absolute microseconds for stock versus pinned rather than a ratio, which makes the small-message launch cost legible.",
-       "d":"A paired plot of the two chunking arms showing the sign flip -- one helps at large sizes and hurts badly at small ones."}},
-
-    {"id":"f12_fp64_defect","section":"Hardware/Limitations","doublecol":false,
-     "purpose":"The effective-subtraction defect, the three-part repair, and the verification that establishes it.",
-     "displaces":"the prose describing the defect mechanics and the repair",
-     "data":"rtl/fp64_add.sv; data/claim_macros.tex (\\FpAcceptVectors 160,800 with zero errors; control fires on 15,717 of 62,320; partial fix leaves 1.3% / 979 errors)",
-     "variants":{
-       "a":"The adder datapath with the borrow that was missing and the sticky path highlighted, plus the three repair sites marked.",
-       "b":"A bit-level worked example: aligned mantissas, the dropped tail, the wrong rounding decision, and the corrected one.",
-       "c":"An error-rate bar chart across pre-fix, partial fix and full fix, showing the partial fix still leaves 1.3% -- argues why all three edits were needed.",
-       "d":"A verification-coverage view: the vector space swept, the control that fires, and what the scope excludes."}}
+    {
+      "id": "f01_premise",
+      "section": "Problem",
+      "doublecol": false,
+      "purpose": "Show that the same bytes reduced at different world sizes yield different bit patterns -- the motivating premise, measured in W1.",
+      "displaces": "the prose in the Problem section that asserts reshape divergence in words",
+      "data": "experiments/w_final/W1/RESULT.json; \\Gpu* macros in data/wround_macros.tex",
+      "variants": {
+        "a": "Two reduction trees side by side over the identical leaf vector, G=2 and G=4, with the differing 64-bit roots printed beneath and the first divergent bit highlighted.",
+        "b": "A ladder of world sizes on the x-axis against distinct-root count, making the 14/14 result immediate, with hex roots as annotations.",
+        "c": "A dataflow view: identical input bytes entering, the reassociation point circled, divergent outputs leaving -- argues WHERE the divergence is created rather than that it exists.",
+        "d": "An ulp-deviation plot across world sizes on a log axis, showing spread up to the measured maximum -- argues MAGNITUDE rather than existence."
+      }
+    },
+    {
+      "id": "f02_canonical_tree",
+      "section": "Theory",
+      "doublecol": false,
+      "purpose": "Define FBT(N): heap indexing, leaves at N-1..2N-2 ascending, operand binding at each internal node.",
+      "displaces": "the definitional prose of the canonical tree and leaf enumeration",
+      "data": "Definitions in main.tex; no measured data required",
+      "variants": {
+        "a": "FBT(8) drawn with heap indices on every node and the (left,right) operand pair labelled at one internal node.",
+        "b": "The same tree beside its array layout, showing index arithmetic 2n+1 / 2n+2 explicitly -- argues the addressing.",
+        "c": "A construction sequence: leaves placed, then levels folded upward, showing the order is forced.",
+        "d": "A counterexample pairing: canonical tree next to a legal-but-different association, with the roots differing -- argues why the choice matters."
+      }
+    },
+    {
+      "id": "f03_claim1",
+      "section": "Theory",
+      "doublecol": true,
+      "purpose": "Claim 1: the same reduction DAG mapped onto different topologies yields the identical root.",
+      "displaces": "the prose walking through why topology does not affect the result",
+      "data": "tables/invariance.tex",
+      "variants": {
+        "a": "One FBT drawn once, then its nodes mapped onto ring, torus and fat-tree, with routes drawn differently but the root annotated identically on all three.",
+        "b": "Three topology panels each with its own route colouring, converging on a single shared root box -- emphasises convergence.",
+        "c": "A commuting diagram: (compile, map) versus (map, compile), showing the square closes -- argues the orthogonality formally.",
+        "d": "A before/after contrast: an order-violating mapping producing a different root beside the compliant one -- argues by negative control."
+      }
+    },
+    {
+      "id": "f04_fabric",
+      "section": "Hardware",
+      "doublecol": true,
+      "purpose": "The fabric: PE microarchitecture, DMEM, scoreboard, NoC router and links.",
+      "displaces": "the paragraph-level walkthrough of PE internals and the router datapath",
+      "data": "rtl/*.sv; data/fabric_macros.tex, data/resource_macros.tex",
+      "variants": {
+        "a": "One PE expanded (IMEM, DMEM, scoreboard, FADD, NI) inside a small NoC of routers, with the packet path traced.",
+        "b": "A layered stack view -- ISA over PE over NI over router over link -- with the invariant enforced at each layer named.",
+        "c": "A pipeline timing view: GENERATE, COMPUTE, SEND across cycles, showing the GCI gap and scoreboard gating.",
+        "d": "A router-internal detail: crossbar, credit counters, arbiter, with the fail-stop detectors marked."
+      }
+    },
+    {
+      "id": "f05_failstop",
+      "section": "Hardware",
+      "doublecol": false,
+      "purpose": "Property 2: presence-gated fail-stop. A missing or misrouted operand halts rather than producing a wrong root.",
+      "displaces": "the prose enumerating the detectors and their gating conditions",
+      "data": "Property 2 in main.tex; the three detectors in rtl/",
+      "variants": {
+        "a": "A state machine: wait-on-presence, fire, or trap -- with the three detectors as guarded transitions.",
+        "b": "A decision tree from packet arrival to either COMPUTE or P_ERROR.",
+        "c": "Two traces side by side, one healthy and one with a dropped operand, showing where the trap fires.",
+        "d": "A coverage matrix of fault class against detecting invariant, showing nothing reaches the root silently."
+      }
+    },
+    {
+      "id": "f06_compiler",
+      "section": "Software",
+      "doublecol": true,
+      "purpose": "The compiler: stages from tree to binary image, and where each obligation (C-alpha, C-conn, C-sw, C-bind, C-leaf, C-route, C-mem) is discharged.",
+      "displaces": "the stage-by-stage prose description of the pipeline",
+      "data": "src/sprs_core.py; the obligations list in main.tex",
+      "variants": {
+        "a": "A left-to-right pipeline with each obligation attached to the stage that discharges it.",
+        "b": "The same stages with the search space collapsing at each step (assignment then mapping), annotated with counts.",
+        "c": "A dependency graph of obligations showing which must hold before which stage can run.",
+        "d": "An artefact-centric view: what data structure exists after each stage, ending at the IMEM image and its hash."
+      }
+    },
+    {
+      "id": "f07_campaign",
+      "section": "Co-run",
+      "doublecol": false,
+      "purpose": "The campaign funnel: compilations attempted, feasible, unique testbenches, unique assignments, passing hardware runs.",
+      "displaces": "the sentence listing the five campaign denominators in sequence",
+      "data": "data/campaign_macros.tex (7,200 / 6,785 / 2,920 / 622 / 2,822)",
+      "variants": {
+        "a": "A funnel with each stage's count and the reason for each reduction labelled on the taper.",
+        "b": "A Sankey-style flow where band width is proportional to count, showing where the mass goes.",
+        "c": "A waterfall bar chart of successive reductions -- easiest to read exact numbers from.",
+        "d": "A nested-set diagram showing the containment of each population in the last."
+      }
+    },
+    {
+      "id": "f08_coverage",
+      "section": "Co-run",
+      "doublecol": false,
+      "purpose": "Instance-suite coverage across N-bucket and topology, including its unevenness -- the honest basis for L5.",
+      "displaces": "part of tables/coverage.tex and the prose describing thin cells",
+      "data": "tables/coverage.tex (30 cells, 4 empty, 26 populated, 23 holding <=2 instances)",
+      "variants": {
+        "a": "A heatmap of cell counts with empty cells struck through and thin cells hatched.",
+        "b": "A scatter of the 40 instances in (N, G) space, marker shape by topology, showing the N-G confound directly.",
+        "c": "A bubble grid, area proportional to instance count, making sparsity visually obvious.",
+        "d": "A dual panel: coverage grid beside the N-versus-G correlation that L5 reports."
+      }
+    },
+    {
+      "id": "f09_omega",
+      "section": "Co-run",
+      "doublecol": false,
+      "purpose": "Distance to the composite lower bound Omega for every instance.",
+      "displaces": "nothing new -- replaces the existing figures/omega_by_instance.tex, which stays as one variant",
+      "data": "figures/omega_by_instance.tex; data/results_macros.tex",
+      "variants": {
+        "a": "The existing per-instance plot, kept as-is for continuity.",
+        "b": "Sorted by ratio rather than instance, with the 1.35 minimum annotated.",
+        "c": "Grouped by topology, showing ring as the outlier in both directions.",
+        "d": "A histogram of the ratio with the minimum and median marked -- argues the distribution rather than the per-instance detail."
+      }
+    },
+    {
+      "id": "f10_selection",
+      "section": "Co-run",
+      "doublecol": false,
+      "purpose": "THE STRONGEST NEW RESULT. Held-out regret of the portfolio against k, showing the knee at k=4 and that it transfers to an unseen topology.",
+      "displaces": "the prose reciting the LOO and grouped-CV numbers",
+      "data": "experiments/w_final/W9_selection/RESULT.json and RESULT_ksweep.json. LOO k=4 = 1.0025, CI [1.0000,1.0076]; unseen-topology k=4 = 1.0391, CI [1.0025,1.0885]; best single algorithm 1.0797; k=5 identical to k=4; k=6 reaches 1.0000 LOO.",
+      "variants": {
+        "a": "Mean regret against k, two series (LOO and topology-held-out) with bootstrap CI bands, the single-algorithm baseline as a horizontal reference, and the k=4 knee marked.",
+        "b": "A dot-and-interval plot comparing estimators at k=4 -- oracle, portfolio, conditional-on-topology, best-single -- making the inversion (conditioning is WORSE) the headline.",
+        "c": "A per-instance regret strip at k=4 showing how many instances are exactly optimal (35 of 39 under the topology holdout).",
+        "d": "A cumulative distribution of regret across estimators, showing the whole distribution rather than the mean."
+      }
+    },
+    {
+      "id": "f11_export_cost",
+      "section": "Co-run",
+      "doublecol": false,
+      "purpose": "Pinned-FBT overhead against stock NCCL by message size, including the reversal above 32 MiB that the text currently stops short of.",
+      "displaces": "the prose describing the cost decomposition and the chunking behaviour",
+      "data": "experiments/w_final/W2/v004/COST.json and data/wround_macros.tex. fp64 G=2 headline geomean 2.57x, best 1.49x, worst 3.91x; 128 MiB one-chunk 2.207x; two-chunk 1.85x at 128 MiB and much worse below 1 MiB.",
+      "variants": {
+        "a": "Overhead against message size on a log x-axis, one-chunk and two-chunk series, with the 1.0 line marked and the crossover annotated.",
+        "b": "A decomposition: the algorithmic factor-of-two floor at G=2 shown as a shaded band, with the launch-overhead excess above it -- argues WHY, not just how much.",
+        "c": "Absolute microseconds for stock versus pinned rather than a ratio, which makes the small-message launch cost legible.",
+        "d": "A paired plot of the two chunking arms showing the sign flip -- one helps at large sizes and hurts badly at small ones."
+      }
+    },
+    {
+      "id": "f12_fp64_defect",
+      "section": "Hardware/Limitations",
+      "doublecol": false,
+      "purpose": "The effective-subtraction defect, the three-part repair, and the verification that establishes it.",
+      "displaces": "the prose describing the defect mechanics and the repair",
+      "data": "rtl/fp64_add.sv; data/claim_macros.tex (\\FpAcceptVectors 160,800 with zero errors; control fires on 15,717 of 62,320; partial fix leaves 1.3% / 979 errors)",
+      "variants": {
+        "a": "The adder datapath with the borrow that was missing and the sticky path highlighted, plus the three repair sites marked.",
+        "b": "A bit-level worked example: aligned mantissas, the dropped tail, the wrong rounding decision, and the corrected one.",
+        "c": "An error-rate bar chart across pre-fix, partial fix and full fix, showing the partial fix still leaves 1.3% -- argues why all three edits were needed.",
+        "d": "A verification-coverage view: the vector space swept, the control that fires, and what the scope excludes."
+      }
+    },
+    {
+      "id": "f13_worked_example",
+      "section": "Theory",
+      "doublecol": false,
+      "purpose": "A fully worked invariance example at small N: real leaf values, the canonical tree, the actual 64-bit root, and the same root reached from a different topology. Makes the claim concrete before the formal statement.",
+      "displaces": "the worked-example prose and part of Appendix C's narrative",
+      "data": "tables/invariance.tex (N=8 root 0x40E1948E978D4FDF); leaf values from src/sprs_core.py make_leaf_val with alu_op=0b111",
+      "variants": {
+        "a": "FBT(8) with the actual leaf values printed on the leaves, partial sums at each internal node, and the 64-bit root beneath.",
+        "b": "A two-column trace: the same reduction executed at G=2 and at G=4, step by step, converging on one root.",
+        "c": "The arithmetic laid bare -- each fadd shown with its operands' exponents aligned, so a reader sees where rounding enters.",
+        "d": "A minimal version: eight leaves, one root, and the single sentence that the shape of the machine does not appear anywhere in the computation."
+      }
+    },
+    {
+      "id": "f14_isa_encoding",
+      "section": "Hardware",
+      "doublecol": true,
+      "purpose": "The 64-bit instruction word and the 96-bit packet, field by field, and what each field binds.",
+      "displaces": "the ISA field enumeration and the packet-format prose",
+      "data": "src/sprs_core.py encode_instruction; rtl/btree_pkg.sv; rtl/noc_pkg.sv",
+      "variants": {
+        "a": "Both words as labelled bit-strips, with the operand-binding fields highlighted as the ones Claim 1 depends on.",
+        "b": "One instruction of each opcode (GENERATE, COMPUTE, SEND) filled in with real values from a compiled image.",
+        "c": "The encoding beside the RTL declaration that decodes it, so the paper's claim and the hardware are visibly the same object.",
+        "d": "A field-lifetime view: where each field is written by the compiler and where it is consumed in the fabric."
+      }
+    },
+    {
+      "id": "f15_dmem_cmem",
+      "section": "Hardware",
+      "doublecol": false,
+      "purpose": "The DMEM allocator, peak occupancy against the hard depth, and the C-mem ceiling -- including the constructed counterexample that overflows silently.",
+      "displaces": "the C-mem obligation prose and the counterexample walkthrough in L6",
+      "data": "data/resource_macros.tex (DmemPeakMax, DmemDepth, DmemMargin, DmemCexPeak, DmemCexOver); src/sprs_core.py DMEMAllocator",
+      "variants": {
+        "a": "Occupancy against time for the worst validated instance, with the hard depth as a ceiling line and the measured margin annotated.",
+        "b": "The allocator's free-list walk: slots taken, freed after their consumer reads, and the high-water mark.",
+        "c": "Validated instances against the counterexample side by side, showing how far past the ceiling a legal-looking image can go.",
+        "d": "A histogram of peak occupancy across all validated configurations, with the ceiling and the counterexample marked."
+      }
+    },
+    {
+      "id": "f16_mutation",
+      "section": "Co-run",
+      "doublecol": false,
+      "purpose": "The mutation-testing protocol and what it establishes: the oracle is not vacuous.",
+      "displaces": "the mutation-protocol prose and its result enumeration",
+      "data": "data/claim_macros.tex (MutAddrSub, MutLeaf, MutTotal, MutAddrStall, MutLiveSlotMax); data/mutation_results.json",
+      "variants": {
+        "a": "Mutation class against outcome: detected by fail-stop, detected by the oracle, or no verdict -- with the counts.",
+        "b": "The protocol as a flow: inject, compile, simulate, compare, classify.",
+        "c": "A stacked bar per leaf class showing detection route, so the one no-verdict case is visible rather than buried.",
+        "d": "The detection-probability argument: what fraction of random reorderings a given N can distinguish."
+      }
+    },
+    {
+      "id": "f17_omega_decomp",
+      "section": "Co-run",
+      "doublecol": false,
+      "purpose": "How the composite lower bound Omega is assembled from its constituent terms, and which term binds where.",
+      "displaces": "the prose deriving Omega from its seven constraints",
+      "data": "data/results_macros.tex; the Omega derivation in main.tex",
+      "variants": {
+        "a": "Stacked contribution per instance showing which constituent term is binding.",
+        "b": "Each constituent bound drawn as a curve against N/G, with Omega as their upper envelope.",
+        "c": "A decision tree: which term dominates in which regime.",
+        "d": "The bound against measured cycles for every instance, with the gap shaded -- argues tightness rather than construction."
+      }
+    },
+    {
+      "id": "f18_topology_gallery",
+      "section": "Co-run",
+      "doublecol": true,
+      "purpose": "The six topologies the suite spans, drawn, with how many instances sit on each and the radix range each implies.",
+      "displaces": "the topology enumeration in the methodology and part of the coverage prose",
+      "data": "scripts/gen_coverage.py SUITE; data/fabric_macros.tex (RadixMin, RadixMax)",
+      "variants": {
+        "a": "Six small diagrams in a row -- linear, ring, mesh, torus, fat-tree, hypercube -- each labelled with its instance count and radix.",
+        "b": "The same six with one worked route drawn on each, showing the route differs while the reduction DAG does not.",
+        "c": "Scaled by instance count, so the suite's emphasis is visible in the drawing itself.",
+        "d": "Each topology with its measured router radix, connecting the abstract shape to the synthesised cost."
+      }
+    },
+    {
+      "id": "f19_reshape",
+      "section": "Problem",
+      "doublecol": true,
+      "purpose": "What actually happens when a cluster reshapes, and exactly where the ABI intervenes.",
+      "displaces": "the problem-statement prose describing reshape and the intervention point",
+      "data": "experiments/w_final/W1/RESULT.json; the ABI definition in main.tex",
+      "variants": {
+        "a": "A before/after pair: the same job at two world sizes, with the reassociation point circled and the ABI's constraint drawn across it.",
+        "b": "A timeline of a training run that reshapes mid-flight, showing where the root changes without the ABI and does not with it.",
+        "c": "The stack: application, collective library, ABI, fabric -- with the layer each existing approach acts at, and the layer this one does.",
+        "d": "A decision view: what a practitioner gives up under each existing answer (fix the world size, sort and compensate, accept drift) against this one."
+      }
+    }
   ]
 }

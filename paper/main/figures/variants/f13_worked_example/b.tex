@@ -1,0 +1,114 @@
+% f13_worked_example variant b -- the same N=8 reduction executed on two real
+% machines, step by step, converging on one root.
+% Data: both configurations are TEST_INSTANCES entries of src/sprs_core.py --
+%   (8,2,'linear','tiny_dense_1d') and (8,4,'ring','tiny_mod_ring') -- and they
+%   are exactly the two (G,topology) points the N=8 row of tables/invariance.tex
+%   records as compiled and HW-validated.  Every op box below (type, node, issue
+%   cycle) was read off the released compiler: CBTree(8) -> assign_recursive_
+%   bisection -> map_identity -> build_schedule -> generate_instructions at
+%   alu_op=ALU_FADD, i.e. sprs_core.compile(..., s2_id='2b', s3_id='3a').  The
+%   makespans 37 and 31 are that Schedule's own makespan field.  The root word
+%   is the N=8 row of tables/invariance.tex, reproduced here by evaluating
+%   FBT(8) in FP64.
+% Strategy: the TRACE.  It is the only variant that shows two machines at once,
+%   so it argues invariance by exhibiting what changes (PE, address, cycle,
+%   SEND count, makespan) against what does not (the seven operand pairs).
+%   a gives the arithmetic on one tree; c opens the rounding; d is the slogan.
+% Colour: spBlue is the ABI-fixed part -- the COMPUTE and its operand pair;
+%   spAmber is everything the machine is free to choose, so SENDs, cycles and
+%   the G=4 panel's extra PEs; spGreen is the confirmed invariant root.  Glyph
+%   letters G/C/S carry the op type with colour stripped.
+% Target: IEEE single column (3.5in = 8.9cm); drawn width approx 8.5cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  opG/.style={draw=spMute, rounded corners=1pt, fill=white, font=\tiny,
+              align=center, inner sep=1pt, minimum width=8.0mm,
+              minimum height=4.6mm, text=spInk},
+  opC/.style={opG, draw=spBlue, fill=spBlueF, line width=0.7pt},
+  opS/.style={opG, draw=spAmber!85!spInk, fill=spAmberF},
+  opR/.style={opC, draw=spGreen, fill=spGreenF, line width=1.0pt},
+  lane/.style={draw=spGrid, line width=0.4pt},
+  pe/.style={font=\tiny, text=spMute, anchor=east},
+  ttl/.style={font=\scriptsize\bfseries, anchor=west, text=spInk},
+  snd/.style={-{Latex[length=1.4mm,width=1.0mm]}, draw=spAmber!85!spInk,
+              line width=0.6pt, densely dashed},
+]
+\def\px{0.945}   % op-slot pitch
+\def\ox{0.62}    % first op-slot centre
+% ---------------------------------------------------------------- panel A ---
+\node[ttl] at (-0.34,0.16)
+  {A \ \ $G{=}2$, linear \ \sv{tiny\_dense\_1d}};
+\node[font=\tiny, text=spMute, anchor=east] at (7.62,0.16) {makespan 37 cyc};
+\foreach \y in {-0.42,-1.08} { \draw[lane] (0.10,\y) -- (7.62,\y); }
+\node[pe] at (0.06,-0.42) {PE0};
+\node[pe] at (0.06,-1.08) {PE1};
+% PE0: GEN v10, GEN v9, CMP v4, GEN v8, GEN v7, CMP v3, CMP v1, SEND v1
+\foreach \i/\st/\lab/\cy in {0/opG/{G $v_{10}$}/0, 1/opG/{G $v_{9}$}/6,
+    2/opC/{C $v_{4}$}/12, 3/opG/{G $v_{8}$}/13, 4/opG/{G $v_{7}$}/19,
+    5/opC/{C $v_{3}$}/25, 6/opC/{C $v_{1}$}/26, 7/opS/{S $v_{1}$}/27} {
+  \pgfmathsetmacro{\x}{\ox+\i*\px}
+  \node[\st] (A0\i) at (\x,-0.42) {\lab\\{\color{spMute}@\cy}};
+}
+% PE1: GEN v14, GEN v13, CMP v6, GEN v12, GEN v11, CMP v5, CMP v2, CMP v0
+\foreach \i/\st/\lab/\cy in {0/opG/{G $v_{14}$}/0, 1/opG/{G $v_{13}$}/6,
+    2/opC/{C $v_{6}$}/12, 3/opG/{G $v_{12}$}/13, 4/opG/{G $v_{11}$}/19,
+    5/opC/{C $v_{5}$}/25, 6/opC/{C $v_{2}$}/26, 7/opR/{C $v_{0}$}/33} {
+  \pgfmathsetmacro{\x}{\ox+\i*\px}
+  \node[\st] (A1\i) at (\x,-1.08) {\lab\\{\color{spMute}@\cy}};
+}
+\draw[snd] (A07.south) -- (A17.north);
+\node[font=\tiny, text=spAmber!85!spInk, anchor=east, inner sep=1pt,
+      fill=white, fill opacity=0.9, text opacity=1] at (6.92,-0.75)
+  {$v_1\!\to$ PE1 \sv{DMEM[4]}};
+% ---------------------------------------------------------------- panel B ---
+\node[ttl] at (-0.34,-1.74)
+  {B \ \ $G{=}4$, ring \ \sv{tiny\_mod\_ring}};
+\node[font=\tiny, text=spMute, anchor=east] at (7.62,-1.74) {makespan 31 cyc};
+\foreach \y in {-2.22,-2.88,-3.54,-4.20} { \draw[lane] (0.10,\y) -- (7.62,\y); }
+\node[pe] at (0.06,-2.22) {PE0};
+\node[pe] at (0.06,-2.88) {PE1};
+\node[pe] at (0.06,-3.54) {PE2};
+\node[pe] at (0.06,-4.20) {PE3};
+\foreach \i/\st/\lab/\cy in {0/opG/{G $v_{8}$}/0, 1/opG/{G $v_{7}$}/6,
+    2/opC/{C $v_{3}$}/12, 3/opS/{S $v_{3}$}/13} {
+  \pgfmathsetmacro{\x}{\ox+\i*\px}
+  \node[\st] (B0\i) at (\x,-2.22) {\lab\\{\color{spMute}@\cy}};
+}
+\foreach \i/\st/\lab/\cy in {0/opG/{G $v_{10}$}/0, 1/opG/{G $v_{9}$}/6,
+    2/opC/{C $v_{4}$}/12, 3/opC/{C $v_{1}$}/19, 4/opS/{S $v_{1}$}/20} {
+  \pgfmathsetmacro{\x}{\ox+\i*\px}
+  \node[\st] (B1\i) at (\x,-2.88) {\lab\\{\color{spMute}@\cy}};
+}
+\foreach \i/\st/\lab/\cy in {0/opG/{G $v_{12}$}/0, 1/opG/{G $v_{11}$}/6,
+    2/opC/{C $v_{5}$}/12, 3/opS/{S $v_{5}$}/13} {
+  \pgfmathsetmacro{\x}{\ox+\i*\px}
+  \node[\st] (B2\i) at (\x,-3.54) {\lab\\{\color{spMute}@\cy}};
+}
+\foreach \i/\st/\lab/\cy in {0/opG/{G $v_{14}$}/0, 1/opG/{G $v_{13}$}/6,
+    2/opC/{C $v_{6}$}/12, 3/opC/{C $v_{2}$}/19, 4/opR/{C $v_{0}$}/27} {
+  \pgfmathsetmacro{\x}{\ox+\i*\px}
+  \node[\st] (B3\i) at (\x,-4.20) {\lab\\{\color{spMute}@\cy}};
+}
+\draw[snd] (B03.south) to[out=-90,in=90] (B13.north);
+\draw[snd] (B14.south) to[out=-90,in=90] ([xshift=-2mm]B34.north);
+\draw[snd] (B23.south) to[out=-90,in=110] (B34.north west);
+\node[font=\tiny, text=spAmber!85!spInk, anchor=west] at (4.60,-3.42)
+  {three \sv{SEND}s, not one};
+% ------------------------------------------------------------- the verdict --
+\node[draw=spGreen, line width=0.8pt, rounded corners=1.6pt, fill=spGreenF,
+      anchor=north west, font=\tiny, align=left, inner sep=3pt,
+      text width=7.90cm, text=spInk] at (-0.34,-4.62)
+  {\textbf{What is the same.} Both images emit the same seven
+   \texttt{COMPUTE}s with the same operand pairs, because binding is a function
+   of the node alone:
+   $v_3{\leftarrow}(v_7,v_8)$, $v_4{\leftarrow}(v_9,v_{10})$,
+   $v_1{\leftarrow}(v_3,v_4)$, $v_5{\leftarrow}(v_{11},v_{12})$,
+   $v_6{\leftarrow}(v_{13},v_{14})$, $v_2{\leftarrow}(v_5,v_6)$,
+   $v_0{\leftarrow}(v_1,v_2)$. Root
+   \texttt{0x40E1948E978D4FDF} in both.\\[2pt]
+   \textbf{What is not.} $G$, the topology, which PE holds each node, the DMEM
+   address each value lands in ($v_3$ is \sv{DMEM[2]} on PE0 in A, but
+   \sv{DMEM[1]} on PE0 in B and \sv{DMEM[3]} on PE1, where it arrives in a
+   receive slot), the issue cycles, one \texttt{SEND} against three, and the
+   makespan.};
+\end{tikzpicture}

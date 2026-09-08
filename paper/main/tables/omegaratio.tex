@@ -9,30 +9,11 @@
 \centering
 \footnotesize
 \renewcommand{\arraystretch}{1.18}
-% ---- shared table style (figures/_palette.tex); see scripts/gen_tablestyle.py.
-% main.tex does not load colortbl, so a row tint is a zero-size rule emitted at
-% the start of the row and painted under the cells that follow it.
-% Defined once per document: these files are \input INSIDE float environments,
-% so the definitions must be global or the second table finds them gone.
-\makeatletter
-\@ifundefined{spwd}{\begingroup\globaldefs\@ne
-  \newlength{\spwd}%
-  \newsavebox{\spbox}%
-  \newcommand{\spmeasure}[1]{\sbox{\spbox}{#1}\spwd=\wd\spbox}%
-  \newcommand{\spband}[1]{\rlap{\raisebox{0pt}[0pt][0pt]{\textcolor{#1}{%
-    \rule[-\dimexpr\arraystretch\dp\strutbox+0.35pt\relax]{\spwd}%
-    {\dimexpr\arraystretch\ht\strutbox+\arraystretch\dp\strutbox+0.7pt\relax}}}}}%
-  \newcommand{\spbar}[2]{\textcolor{#1}{\rule[0.04em]{#2}{0.40em}}}%
-  \newcommand{\spspan}[4]{\makebox[#1][l]{\rlap{\textcolor{spSkyF}%
-    {\rule[0.04em]{#1}{0.40em}}}\hspace*{#2}\textcolor{#3}%
-    {\rule[0.04em]{#4}{0.40em}}}}%
-  \newcommand{\sphd}[1]{\textbf{#1}}%
-\endgroup}{}
-\makeatother
+\input{tables/_style}
 \def\spTBL{%
 \begin{tabular}{@{}l r r@{\,}l r@{}}
 \toprule
-\spband{spBlueF}\sphd{Topology} & \sphd{Inst.} & \multicolumn{2}{c}{\sphd{Median cyc/$\Omega$}} & \sphd{Best} \\\\
+\spband{spBlueF}\sphd{Topology} & \sphd{Inst.} & \multicolumn{2}{c}{\sphd{Median cyc/$\Omega$}} & \sphd{Best} \\
 \midrule
 linear & 4 & 1.39 & \spbar{spBlue}{1.115em} & 1.35 \\
 \spband{spGrid}hypercube & 7 & 1.85 & \spbar{spBlue}{1.489em} & 1.55 \\

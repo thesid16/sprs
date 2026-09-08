@@ -1,0 +1,180 @@
+% f18_topology_gallery variant a -- the census: six topologies drawn, each with
+% how many of the suite's instances sit on it and what radix it implies.
+% Data: the SUITE manifest in scripts/gen_coverage.py -- 40 instances whose
+%       per-topology counts are linear 4, ring 6, mesh 4, torus 10, fat-tree 9,
+%       hypercube 7 (summing to \SuiteSize{}); the same counts are the column
+%       totals of tables/coverage.tex, and the N and G spans are the min/max of
+%       that manifest per topology. Radix rules and ranges are tables/radix.tex
+%       (linear/ring 2+local = \RadixMin; mesh/torus 4+local = \RadixLo;
+%       hypercube dim+1 = \RadixMin--\RadixHc; fat-tree max(5,k+2) =
+%       \RadixLo--\RadixMax), which gen_resource.py derives from the same
+%       sprs_core.build_topology call the emitter used. \RadixMaxInst,
+%       \RadixMaxRouters, \RouterBlowup from data/resource_macros.tex. The
+%       family list T and the "one noc_system, two tables" claim are
+%       sec:fabric-topo. Every drawing is schematic: the smallest member of the
+%       family, not the instance -- max_bal_2d is 1,024 routers, not nine.
+% Strategy: the CENSUS. One row, six shapes, and under each the three facts a
+%       reader needs to place it -- how much of the suite it carries, what radix
+%       it costs, and over what (N,G) span it was exercised. b puts a worked
+%       route on each and argues invariance; c re-scales the panels by instance
+%       count so the suite's emphasis is in the drawing; d abandons the row and
+%       plots radix against per-router cost. This one is the table, drawn.
+% Colour: routers and links are structural machinery (spBlue over spBlueF);
+%       radix is the cost channel, so the two families whose radix GROWS with G
+%       are spVerm and the four with a fixed radix are spMute; the single
+%       excluded instance is a caution (spAmber); the invariance statement in
+%       the footer is the confirmed result (spGreen). Shape carries the family
+%       and a dashed rule under the variable-radix cells carries the cost
+%       distinction, so greyscale loses nothing.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn on a fixed 16.9cm canvas --
+%       the standalone wrapper is varwidth=17cm, so a wider canvas is cropped in
+%       the guide preview (the same constraint f04_fabric records).
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  rt/.style ={draw=spBlue, fill=spBlueF, circle, line width=0.35pt,
+              minimum size=0.20cm, inner sep=0pt},
+  sw/.style ={draw=spBlue, fill=spBlue!32, rectangle, line width=0.35pt,
+              minimum width=0.28cm, minimum height=0.17cm, inner sep=0pt},
+  lk/.style ={draw=spBlue!60, line width=0.4pt},
+  wr/.style ={draw=spBlue!60, line width=0.4pt, densely dotted},
+  ttl/.style={font=\scriptsize\bfseries, text=spInk, inner sep=1pt},
+  cnt/.style={font=\scriptsize, text=spInk, inner sep=0.5pt},
+  fix/.style={font=\tiny, text=spMute, inner sep=0.5pt},
+  var/.style={font=\tiny, text=spVerm, inner sep=0.5pt},
+  rng/.style={font=\tiny, text=spMute, inner sep=0.5pt},
+]
+% Fixed canvas: pins the bounding box so the preview equals the typeset size.
+\path (0,0.02) rectangle (16.9,6.62);
+
+% ---- panel grounds ---------------------------------------------------------
+\begin{scope}[on background layer]
+  \foreach \cx in {1.45,4.25,7.05,9.85,12.65,15.45}{
+    \fill[spGrid!55, rounded corners=2.5pt] (\cx-1.35,2.24) rectangle (\cx+1.35,6.34);
+  }
+\end{scope}
+\foreach \cx in {1.45,4.25,7.05,9.85,12.65,15.45}{
+  \draw[spMute!55, line width=0.3pt] (\cx-1.20,3.60) -- (\cx+1.20,3.60);
+}
+
+% =========================== 1. LINEAR ======================================
+\node[ttl] at (1.45,6.10) {linear};
+\begin{scope}[shift={(1.45,4.88)}]
+  \foreach \i in {0,...,4}{ \node[rt] (L\i) at (-0.88+\i*0.44,0) {}; }
+  \foreach \i/\j in {0/1,1/2,2/3,3/4}{ \draw[lk] (L\i) -- (L\j); }
+\end{scope}
+\node[cnt] at (1.45,3.36) {\textbf{4} of \SuiteSize{} instances};
+\node[fix] at (1.45,3.07) {radix $P = \RadixMin$};
+\node[fix] at (1.45,2.81) {(2 + local)};
+\node[rng] at (1.45,2.53) {$N$ 8--1024 \quad $G$ 2--16};
+
+% =========================== 2. RING ========================================
+\node[ttl] at (4.25,6.10) {ring};
+\begin{scope}[shift={(4.25,4.88)}]
+  \foreach \i in {0,...,7}{
+    \node[rt] (R\i) at ({0.60*cos(90-\i*45)},{0.60*sin(90-\i*45)}) {};
+  }
+  \foreach \i/\j in {0/1,1/2,2/3,3/4,4/5,5/6,6/7,7/0}{ \draw[lk] (R\i) -- (R\j); }
+\end{scope}
+\node[cnt] at (4.25,3.36) {\textbf{6} of \SuiteSize{} instances};
+\node[fix] at (4.25,3.07) {radix $P = \RadixMin$};
+\node[fix] at (4.25,2.81) {(2 + local)};
+\node[rng] at (4.25,2.53) {$N$ 8--2048 \quad $G$ 4--512};
+
+% =========================== 3. MESH ========================================
+\node[ttl] at (7.05,6.10) {2D mesh};
+\begin{scope}[shift={(7.05,4.88)}]
+  \foreach \i in {0,1,2}{ \foreach \j in {0,1,2}{
+    \node[rt] (M\i\j) at (-0.54+\i*0.54,-0.54+\j*0.54) {};
+  }}
+  \foreach \j in {0,1,2}{ \draw[lk] (M0\j) -- (M1\j) -- (M2\j); }
+  \foreach \i in {0,1,2}{ \draw[lk] (M\i0) -- (M\i1) -- (M\i2); }
+\end{scope}
+\node[cnt] at (7.05,3.36) {\textbf{4} of \SuiteSize{} instances};
+\node[fix] at (7.05,3.07) {radix $P = \RadixLo$};
+\node[fix] at (7.05,2.81) {(4 + local)};
+\node[rng] at (7.05,2.53) {$N$ 16--2048 \quad $G$ 5--256};
+
+% =========================== 4. TORUS =======================================
+\node[ttl] at (9.85,6.10) {2D torus};
+\begin{scope}[shift={(9.85,4.88)}]
+  \foreach \i in {0,1,2}{ \foreach \j in {0,1,2}{
+    \node[rt] (T\i\j) at (-0.50+\i*0.50,-0.50+\j*0.50) {};
+  }}
+  \foreach \j in {0,1,2}{ \draw[lk] (T0\j) -- (T1\j) -- (T2\j); }
+  \foreach \i in {0,1,2}{ \draw[lk] (T\i0) -- (T\i1) -- (T\i2); }
+  \foreach \j in {0,1,2}{ \draw[wr] (T0\j) to[out=150,in=30,looseness=1.1] (T2\j); }
+  \foreach \i in {0,1,2}{ \draw[wr] (T\i0) to[out=240,in=120,looseness=1.1] (T\i2); }
+\end{scope}
+\node[cnt] at (9.85,3.36) {\textbf{10} of \SuiteSize{} instances};
+\node[fix] at (9.85,3.07) {radix $P = \RadixLo$};
+\node[fix] at (9.85,2.81) {(4 + local)};
+\node[rng] at (9.85,2.53) {$N$ 32--8192 \quad $G$ 10--2048};
+
+% =========================== 5. FAT-TREE ====================================
+\node[ttl] at (12.65,6.10) {fat-tree};
+\begin{scope}[shift={(12.65,4.88)}]
+  \node[sw] (FC) at (-0.30,0.58) {};
+  \node[sw] (FP0) at (-0.72,0.02) {};
+  \node[sw] (FP1) at ( 0.12,0.02) {};
+  \draw[lk] (FP0) -- (FC) -- (FP1);
+  \foreach \i in {0,...,5}{ \node[rt] (FL\i) at (-0.98+\i*0.27,-0.58) {}; }
+  \foreach \i in {0,1,2}{ \draw[lk] (FL\i) -- (FP0); }
+  \foreach \i in {3,4,5}{ \draw[lk] (FL\i) -- (FP1); }
+  \node[font=\tiny, text=spMute, anchor=west, inner sep=1pt] at (-0.12,0.58) {core};
+  \node[font=\tiny, text=spMute, anchor=west, inner sep=1pt] at ( 0.30,0.02) {pod};
+  \node[font=\tiny, text=spMute, anchor=west, inner sep=1pt] at ( 0.52,-0.58) {leaf};
+\end{scope}
+\node[cnt] at (12.65,3.36) {\textbf{9} of \SuiteSize{} instances};
+\node[var] at (12.65,3.07) {radix $P = \RadixLo$--$\RadixMax$};
+\node[var] at (12.65,2.81) {$\max(5,\,k{+}2)$};
+\draw[spVerm, line width=0.4pt, densely dashed] (11.75,2.67) -- (13.55,2.67);
+\node[rng] at (12.65,2.53) {$N$ 32--8192 \quad $G$ 8--4096};
+
+% =========================== 6. HYPERCUBE ===================================
+\node[ttl] at (15.45,6.10) {hypercube};
+\begin{scope}[shift={(15.45,4.85)}]
+  \foreach \i/\x/\y in {0/-0.62/-0.50, 1/0.20/-0.50, 2/0.20/0.32, 3/-0.62/0.32}{
+    \node[rt] (H\i) at (\x,\y) {};
+  }
+  \foreach \i/\x/\y in {4/-0.24/-0.14, 5/0.58/-0.14, 6/0.58/0.68, 7/-0.24/0.68}{
+    \node[rt] (H\i) at (\x,\y) {};
+  }
+  \foreach \i/\j in {0/1,1/2,2/3,3/0}{ \draw[lk] (H\i) -- (H\j); }
+  \foreach \i/\j in {4/5,5/6,6/7,7/4}{ \draw[lk] (H\i) -- (H\j); }
+  \foreach \i/\j in {0/4,1/5,2/6,3/7}{ \draw[wr] (H\i) -- (H\j); }
+\end{scope}
+\node[cnt] at (15.45,3.36) {\textbf{7} of \SuiteSize{} instances};
+\node[var] at (15.45,3.07) {radix $P = \RadixMin$--$\RadixHc$};
+\node[var] at (15.45,2.81) {$\dim + 1$};
+\draw[spVerm, line width=0.4pt, densely dashed] (14.55,2.67) -- (16.35,2.67);
+\node[rng] at (15.45,2.53) {$N$ 32--8192 \quad $G$ 4--1024};
+
+% ---- key and footer --------------------------------------------------------
+\node[font=\tiny, text=spVerm, anchor=west, inner sep=1pt] at (0.15,2.06)
+  {\rule[0.06cm]{0.34cm}{0.4pt}\ \ radix grows with $G$};
+\node[font=\tiny, text=spMute, anchor=west, inner sep=1pt] at (3.05,2.06)
+  {radix fixed by the family};
+\node[font=\tiny, text=spAmber!75!spInk, anchor=west, inner sep=1pt] at (6.00,2.06)
+  {\RadixMaxInst{} ($P{=}\RadixMax$, \RadixMaxRouters{} routers) is the one
+   instance the campaign excludes};
+
+\node[anchor=north west, align=left, font=\tiny, inner sep=1pt, text=spInk,
+      text width=16.6cm] at (0.15,1.80)
+  {One \sv{noc\_system} module realises all six: the adjacency table maps
+   (router, port) to (target router, target port) and the routing table maps
+   (router, destination) to an output port, both written before
+   \sv{program\_start}, so a family is a Python classmethod and no Verilog
+   change. \emph{Radix is what the shape costs.} Linear and ring hold at
+   $P = \RadixMin$ and mesh and torus at $P = \RadixLo$ whatever $G$ is, while
+   hypercube reaches $P = \RadixHc$ at $G{=}1024$ and fat-tree $P = \RadixMax$
+   at $G{=}4096$; because the crossbar is $O(P^2)$ a fat-tree router is
+   \RouterBlowup$\times$ a mesh router (\RouterBitsFt{} against \RouterBitsLo{}
+   storage-equivalent bits), which is why one fixed-radix estimate cannot
+   price the suite.};
+\node[anchor=north west, align=left, font=\tiny, inner sep=1pt, text=spGreen,
+      text width=16.6cm] at (0.15,0.56)
+  {\textbf{What does not vary with the shape is the answer.} Across all six
+   families the target is $\Rcan(N,L)$, a function of $N$ alone: over
+   \WallTBs{} settled hardware simulations no configuration produced a finite
+   root differing from it.};
+\end{tikzpicture}

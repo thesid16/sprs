@@ -1,0 +1,65 @@
+% f14_isa_encoding variant a -- the two encodings the ABI actually rides on, field by
+% field, with the fields Claim 1 depends on marked.
+% Data: field boundaries read from src/sprs_core.py encode_instruction and the widths
+%       declared in rtl/btree_pkg.sv / rtl/noc_pkg.sv. \SendAddrBits from
+%       data/fabric_macros.tex is the width the SEND's destination is carried in on the
+%       wire; \DmemDepth is the memory it indexes.
+% Strategy: variants b-d show a filled example, the RTL decoder beside the encoding, and
+%       a field-lifetime view. This one is the reference plate: every field, its width,
+%       and -- the point -- which three fields are the ones the invariance claim rests on.
+%       Operand binding is not a convention here, it is two address fields in a word.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn inside 17.6cm.
+\begin{tikzpicture}[x=1cm, y=1cm, font=\footnotesize,
+  fld/.style={draw=spMute, line width=0.4pt, fill=white},
+  bind/.style={draw=spBlue, line width=0.9pt, fill=spBlueF},
+  warn/.style={draw=spAmber!80!spInk, line width=0.9pt, fill=spAmber!28},
+  lb/.style={font=\tiny, align=center, inner sep=0.5pt, text=spInk},
+  ttl/.style={font=\scriptsize\bfseries, anchor=west, text=spInk},
+  key/.style={font=\tiny, anchor=west, text=spMute},
+]
+% ---------------- 64-bit instruction word ----------------
+\node[ttl] at (0.05,0.62) {the 64-bit instruction word};
+\node[key] at (6.10,0.62) {\textcolor{spBlue}{$\blacksquare$} the two fields operand
+  binding is written in --- \textsf{C-bind} is exactly their value};
+% 0.2725 cm per bit over 64 bits from x=0.05
+\draw[fld]  (0.05,-0.55) rectangle ( 1.14,0.25);
+\draw[fld]  (1.14,-0.55) rectangle ( 2.23,0.25);
+\draw[fld]  (2.23,-0.55) rectangle ( 6.59,0.25);
+\draw[bind] (6.59,-0.55) rectangle (10.95,0.25);
+\draw[bind] (10.95,-0.55) rectangle (15.31,0.25);
+\draw[fld]  (15.31,-0.55) rectangle (17.49,0.25);
+\node[lb, text width=10mm] at ( 0.60,-0.15) {\sv{[63:60]}\\opcode};
+\node[lb, text width=10mm] at ( 1.69,-0.15) {\sv{[59:56]}\\aux};
+\node[lb, text width=40mm] at ( 4.41,-0.15) {\sv{[55:40]} \sv{dest}\\write-back address};
+\node[lb, text width=40mm] at ( 8.77,-0.15) {\sv{[39:24]} \sv{addr\_a}\\left operand};
+\node[lb, text width=40mm] at (13.13,-0.15) {\sv{[23:8]} \sv{addr\_b}\\right operand};
+\node[lb, text width=20mm] at (16.40,-0.15) {\sv{[7:0]}\\reserved};
+
+% ---------------- opcodes ----------------
+\node[ttl] at (0.05,-1.15) {opcodes};
+\node[font=\tiny, anchor=north west, align=left, text width=170mm, text=spInk]
+  at (0.05,-1.42)
+  {\sv{GENERATE} writes a leaf value to \sv{dest}. \sv{COMPUTE} reads \sv{addr\_a} and
+   \sv{addr\_b}, adds them in the FP64 unit, and writes \sv{dest} --- exactly two
+   operands, which is why no same-fabric reducer can be shallower than $\FBT(N)$.
+   \sv{SEND} carries the value at \sv{addr\_a} to the worker named in \sv{dest}.};
+
+% ---------------- 96-bit packet ----------------
+\node[ttl] at (0.05,-2.55) {the 96-bit packet a \sv{SEND} becomes};
+% 0.1822 cm per bit over 96 bits from x=0.05
+\draw[fld]  (0.05,-3.70) rectangle ( 2.97,-2.90);
+\draw[warn] (2.97,-3.70) rectangle ( 4.79,-2.90);
+\draw[fld]  (4.79,-3.70) rectangle ( 5.89,-2.90);
+\draw[fld]  (5.89,-3.70) rectangle (17.49,-2.90);
+\node[lb, text width=26mm] at ( 1.51,-3.30) {\sv{[95:80]}\\\sv{dest\_gpu\_id}};
+\node[lb, text width=17mm] at ( 3.88,-3.30) {\sv{[79:70]}\\\sv{target\_addr}};
+\node[lb, text width=10mm] at ( 5.34,-3.30) {\sv{[69:64]}\\resv.};
+\node[lb, text width=60mm] at (11.69,-3.30) {\sv{[63:0]} payload --- the 64-bit value};
+\node[font=\tiny, anchor=north west, align=left, text width=170mm, text=spInk]
+  at (0.05,-3.88)
+  {\textcolor{spAmber!70!spInk}{$\blacksquare$} The instruction's 16-bit \sv{dest} is
+   carried on the wire in only \SendAddrBits{} bits, while \sv{DMEM} is \DmemDepth{}
+   deep. An image naming more addresses than that on one worker aliases two onto one
+   slot with no flag raised --- which is why \textsf{C-mem} is a compile-time
+   obligation and not a run-time check.};
+\end{tikzpicture}

@@ -195,6 +195,12 @@ IEEE~754 floating point, network-on-chip, bitwise reproducibility, all-reduce.
 \section{The Problem}\label{sec:intro}
 % =====================================================================
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f19_reshape/a}
+\caption{What cluster reshape does to a reduction, and where an answer can act. Only the grouping changes; because floating-point addition is not associative, the bit pattern changes with it. Measured across \GpuWorldSizes{} world sizes on identical input, \GpuRootsDistinct{} distinct roots. Existing answers act above the fabric and pay for it in elasticity or in cost; this paper fixes the order at the compiler/fabric interface, below the software that could violate it.}\label{fig:reshape}
+\end{figure}
+
+
 \IEEEPARstart{P}{roduction} all-reduce implementations --- ring, recursive
 halving--doubling, double-binary tree --- pick the reduction order that
 maximises throughput for the observed topology and worker
@@ -289,6 +295,12 @@ same discipline onto production collectives in software and prices it there;
 % =====================================================================
 \section{Background and Threat Model}\label{sec:background}
 % =====================================================================
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f01_premise/a}
+\caption{The premise, measured rather than assumed. Reducing identical bytes at different world sizes yields different 64-bit roots. Above $G{=}2$ the sweep runs on the gloo/CPU backend, because NCCL requires one rank per device and the node has two GPUs.}\label{fig:premise}
+\end{figure}
+
 
 \emph{Where the order comes from.} Let $\tau$ be a binary reduction tree over
 $N$ binary64 values and $\Sigma_\tau$ the 64-bit result of evaluating it with
@@ -388,6 +400,12 @@ and enforcement below the software stack with a fail-stop failure mode.
 
 \subsection{The Canonical Tree}\label{sec:abi-tree}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f02_canonical_tree/a}
+\caption{$\FBT(N)$: heap-indexed, leaves at $N{-}1 \ldots 2N{-}2$ in ascending index order. The tree, not the machine, defines the result.}\label{fig:canontree}
+\end{figure}
+
+
 \begin{definition}[Canonical full binary tree]\label{def:fbt}
 For $N \geq 1$, $\FBT(N)$ is the heap-indexed binary tree with $2N-1$ nodes:
 root at index $0$, children of $i$ at $2i+1$ and $2i+2$; internal nodes
@@ -441,6 +459,12 @@ invariance table are not equally informative --- at small $N$ agreement is
 close to free, and the weight of the evidence sits at the large leaf counts.
 
 \subsection{The ABI}\label{sec:abi-def}
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f13_worked_example/a}
+\caption{A worked reduction at $N{=}8$ with the real leaf values, showing the canonical root the campaign reports for that leaf count. The shape of the machine appears nowhere in the computation.}\label{fig:worked}
+\end{figure}
+
 
 \begin{definition}[Operand binding]\label{def:opbind}
 For every internal node $v$ of $\FBT(N)$ the compiler emits exactly one
@@ -519,6 +543,12 @@ margin.
 \end{remark}
 
 \subsection{Claim 1 and the Fail-Stop Property}\label{sec:abi-claim}
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f03_claim1/a}
+\caption{Claim 1. The same reduction DAG mapped onto different topologies yields the identical 64-bit root: routes differ, the root does not.}\label{fig:claim1}
+\end{figure}
+
 
 \begin{claim}[Cross-topology bitwise invariance]\label{claim:1}
 Let $N \in \mathbb{N}$, let $L \in (\mathrm{bits}_{64})^N$ be a fixed
@@ -704,6 +734,12 @@ find them first.
 
 \subsection{Packet Format and Reduction ISA}\label{sec:fabric-isa}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f14_isa_encoding/a}
+\caption{The two encodings the ABI rides on. Operand binding is not a convention but two address fields in the instruction word; \textsf{C-mem} is the gap between the 16-bit \sv{dest} and the \SendAddrBits{} bits that carry it.}\label{fig:isa}
+\end{figure}
+
+
 \begin{figure}[!t]
 \centering
 \input{figures/variants/f04_fabric/a}
@@ -855,6 +891,12 @@ list where a reader might expect only \textsf{F-sb-gate}.
 
 \subsection{Fail-Stop Discipline}\label{sec:fail-stop}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f05_failstop/a}
+\caption{Property 2. A missing or misrouted operand halts the run; it never silently produces a different root.}\label{fig:failstop}
+\end{figure}
+
+
 The PIU's header check against the local PE (Fig.~\ref{fig:pipeline}) is what
 discards a misrouted packet --- a routing-table bug, a corrupted packet, a
 torn adjacency --- rather than writing it (\textsf{F-misroute}). The drop and
@@ -928,6 +970,12 @@ termination and never correctness, which is why no passing run can contain
 one.
 
 \subsection{Resource Envelope}\label{sec:resource}
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f15_dmem_cmem/a}
+\caption{Peak DMEM occupancy against the hard depth. The campaign came within \DmemMargin{} slots of a ceiling that does not announce itself: past it the run terminates normally and returns a wrong root.}\label{fig:dmem}
+\end{figure}
+
 
 
 Router cost is dominated by radix, and radix is a property of the topology
@@ -1049,6 +1097,12 @@ it into a fabric-side guarantee.
 \section{The Compiler}\label{sec:compiler}
 % =====================================================================
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f06_compiler/a}
+\caption{The compiler pipeline and where each obligation is discharged. Stages the campaign actually exercised are drawn solid; the assignment stage carries the whole decision.}\label{fig:compiler}
+\end{figure}
+
+
 \begin{table}[!t]
 \caption{The compiler's passes, and which of them produced the results in this
   paper. \StagesRun{} ran; three did not, and we describe the pipeline that
@@ -1167,6 +1221,12 @@ code-level content of Proposition~\ref{thm:orth}.
 % =====================================================================
 \section{Methodology}\label{sec:method}
 % =====================================================================
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f18_topology_gallery/a}
+\caption{The six topologies the instance suite spans, with how many instances sit on each and the router radix that follows. Measured radix spans \RadixMin{} to \RadixMax{}, and a crossbar is $O(P^2)$.}\label{fig:topologies}
+\end{figure}
+
 
 \emph{Instance suite.} \SuiteSize{} instances span $N \in \{8, 10, 16, 32, 50,\allowbreak
 100, 128, 200, 500,\allowbreak 512, 1024, 1500,\allowbreak
@@ -1306,6 +1366,12 @@ residual as the principal open item in the evaluation
 % =====================================================================
 \section{Evaluation}\label{sec:results}
 % =====================================================================
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f07_campaign/a}
+\caption{The campaign funnel, from compilations attempted to passing hardware runs.}\label{fig:campaign}
+\end{figure}
+
 
 Vivado xsim 2025.2 on Linux; ten SystemVerilog sources ($3{,}738$ lines); a
 72-thread Intel Xeon~w9-3475X with 503~GB of RAM; RNG seeds pinned at $42$;
@@ -1465,6 +1531,12 @@ exactly.
 
 \subsection{The Oracle Is Not Vacuous, and Where It Stops}
 
+\begin{figure}[!t]\centering
+\input{figures/variants/f16_mutation/a}
+\caption{Mutation testing: what each injected fault class does, and by which route it is caught. Reordering genuinely changes the root, which is what makes an agreeing run evidence rather than a tautology.}\label{fig:mutation}
+\end{figure}
+
+
 A zero-divergence column means nothing unless the oracle can report a non-zero
 one. Reporting the injected-fault campaign requires more care than a single
 rate. The harness retains one boolean per mutant, and the testbench prints
@@ -1493,6 +1565,12 @@ Mutants were injected across all \InvLeafCounts{} leaf-count classes, so no
 row of Table~\ref{tab:invariance} rests on an oracle that was never exercised.
 
 \subsection{The Cost of the ABI}\label{sec:results-overhead}
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f17_omega_decomp/a}
+\caption{How $\Omega$ is assembled, and which constituent binds. Every term that ever binds is reducer-independent; the one $\FBT$-specific term binds on none, which is why distance to $\Omega$ cannot price the ABI.}\label{fig:omegadecomp}
+\end{figure}
+
 
 We report no measured $\eta$ (\S\ref{sec:method}); quoting a ratio against a
 reducer that does not exist would not be a measurement. But the ABI's cost is a
@@ -1616,6 +1694,18 @@ assignment algorithms.
 
 \subsection{A Derived Selection Rule}\label{sec:selrule}
 
+\begin{table}[!t]\centering\footnotesize
+\caption{Held-out performance of the portfolio against its size $k$. Leave-one-out is the optimistic protocol; holding out a whole topology is the honest one, since instances sharing a topology are not independent. $k{=}4$ is the knee: $k{=}5$ is identical to four decimals. Intervals are 95\% bootstrap CIs, $B{=}2000$, resampling the \TournNInst{} instances.}\label{tab:ksweep}
+\input{tables/ksweep}
+\end{table}
+
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f10_selection/a}
+\caption{Held-out regret against portfolio size. The rule transfers to a topology it never saw, and conditioning the choice on topology is worse than ignoring it.}\label{fig:selection}
+\end{figure}
+
+
 The campaign was built to answer a practitioner's question --- given an
 instance, which of the \SelConfigsTotal{} configurations should be run? ---
 and champion-class membership answers it in a form invariant to the tie
@@ -1720,6 +1810,12 @@ compiler, another accelerator, or to MPI or NCCL collectives.
 % =====================================================================
 \section{Exporting the ABI to Production Collectives}\label{sec:pinfbt}
 % =====================================================================
+
+\begin{figure}[!t]\centering
+\input{figures/variants/f11_export_cost/a}
+\caption{Measured overhead of the pinned-FBT export against stock \texttt{ncclAllReduce}. The headline is pre-registered and unfavourable; the point estimate is provisional, having been measured under GPU contention.}\label{fig:exportcost}
+\end{figure}
+
 
 Can the discipline be adopted without the \sprs{} fabric? It can, in software:
 replace a production collective's dynamic $G$-dependent tree with a library

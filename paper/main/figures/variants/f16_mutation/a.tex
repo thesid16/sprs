@@ -1,0 +1,100 @@
+% f16_mutation variant a -- mutation class against outcome, with the counts.
+% Data: data/claim_macros.tex (\MutAddrSub, \MutLeaf, \MutTotal, \MutAddrStall,
+%       \MutLiveSlotMax) and data/results_macros.tex (\MutVerdicts,
+%       \MutNoCompare, \MutOracleLo, \MutOracleHi). Raw records in
+%       data/mutation_results.json: 108 runs, 54 addr_sub + 54 leaf_corrupt,
+%       detected=true on 107 and null on exactly one (maxp_dense_hc, N=8192,
+%       G=1024, seed 1001, error "no verdict in xsim output"). The route split
+%       inside the addr_sub row is not a recorded field -- it is the static
+%       reconstruction in data/council/T03_verify.json against the DE presence
+%       gate (43 of 54 repoint at an address no agent ever writes; 9 at a remote
+%       receive buffer; 2 at an already-written local temporary), which is where
+%       \MutAddrStall and \MutLiveSlotMax come from. Hence 42 + 11 + 1 = 54.
+% Strategy: the accounting, as a class x route matrix. The single claim the
+%       campaign must support is that the oracle can report a non-zero column,
+%       and only the middle column is evidence for it: \MutOracleLo--\MutOracleHi
+%       of \MutTotal{} verdicts, not \MutTotal{}. Variant b draws the protocol
+%       that produces these cells, c re-cuts them by leaf count, d argues the
+%       oracle's power from reordering statistics instead of from mutants.
+% Colour: the fail-stop route is spGreen -- it is Property 2's halt outcome
+%       observed, a confirmed behaviour, and it is the same green f05 gives the
+%       presence gate. The value comparison is spBlue: it is the canonical-root
+%       oracle. The one unclassifiable run is spAmber. The two bounded cells
+%       carry a hatch, not a shade, so "at least" and "at most" survive
+%       greyscale; the exact cells are solid.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  hd/.style={font=\scriptsize, text=spInk, align=center, inner sep=0pt},
+  hs/.style={font=\tiny, align=center, inner sep=0pt},
+  rw/.style={font=\scriptsize, text=spInk, align=right, inner sep=0pt},
+  cell/.style={draw=spMute!55, line width=0.3pt, minimum width=21mm,
+               minimum height=11.5mm, inner sep=0pt},
+  num/.style={font=\scriptsize, text=spInk, inner sep=0pt},
+  big/.style={font=\small, text=spInk, inner sep=0pt},
+  sub/.style={font=\tiny, text=spMute, inner sep=0pt, align=center},
+]
+% ---- column headers ---------------------------------------------------
+\node[hd, text=spGreen] at (2.90,1.50) {fail-stop};
+\node[hs, text=spGreen] at (2.90,1.21) {\sv{P\_ERROR}, watchdog};
+\node[hd, text=spBlue]  at (5.15,1.50) {value oracle};
+\node[hs, text=spBlue]  at (5.15,1.21) {root $\neq\Rcan$};
+\node[hd, text=spAmber] at (7.40,1.50) {no verdict};
+\node[hs, text=spAmber] at (7.40,1.21) {recorded};
+\draw[spMute, line width=0.4pt] (0.25,1.00) -- (8.45,1.00);
+
+% ---- row 1: address substitution --------------------------------------
+\node[rw, anchor=east] at (1.75,0.46) {address};
+\node[rw, anchor=east] at (1.75,0.18) {substitution};
+\node[sub, anchor=east] at (1.75,-0.10) {\MutAddrSub{} runs, \textsf{C-bind}};
+\node[cell, fill=spGreen!16, pattern=north east lines, pattern color=spGreen!45]
+  at (2.90,0.30) {};
+\node[cell, draw=spGreen!75, line width=0.5pt] at (2.90,0.30) {};
+\node[num] at (2.90,0.48) {at least \MutNoCompare};
+\node[sub, fill=white, fill opacity=0.85, text opacity=1, inner sep=1pt]
+  at (2.90,0.08) {no comparison ran};
+\node[cell, fill=spBlue!14, pattern=north west lines, pattern color=spBlue!40]
+  at (5.15,0.30) {};
+\node[cell, draw=spBlue!75, line width=0.5pt] at (5.15,0.30) {};
+\node[num] at (5.15,0.48) {at most \MutLiveSlotMax};
+\node[sub, fill=white, fill opacity=0.85, text opacity=1, inner sep=1pt]
+  at (5.15,0.08) {reached a live slot};
+\node[cell, fill=spAmberF, draw=spAmber, line width=0.5pt] at (7.40,0.30) {};
+\node[big] at (7.40,0.48) {1};
+\node[sub] at (7.40,0.08) {\sv{maxp\_dense\_hc}};
+
+% ---- row 2: leaf corruption -------------------------------------------
+\node[rw, anchor=east] at (1.75,-1.02) {leaf};
+\node[rw, anchor=east] at (1.75,-1.30) {corruption};
+\node[sub, anchor=east] at (1.75,-1.58) {\MutLeaf{} runs, \textsf{C-leaf}};
+\node[cell, fill=white] at (2.90,-1.18) {};
+\node[big, text=spMute] at (2.90,-1.18) {0};
+\node[cell, fill=spBlue!32, draw=spBlue!85, line width=0.8pt] at (5.15,-1.18) {};
+\node[big] at (5.15,-1.00) {\MutLeaf};
+\node[sub, text=spInk] at (5.15,-1.40) {all terminate normally};
+\node[cell, fill=white] at (7.40,-1.18) {};
+\node[big, text=spMute] at (7.40,-1.18) {0};
+
+% ---- column totals ----------------------------------------------------
+\draw[spMute, line width=0.4pt] (0.25,-1.92) -- (8.45,-1.92);
+\node[rw, anchor=east] at (1.75,-2.20) {of 108 runs};
+\node[hd, text=spGreen] at (2.90,-2.20) {\MutAddrStall};
+\node[hd, text=spBlue]  at (5.15,-2.20) {\MutOracleLo--\MutOracleHi};
+\node[hd, text=spAmber] at (7.40,-2.20) {1};
+\node[sub, anchor=north] at (2.90,-2.38) {Property~2\\outcome (b)};
+\node[sub, text=spBlue, anchor=north] at (5.15,-2.38)
+  {\textbf{the non-vacuity}\\\textbf{evidence}};
+\node[sub, anchor=north] at (7.40,-2.38) {unclassifiable};
+
+% ---- the reading -------------------------------------------------------
+\node[draw=spBlue, line width=0.4pt, rounded corners=2pt, fill=white,
+      font=\tiny, align=left, text width=77mm, inner sep=3pt,
+      anchor=north west, text=spInk]
+  at (0.25,-2.86)
+  {A zero-divergence column means nothing unless the oracle can report a
+   non-zero one. Only the middle column can: non-vacuity rests on
+   \MutOracleLo--\MutOracleHi{} of the \MutTotal{} verdicts, not on all
+   \MutTotal{}. The left column is not waste --- it is Property~2's halt
+   observed under injected fault. Hatched cells are bounds, not counts: the
+   route was recovered by static reconstruction, and one run returned no
+   verdict at all.};
+\end{tikzpicture}

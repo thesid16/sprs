@@ -1,0 +1,55 @@
+% f15_dmem_cmem variant a -- peak DMEM occupancy against the hard depth, and the
+% constructed image that walks past it without raising anything.
+% Data: data/resource_macros.tex -- \DmemPeakMax (peak over all validated
+%       configurations), \DmemDepth (the hard depth), \DmemMargin (what is left),
+%       \DmemCexPeak / \DmemCexOver (the counterexample and how far past), and
+%       \DmemCexLeaves / \DmemCexWorkers (the instance that constructs it).
+% Strategy: variants b-d show the allocator's free-list walk, a side-by-side, and a
+%       histogram. This one is the margin itself. Note the axis starts at 440, not 0:
+%       the entire argument lives in the ~50 slots around the ceiling, and a zero-based
+%       axis renders a 21-slot margin and an 11-slot overshoot invisible. The break is
+%       marked so the truncation is not mistaken for the full range.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn at 8.6cm.
+\begin{tikzpicture}[x=1cm, y=1cm, font=\footnotesize]
+% y scale: 0.055 cm per slot over 440..535
+\def\Y#1{{(#1-440)*0.055}}
+% ---- ceiling ----
+\draw[spVerm, line width=1.0pt, dashed] (0.75,\Y{512}) -- (8.5,\Y{512});
+% Placed left of the bars: at x=5.55 it sat behind the counterexample column.
+\node[font=\tiny, anchor=south west, text=spVerm] at (0.85,\Y{512.5454545454545})
+  {\sv{DMEM\_DEPTH}$=\DmemDepth$ --- hard ceiling};
+% ---- validated ----
+\fill[spBlueF, draw=spBlue, line width=0.6pt] (1.35,0) rectangle (3.15,\Y{491});
+\node[font=\tiny, anchor=south, text=spBlue] at (2.25,\Y{491.72727272727275}) {\DmemPeakMax};
+\node[font=\scriptsize, anchor=north, align=center, text=spInk] at (2.25,-0.08)
+  {validated\\campaign};
+% margin, drawn inside the gap it describes
+\draw[{Latex[length=1.1mm]}-{Latex[length=1.1mm]}, spMute, line width=0.4pt]
+  (3.42,\Y{491}) -- (3.42,\Y{512});
+\node[font=\tiny, anchor=west, text=spMute, align=left] at (3.52,\Y{501.5})
+  {\DmemMargin{} slots};
+% ---- counterexample ----
+\fill[spAmber!28, draw=spAmber!80!spInk, line width=0.6pt] (5.55,0) rectangle (7.35,\Y{512});
+\fill[spVerm!30, draw=spVerm, line width=0.7pt] (5.55,\Y{512}) rectangle (7.35,\Y{522});
+\node[font=\tiny, anchor=south, text=spVerm] at (6.45,\Y{522.7272727272727}) {\DmemCexPeak};
+\node[font=\scriptsize, anchor=north, align=center, text=spInk] at (6.45,-0.08)
+  {constructed\\$\FBT(\DmemCexLeaves)$, $G{=}\DmemCexWorkers$};
+\node[font=\tiny, anchor=west, text=spVerm, align=left] at (7.45,\Y{517})
+  {\DmemCexOver{} over};
+% ---- axis, with the break marked ----
+\draw[spMute, line width=0.4pt] (0.75,0) -- (0.75,\Y{534});
+\foreach \v in {450,470,490,510,530} {
+  \draw[spMute, line width=0.35pt] (0.68,\Y{\v}) -- (0.75,\Y{\v});
+  \node[font=\tiny, anchor=east, text=spMute] at (0.65,\Y{\v}) {\v};}
+\draw[spMute, line width=0.5pt] (0.66,-0.10) -- (0.84,-0.02);
+\draw[spMute, line width=0.5pt] (0.66,-0.16) -- (0.84,-0.08);
+\node[font=\tiny, rotate=90, anchor=south, text=spInk] at (0.12,\Y{487})
+  {peak slots on one worker};
+% ---- the point ----
+\node[font=\tiny, anchor=north west, align=left, text width=84mm, text=spInk]
+  at (-0.05,-0.72)
+  {Past the ceiling the run does not stop. It terminates normally, raises no
+   \sv{P\_ERROR}, and returns a wrong root, two addresses having been aliased onto one
+   slot. That silence is why \textsf{C-mem} is discharged by the compiler as a
+   precondition rather than checked by the fabric at run time.};
+\end{tikzpicture}

@@ -66,7 +66,6 @@
 
 % ---- exact / long accumulation in hardware ----
 
-% TODO verify: year. Two on-disk sources agree the object cited is the 2nd
 % de Gruyter edition -- so `edition` is now recorded -- but they disagree on
 % its year, and neither is the book itself:
 %   t06scratch/exblas1.txt:1114-1116 (ExBLAS paper): "Kulisch UW (2013)
@@ -77,6 +76,7 @@
 %     Applications. 2nd ed. Walter de Gruyter."
 % 2013 is left in place unverified; the series/volume is not recorded because
 % only one of the two sources gives it.
+% resolved 2026-08-29: year settled at 2013: the Crossref record for the 2nd edition gives published-print 2013-04-16 (ISBN 9783110301731). An on-disk source said 2012, which appears to be an online-first date; 2013 is the print year.
 @book{kulisch2013arithmetic,
   author    = {Ulrich W. Kulisch},
   title     = {Computer Arithmetic and Validity: Theory, Implementation,
@@ -86,17 +86,18 @@
   year      = {2013}
 }
 
-% TODO verify: page range and DOI not confirmed by the verification council.
+% resolved 2026-08-29: pages, DOI and full author list from the Crossref record for doi 10.1109/arith.2017.38 (ARITH 2017, London), retrieved 2026-08-29.
 @inproceedings{koenig2017exactdot,
-  author    = {Jerry Koenig and David Biancolin and Jonathan Bachrach and
-               Krste Asanovi\'c},
+  author    = {Jack Koenig and David Biancolin and Jonathan Bachrach and Krste Asanovic},
   title     = {A Hardware Accelerator for Computing an Exact Dot Product},
   booktitle = {IEEE Symposium on Computer Arithmetic (ARITH)},
   year      = {2017},
-  publisher = {IEEE}
+  publisher = {IEEE},
+  pages        = {114--121},
+  doi          = {10.1109/arith.2017.38}
 }
 
-% TODO verify: page range and DOI not confirmed by the verification council.
+% resolved 2026-08-29: pages and DOI from the Crossref record for doi 10.1109/fpt.2008.4762363 (FPT 2008), retrieved 2026-08-29.
 @inproceedings{dedinechin2008accumulation,
   author    = {Florent de Dinechin and Bogdan Pasca and Octavian Cre\c{t} and
                Radu Tudoran},
@@ -104,16 +105,22 @@
                Sum-of-Products},
   booktitle = {International Conference on Field-Programmable Technology (FPT)},
   year      = {2008},
-  publisher = {IEEE}
+  publisher = {IEEE},
+  pages        = {33--40},
+  doi          = {10.1109/fpt.2008.4762363}
 }
 
-% TODO verify: volume, issue, page range and DOI not confirmed by the
 % verification council.
+% resolved 2026-08-29: volume, issue and DOI from Crossref (doi 10.14529/jsfi170206); page range 71--86 from the publisher record at superfri.org/index.php/superfri/article/view/137. Retrieved 2026-08-29.
 @article{gustafson2017posit,
   author  = {John L. Gustafson and Isaac Yonemoto},
   title   = {Beating Floating Point at its Own Game: Posit Arithmetic},
   journal = {Supercomputing Frontiers and Innovations},
-  year    = {2017}
+  year    = {2017},
+  volume       = {4},
+  number       = {2},
+  pages        = {71--86},
+  doi          = {10.14529/jsfi170206}
 }
 
 % ---- reproducible BLAS and numerical libraries ----
@@ -198,7 +205,6 @@
   doi          = {10.1145/3389360}
 }
 
-% TODO verify: exact page title and document version. Intel republishes this
 % material under several release paths -- developer-guide-linux/2023-0,
 % .../2024-0 and developer-reference-c/2025-0 all appear in the on-disk
 % record -- so a co-author should pin the edition actually cited before
@@ -214,12 +220,18 @@
 % (it already does so for 24 of the 35 cited entries) and no entry in this
 % file carries an access date; adding either would make this the single most
 % decorated reference in the list.
+% resolved 2026-08-29: page title, document title and version confirmed by fetching
+% the Intel page directly -- "Obtaining Numerically Reproducible Results" in the
+% Developer Guide for Intel oneAPI Math Kernel Library for Linux, version 2024.0,
+% document 766690 dated 2023-11-07. The paper quotes this source substantively, so
+% it now carries a URL and an access date.
 @misc{onemkl_cnr,
   author       = {{Intel Corporation}},
-  title        = {Conditional Numerical Reproducibility in the {oneAPI} {Math}
-                  {Kernel} {Library}},
-  howpublished = {Intel oneMKL Developer Guide},
-  year         = {2024}
+  title        = {Obtaining Numerically Reproducible Results},
+  howpublished = {Developer Guide for Intel oneAPI Math Kernel Library for Linux, version 2024.0, document 766690},
+  year         = {2024},
+  url          = {https://www.intel.com/content/www/us/en/docs/onemkl/developer-guide-linux/2024-0/obtaining-numerically-reproducible-results.html},
+  note         = {Accessed 2026-08-29}
 }
 
 % ---- fixed-order reproducibility in deployed stacks (2024--2026) ----
