@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+r"""
+gen_campaign_macros.py -- emit data/campaign_macros.tex.
+
+The campaign-funnel and campaign-accounting numbers, plus the Sec.~VIII-D
+canonical-root sweep numbers, were typed into the manuscript by hand.  Each one
+below is emitted from a council verdict record, and before emission the script
+asserts that the exact source string is present in that record.  A council file
+that is replaced, edited, or renumbered therefore makes this script FAIL rather
+than let a stale number be typeset.
+
+Sources (read-only):
+  council/work/T05_verify.json -- compilation funnel (compilations -> emitted
+                                  images -> distinct testbench hashes)
+  council/work/T01_verify.json -- campaign accounting (attempted, passing,
+                                  non-settling, core-hours)
+  council/work/T16_verify.json -- Sec. VIII-D canonical-root sweep and the
+                                  level-cut repair sweep
+
+Macro names contain no digits, so check_consistency.py's C1 check passes.
+Override the council location with $SPRS_COUNCIL.
+
+Usage:  python3 scripts/gen_campaign_macros.py [--out data/campaign_macros.tex]
+"""
+import argparse
+import json
+import os
+import sys
+
+# Council record directory.  Resolution order:
+#   1. $SPRS_COUNCIL                   -- explicit override
+#   2. <paper>/data/council            -- the released artifact layout (the JSONs
+#                                         these generators read are vendored there
+#                                         so a fresh clone can run them)
+#   3. the author's original absolute path, last resort.
+def _council_default():
+    here = os.path.dirname(os.path.abspath(__file__))
+    cand = os.path.join(os.path.dirname(here), "data", "council")
+    return cand if os.path.isdir(cand) else \
+        "/home/rohit/sprs-review/runs/20260817T230831Z/council/work"
+
+
+COUNCIL = os.environ.get("SPRS_COUNCIL") or _council_default()
+HERE = os.path.dirname(os.path.abspath(__file__))
+PAPER = os.path.dirname(HERE)
+FAIL = []
+M = []
+
+
+def load(name):
+    path = os.path.join(COUNCIL, name)
+    if not os.path.exists(path):
+        FAIL.append(f"source record absent: {path}")
+        return ""
+    with open(path, encoding="utf-8") as fh:
+        return json.dumps(json.load(fh))
+
+
+T01 = load("T01_verify.json")
+T05 = load("T05_verify.json")
+T16 = load("T16_verify.json")
+
+
+def emit(name, value, blob, needle, what=None):
+    """Emit \\name{value}, but only after `needle` is found in `blob`."""
+    if blob and needle not in blob:
+        FAIL.append(f"{what or name}: source string {needle!r} absent from its "
+                    f"verdict record -- refusing to emit \\{name}")
+    M.append(f"\\newcommand{{\\{name}}}{{{value}}}")
+
+
+# ---- T05: the compilation funnel ----------------------------------------
+# "7,200 compilations, of which 6,777 emit a program image", collapsed by
+# testbench-hash dedup to 2,920 distinct images.
+emit("FunnelCompiles", "7{,}200", T05, "7,200")
+emit("FunnelImages", "6{,}777", T05, "6,777")
+emit("FunnelUnique", "2{,}920", T05, "2,920")
+
+# ---- T01: campaign accounting -------------------------------------------
+# "2,844 attempted unique configurations, 2,822 passing, 22 non-settling"
+# "122.9 core-hours (12.3% of the campaign's true 1,003.3 core-h)"
+emit("CampAttempted", "2{,}844", T01,
+     "2,844 attempted unique configurations, 2,822 passing, 22 non-settling")
+emit("CampPassing", "2{,}822", T01,
+     "2,844 attempted unique configurations, 2,822 passing, 22 non-settling")
+emit("CampNonSettling", "22", T01,
+     "2,844 attempted unique configurations, 2,822 passing, 22 non-settling")
+emit("CampCoreHTotal", "1{,}003.3", T01, "1,003.3 core-h")
+emit("CampCoreHUnsettled", "122.9", T01, "122.9 core-hours")
+
+# ---- T16: Sec. VIII-D canonical-root sweep -------------------------------
+# "over ALL 44,850 pairs with 2<=N<=300, 2<=G<=N, step 1 holds on 1,217 = 2.71%"
+emit("SweepPairs", "44{,}850", T16, "over ALL 44,850 pairs")
+emit("SweepStepOneHolds", "1{,}217", T16, "step 1 holds on 1,217 = 2.71%")
+emit("SweepStepOnePct", "2.71\\%", T16, "1,217 = 2.71%")
+# "returns a different 64-bit root on 699/1,546 = 45.2% of swept pairs"
+emit("SweepRootDivergePct", "45.2\\%", T16, "699/1,546 = 45.2% of swept pairs")
+# "repair_sweep.py: 426/426 (N,G) pairs give exactly R_can"
+emit("RepairSweepPairs", "426", T16, "426/426 (N,G) pairs give exactly R_can")
+# "worst-case load imbalance max_rank_leaves/(N/G)=1.969"
+emit("RepairImbalance", "1.969", T16, "max_rank_leaves/(N/G)=1.969")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=os.path.join(PAPER, "data", "campaign_macros.tex"))
+    a = ap.parse_args()
+    if FAIL:
+        for f in FAIL:
+            print("FAIL " + f, file=sys.stderr)
+        print(f"gen_campaign_macros: {len(FAIL)} value(s) could not be sourced; "
+              f"nothing written.", file=sys.stderr)
+        return 1
+    hdr = ("% GENERATED by scripts/gen_campaign_macros.py -- do not edit by hand.\n"
+           "% source : council/work/{T01,T05,T16}_verify.json\n"
+           "% method : each value asserted present, as an exact substring, in its\n"
+           "%          source verdict record before emission; the script fails\n"
+           "%          rather than emit a stale number.  Names carry no digits\n"
+           "%          (check_consistency C1).\n")
+    os.makedirs(os.path.dirname(a.out), exist_ok=True)
+    with open(a.out, "w", encoding="utf-8") as fh:
+        fh.write(hdr + "\n".join(M) + "\n")
+    print(f"wrote {a.out} ({len(M)} macros)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

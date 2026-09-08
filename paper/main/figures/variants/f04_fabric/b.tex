@@ -1,0 +1,145 @@
+% f04_fabric variant b -- the fabric as a layered contract: link, router, NI, PE,
+% emitted image, with the invariant each layer establishes and the one it does not.
+% Target: IEEE double column (figure*), fixed 16.9cm canvas (the standalone
+% wrapper is varwidth=17cm, so 17.6cm would be cropped in the guide preview).
+% Data : rtl/link_tx.sv, sync_fifo.sv, noc_router.sv, noc_ni.sv,
+%        btree_fsm_fast.sv, noc_system.sv; emit_sv_testbench in src/sprs_core.py;
+%        data/fabric_macros.tex, data/resource_macros.tex, data/claim_macros.tex;
+%        the fifteen assumptions in main.tex App. A.
+% Strategy: WHO GUARANTEES WHAT.  Variant a follows one packet through the
+% hardware; this one drops the dataflow entirely and argues the assumption
+% partition instead -- each layer's mechanism, the C-*/F-* it establishes, and
+% the thing it explicitly does not, so a reader can see that every gap is closed
+% one layer up.  It is the variant that displaces the F-* enumeration wholesale.
+\begin{tikzpicture}[
+  font=\tiny,
+  hdr/.style ={font=\scriptsize\bfseries, align=center},
+  lay/.style ={font=\scriptsize\bfseries, align=left, text=spBlue},
+  cell/.style={font=\tiny, align=left, anchor=north west, inner sep=0pt, text=spInk},
+]
+\path (0,0) rectangle (16.9,8.78);
+
+% --- column geometry --------------------------------------------------
+\def\cA{0.62}\def\cB{3.72}\def\cC{9.22}\def\cD{13.42}
+
+% --- header -----------------------------------------------------------
+\node[hdr, anchor=south west, text=spInk]   at (0.10,8.34) {layer};
+\node[hdr, anchor=south west, text=spBlue]  at (\cB,8.34) {mechanism, in the RTL};
+\node[hdr, anchor=south west, text=spGreen] at (\cC,8.34) {establishes};
+\node[hdr, anchor=south west, text=spVerm]  at (\cD,8.34) {does \emph{not} establish};
+
+% --- bands ------------------------------------------------------------
+\fill[spGrid!55] (0.10,6.52) rectangle (16.80,8.28);
+\fill[spGrid!55] (0.10,3.44) rectangle (16.80,4.74);
+\fill[spGrid!55] (0.10,0.80) rectangle (16.80,1.84);
+% role tints on the two argument columns
+\fill[spGreenF, opacity=0.75] (9.10,0.80) rectangle (13.30,8.28);
+\fill[spVermF,  opacity=0.75] (13.30,0.80) rectangle (16.80,8.28);
+\foreach \y in {6.52, 4.74, 3.44, 1.84} \draw[spGrid, thin] (0.10,\y) -- (16.80,\y);
+\draw[semithick, spMute] (0.10,0.80) -- (16.80,0.80);
+\foreach \x in {3.60, 9.10, 13.30} \draw[spGrid, thin] (\x,0.80) -- (\x,8.28);
+\draw[semithick, spMute] (0.10,0.08) rectangle (16.80,8.28);
+
+% --- the stack spine --------------------------------------------------
+\draw[-{Stealth[length=2.2mm,width=1.8mm]}, line width=1pt, spBlue]
+  (0.32,1.00) -- (0.32,8.10);
+
+% =====================================================================
+% L5 -- the emitted image / ISA
+% =====================================================================
+\node[lay, anchor=north west] at (\cA,8.18) {5\ \ emitted image\\ \ \ \ (ISA)};
+\node[cell, text width=5.30cm] at (\cB,8.18)
+  {A 64-bit word: $\mathtt{opcode}\|\mathtt{aux}\|\mathtt{dest}\|
+   \mathtt{addr\_a}\|\mathtt{addr\_b}\|\mathtt{rsvd}$, four live opcodes.
+   \texttt{COMPUTE} names \emph{both} members of the operand pair; \texttt{SEND}
+   names a destination PE and a destination DMEM slot, never an egress port ---
+   the port is resolved by the emitting router's table, which is what keeps
+   topology a configuration input.};
+\node[cell, text width=4.00cm] at (\cC,8.18)
+  {\textsf{C-bind}, \textsf{C-leaf}, \textsf{C-sw}, \textsf{C-mem} --- all four
+   are post-conditions \emph{on the image}, checkable without executing
+   anything. \textsf{C-route}: destination-correct, loop-free paths.};
+\node[cell, text width=3.20cm] at (\cD,8.18)
+  {\textcolor{spAmber!80!spInk}{$\bm{\ast}$} \textsf{C-mem} at run time: addresses truncate to \SendAddrBits{}
+   bits, so an over-budget image aliases onto a live slot silently. Margin
+   \DmemPeakMax{} of \DmemDepth.};
+
+% =====================================================================
+% L4 -- the PE
+% =====================================================================
+\node[lay, anchor=north west] at (\cA,6.42) {4\ \ PE\\ \ \ \ \sv{btree\_fsm\_fast}};
+\node[cell, text width=5.30cm] at (\cB,6.42)
+  {In-order \textsf{IF}$\to$\textsf{DE}$\to$\textsf{EX}, one instruction at a
+   time. A \DmemDepth-bit scoreboard is written by all three DMEM ports (PIU,
+   GCI, \textsf{FSM} writeback), so presence is decided in one place whatever
+   delivered the data. Two-level write$\to$read forwarding; strict-priority
+   arbiter $\mathrm{PIU}{>}\mathrm{GCI}{>}\mathrm{FSM}$ with a GCI retry latch;
+   combinational \sv{fp64\_add}.};
+\node[cell, text width=4.00cm] at (\cC,6.42)
+  {\textsf{F-sb-mono}, \textsf{F-sb-gate}, \textsf{F-fw}, \textsf{F-inorder},
+   \textsf{F-gci-haz}, \textsf{F-arb}, \textsf{F-fadd} --- the seven safety
+   invariants of Claim~1 --- plus the liveness pair \textsf{F-misroute} and
+   \textsf{F-watchdog}.};
+\node[cell, text width=3.20cm] at (\cD,6.42)
+  {\textcolor{spAmber!80!spInk}{$\bm{\ast}$} It gates on \emph{presence}, not identity: a \texttt{COMPUTE} whose
+   two operand bits are set executes whatever the slots contain. A corrupted
+   leaf terminates normally with a wrong root.};
+
+% =====================================================================
+% L3 -- the network interface
+% =====================================================================
+\node[lay, anchor=north west] at (\cA,4.64) {3\ \ NI\\ \ \ \ \sv{noc\_ni}};
+\node[cell, text width=5.30cm] at (\cB,4.64)
+  {Round-robin merge of the PE's two TX links into one \NiFifoDepth-deep
+   injection FIFO; ejection delivers every arriving packet to CN link~0, where
+   the PIU drains it. Also holds the GCI leaf buffer that \texttt{GENERATE}
+   reads, \GciLatency{} cycles per fetch.};
+\node[cell, text width=4.00cm] at (\cC,4.64)
+  {The delivery path \textsf{C-leaf} needs, and the one structural convention
+   independent of topology: port~0 of every router is the local NI.};
+\node[cell, text width=3.20cm] at (\cD,4.64)
+  {No back-pressure onto the injection FIFO: \NiCredits{} credits against
+   \NiFifoDepth{} entries, so a long burst is dropped with no flag.};
+
+% =====================================================================
+% L2 -- the router
+% =====================================================================
+\node[lay, anchor=north west] at (\cA,3.34) {2\ \ router\\ \ \ \ \sv{noc\_router}};
+\node[cell, text width=5.30cm] at (\cB,3.34)
+  {Three stages: per-port, per-VC input FIFOs (\NumVcs{} VCs $\times$
+   \BufDepthSim{} flits in every emitted testbench, RTL default \BufDepthRtl);
+   \sv{route\_table[dest]} $\to$ egress port; two-level round-robin allocation
+   into a crossbar. One egress FIFO per port, \emph{shared} across VCs.};
+\node[cell, text width=4.00cm] at (\cC,3.34)
+  {Destination-correct forwarding for any adjacency and routing table the
+   compiler loads. Radix is per-instance (\sv{PORTS\_PER\_RTR} $=$
+   \RadixMin--\RadixMax{} across the suite), not an RTL constant.};
+\node[cell, text width=3.20cm] at (\cD,3.34)
+  {No acyclic channel-dependency graph: the tables are minimal-distance, not
+   dimension-ordered, and the CDG has cycles on every ring ($G$) and torus
+   (\CdgTorusCycLo--\CdgTorusCycHi).};
+
+% =====================================================================
+% L1 -- the link
+% =====================================================================
+\node[lay, anchor=north west] at (\cA,1.74) {1\ \ link\\ \ \ \ \sv{link\_tx}, \sv{sync\_fifo}};
+\node[cell, text width=5.30cm] at (\cB,1.74)
+  {Credit-only, no ARQ: one 96-bit flit per cycle while a credit is held.
+   Credit returns are serialised through a pending-credit register
+   \CreditCtrBits{} bits wide.};
+\node[cell, text width=4.00cm] at (\cC,1.74)
+  {\textsf{F-credit}: ingress never overflows; the pending register wraps only
+   at a backlog of \CreditCtrWrap, provably never reached here.};
+\node[cell, text width=3.20cm] at (\cD,1.74)
+  {Anything above \sv{VC0}: bit $[64]$ is a VC selector but is written as the
+   constant \VcBitLiteral.};
+
+% --- footer -----------------------------------------------------------
+\node[cell, text width=16.55cm] at (0.15,0.72)
+  {\textbf{The last column.} Every gap there leaves an operand \emph{absent} one
+   layer up, so the presence gate turns it into a halt with a recorded
+   \sv{error\_pc} rather than a wrong root (Property~2). The two marked \textcolor{spAmber!80!spInk}{$\bm{\ast}$}
+   are the exceptions: they leave every read address \emph{present}, so no fabric
+   mechanism can see them, and they are discharged off the machine --- by the
+   compile-time post-condition and by the root-versus-oracle comparison.};
+\end{tikzpicture}

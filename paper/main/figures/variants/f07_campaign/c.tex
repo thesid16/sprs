@@ -1,0 +1,77 @@
+% f07_campaign variant c -- waterfall of the campaign reductions.
+% Data: data/campaign_macros.tex (\FunnelCompiles 7,200; \FunnelImages 6,777;
+%       \FunnelUnique 2,920; \CampAttempted 2,844; \CampPassing 2,822;
+%       \CampNonSettling 22) and tables/dedup.tex (622 unique asgn_hash;
+%       infeasibility cause list). The four step magnitudes are differences of
+%       consecutive macros -- 7200-6777=423, 6777-2920=3857, 2920-2844=76,
+%       2844-2822=22 -- so the bars cannot drift from the text either.
+%       The 76 is the maxp_mod_fat exclusion named in Methodology (L0).
+% Strategy: exact arithmetic on a common axis. This is the only variant from
+% which a reader can read every count AND every loss off one linear scale and
+% check that they sum; the funnel (a) and the flow (b) show proportion, this
+% shows the ledger. The dotted line makes visible why unique assignments
+% cannot be a stage of this chain: 622 lies below the terminal count.
+% Target: IEEE single column, 3.5in = 8.9cm.
+\begin{tikzpicture}
+\begin{axis}[
+  width=8.6cm, height=5.9cm,
+  ylabel={compilations / hardware runs},
+  xmin=0.4, xmax=6.6, ymin=0, ymax=9500,
+  xtick={1,2,3,4,5,6},
+  xticklabels={attempted, infeasible, {duplicate\\image}, {not run\\(L0)},
+               {non-\\settling}, \textbf{passed}},
+  xticklabel style={font=\tiny, align=center, yshift=-1pt},
+  ytick={0,2000,4000,6000,8000},
+  yticklabel style={font=\scriptsize, /pgf/number format/1000 sep={,}},
+  label style={font=\scriptsize},
+  grid=major, grid style={spGrid, very thin},
+]
+% ---------- level bars: the surviving population -----------------------
+\filldraw[fill=spBlueF, draw=spBlue, line width=0.45pt]
+  (axis cs:0.66,0) rectangle (axis cs:1.34,7200);
+\filldraw[fill=spGreenF, draw=spGreen, line width=0.7pt]
+  (axis cs:5.66,0) rectangle (axis cs:6.34,2822);
+% ---------- step bars: what each stage removes (hatched) ----------------
+\fill[spVermF] (axis cs:1.66,6777) rectangle (axis cs:2.34,7200);
+\fill[spVermF] (axis cs:2.66,2920) rectangle (axis cs:3.34,6777);
+\fill[spVermF] (axis cs:3.66,2844) rectangle (axis cs:4.34,2920);
+\fill[spVermF] (axis cs:4.66,2822) rectangle (axis cs:5.34,2844);
+\filldraw[pattern=north east lines, pattern color=spVerm, draw=spVerm, line width=0.45pt]
+  (axis cs:1.66,6777) rectangle (axis cs:2.34,7200);
+\filldraw[pattern=north east lines, pattern color=spVerm, draw=spVerm, line width=0.45pt]
+  (axis cs:2.66,2920) rectangle (axis cs:3.34,6777);
+\filldraw[pattern=north east lines, pattern color=spVerm, draw=spVerm, line width=0.45pt]
+  (axis cs:3.66,2844) rectangle (axis cs:4.34,2920);
+\filldraw[pattern=north east lines, pattern color=spVerm, draw=spVerm, line width=0.45pt]
+  (axis cs:4.66,2822) rectangle (axis cs:5.34,2844);
+% ---------- waterfall connectors ---------------------------------------
+\draw[spMute, dashed, line width=0.35pt] (axis cs:1.34,7200) -- (axis cs:1.66,7200);
+\draw[spMute, dashed, line width=0.35pt] (axis cs:2.34,6777) -- (axis cs:2.66,6777);
+\draw[spMute, dashed, line width=0.35pt] (axis cs:3.34,2920) -- (axis cs:3.66,2920);
+\draw[spMute, dashed, line width=0.35pt] (axis cs:4.34,2844) -- (axis cs:4.66,2844);
+\draw[spMute, dashed, line width=0.35pt] (axis cs:5.34,2822) -- (axis cs:5.66,2822);
+% ---------- values ------------------------------------------------------
+\node[font=\scriptsize, anchor=south, text=spInk] at (axis cs:1,7300) {\FunnelCompiles};
+\node[font=\tiny, anchor=south, text=spVerm] at (axis cs:2,7300) {$-$423};
+\node[font=\tiny, anchor=center, inner sep=1pt, fill=white, fill opacity=0.92,
+      text opacity=1, text=spVerm] at (axis cs:3,4900) {$-$3{,}857};
+\node[font=\scriptsize, anchor=south, text=spGreen] at (axis cs:6,2920) {\textbf{\CampPassing}};
+% tiny steps: leaders out to legible labels
+\draw[spVerm!60, line width=0.3pt] (axis cs:4,2882) -- (axis cs:4,4050);
+\node[font=\tiny, anchor=south, text=spVerm] at (axis cs:4,4070) {$-$76};
+\draw[spVerm!60, line width=0.3pt] (axis cs:5,2833) -- (axis cs:5,4050);
+\node[font=\tiny, anchor=south, text=spVerm] at (axis cs:5,4070) {$-$\CampNonSettling};
+% surviving levels in the middle of the ledger, on their connectors
+\node[font=\tiny, anchor=south, inner sep=1pt, fill=white, fill opacity=0.9,
+      text opacity=1, text=spBlue] at (axis cs:2.50,6860) {\FunnelImages};
+\node[font=\tiny, anchor=south, inner sep=1pt, fill=white, fill opacity=0.9,
+      text opacity=1, text=spBlue] at (axis cs:3.50,3040) {\FunnelUnique};
+% ---------- the second quotient: below the terminal count ----------------
+\draw[spPurple, dotted, line width=0.8pt] (axis cs:0.4,622) -- (axis cs:6.6,622);
+\node[font=\tiny, anchor=north east, align=right, inner sep=1pt, text=spPurple]
+  at (axis cs:6.50,9380)
+  {\emph{dotted line}: 622 distinct \emph{assignments} (\sv{asgn\_hash}) --- a\\
+   different quotient of the feasible set. $622<\CampPassing$, so it\\
+   is not a stage of this chain.};
+\end{axis}
+\end{tikzpicture}

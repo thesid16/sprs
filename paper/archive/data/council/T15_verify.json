@@ -1,0 +1,340 @@
+{
+ "theme": "T15",
+ "status": "SETTLED",
+ "verifier_note": "Every factual check executed against the frozen read-only snapshot. Re-runnable scratch scripts: /home/rohit/t15scratch/{tie1.py,tie2.py,tie3.py,tie4.py,mc2.py,leader.py,timing.py,survive.py,regime.py,d097.py,degen.py,unified.py,selbias.py,final.py,c_and_cost_run.py}. T11_verify.json (D033-ties: 32/39 row-level ties, min() over CSV arrival order), T08_verify.json (N/G knee is a denominator artifact) and T02_verify.json (180 of 21,960 per instance; s4 empty in all 7,200 rows) are taken as settled input and are NOT re-derived. Every T11 tie number reproduced independently before this analysis extended it.",
+ "verdicts": [
+  {
+   "issue": "D041",
+   "finding": "The winner distributions are tie-break artifacts: 32 of 39 instances have a tied minimum cycle count and 30 of 39 have a non-unique champion mapping.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "/home/rohit/t15scratch/tie1.py + tie4.py over results/results/live_hw_results_p1_maxpe.csv (2,822 passing rows, 39 instances). Row level (one row per simulated distinct IMEM): champion cycle count is achieved by >1 row on 32/39; tie-multiplicity histogram exactly as r05 reported {1:7, 2:11, 3:2, 4:5, 5:3, 7:7, 9:2, 10:1, 14:1}, median 3, max 14. Tied set spans >1 distinct S3 mapping on 30/39, >1 distinct S2 algorithm on 10/39, >1 S2 FAMILY on 10/39. r04's three worked examples reproduce to the digit: vlarge2_dense_2d min=200 by 10 rows spanning 10 S3 codes; large_bal_mesh min=144 by 9 rows spanning 9 S3; max_mod_fat min=185 by 14 rows spanning S2 {2b,2o,2p} and S3 {3a,3b,3c,3d,3e,3j}. Selection mechanism confirmed at paper/scripts/gen_tournament.py:192 `tb, cyc = min(lst, key=lambda x: x[1])` over rows appended in CSV order (:189-191).",
+   "what_is_true": "Exactly as stated, and the row level is the WEAKER of the two available readings (see D082).",
+   "consequence": "tab:winners_family, tab:catalogue and the assignment/mapping columns of tab:perinstance_full are not measurements."
+  },
+  {
+   "issue": "D049",
+   "finding": "Only 7 of 39 instances have a unique champion; the Identity 61.5% share is a tie-break artefact inside a [20.5%, 89.7%] interval, while tree DP's 53.8% is robust in [46.2%, 59.0%].",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "/home/rohit/t15scratch/tie3.py, row level. Identity(3a): must-win (all tied rows are 3a) = 8, could-win (3a among tied rows) = 35, i.e. [8,35] = [20.5%,89.7%] -- r05's interval reproduces exactly. Published 24. tree DP family: [18,23] = [46.2%,59.0%], published 21 -- r05's interval reproduces exactly. 3,000 uniform-random tie-breaks (mc2.py, row level): tree DP mean 20.8 range 18-23; hierarchical mean 10.3 range 7-15 (published 7 = MINIMUM of range); graph partition mean 3.7 range 1-7 (published 7 = MAXIMUM of range); clustering exactly 3 in every draw; Identity mean 16.4 range 10-26 (published 24 sits at the 93rd percentile).",
+   "what_is_true": "All of it. r05 also reproduced both published winner tables exactly under a first-in-file tie-break, which I re-confirmed (win2 {2k:17,2b:7,2o:7,2l:4,2g:3,2c:1}; win3 {3a:24,3b:4,3e:4,3c:3,3i:2,3d:1,3h:1}), so the published tables are provably the CSV-arrival-order draw and not an independent measurement.",
+   "consequence": "Two of the five rows of tab:winners_family sit at opposite extremes of their own tie-break ranges. That pattern is what a referee who checks will see first."
+  },
+  {
+   "issue": "D082",
+   "finding": "Winners are attributed to one arbitrarily chosen representative of a bit-identical equivalence class, and the headline mapping result is an artifact of that attribution.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Mechanism confirmed at src/sprs_tournament.py:1192 (`pool1.imap_unordered(_tb_gen_worker, work_items, chunksize=4)`) and :1206-1216 (first arrival for a given (instance, tb_hash) is marked unique_hw_sim=True and its s2/s3 become tb_fname; all others get unique_hw_sim=False and are never simulated). I reconstructed the full equivalence classes from the 40 released results/results/*/sw_results.csv (7,200 rows; every hash group has exactly one leader, verified in tie2.py: 0 groups with >1 leader, 39 leaderless groups, all of which are the 10 size-gated ExactBB rows with empty hash). Expanding each tied row into its IMEM class (tie1.py) gives the CONFIGURATION-level tie structure: the champion cycle count is achieved by more than one (S2,S3) configuration on 38 of 39 instances (not 32), median tie-group size 10, max 90, histogram {1:1, 2:1, 3:2, 6:1, 7:2, 8:2, 9:2, 10:17, 18:1, 20:8, 30:1, 90:1}. Exactly ONE instance in the whole suite has a unique champion configuration: vlarge_bal_fat (N=1024, G=128, fat-tree), 2k|3e. On 27 of 39 instances ALL TEN S3 mappings achieve the champion cycle count. Identity's configuration-level bounds are [0, 38]: there is NO instance on which Identity is the unique best mapping. And the labelling is not merely arbitrary, it is BIASED: over all 2,920 hash classes the leader label distribution is 3a:506, 3e:335, 3c:332, 3h:292, 3d:276, 3b:266, 3j:263, 3i:249, 3f:241, 3g:160, while class MEMBERSHIP is uniform by construction (681, 681, 681, 681, 681, 681, 681, 677, 667, 666) -- Identity is over-labelled 3.2x relative to SFC (leader.py). Identity is also the cheapest S3 to compute (median 0.122 s vs up to 3.602 s for Spectral, timing.py), consistent with first-arrival ordering.",
+   "what_is_true": "r11's mechanism is right and its consequence is understated. r11's per-champion-hash histogram ({1:12,...}, only maxp_bal_2d/med_full_torus/vlarge_dense_2d uniquely Identity) counts only the champion ROW's own hash class; expanding over all tied rows as well shows even those three are tied with other mappings. r11's other conclusion -- that S2 attribution is much safer -- is CONFIRMED and is the part worth keeping: at configuration level the tied set is a single S2 algorithm on 28 of 39 instances and a single S2 family on 28 of 39.",
+   "consequence": "'Identity wins 24 of 39 (61.5%)' is a statement about which worker finished first, not about mapping quality. Under uniform credit over tied configurations Identity's expected share is 4.9 of 39 (12.5%), against the 3.9 (10%) it would get by pure chance. There is no mapping signal in this data at all."
+  },
+  {
+   "issue": "D025",
+   "finding": "Sec. VII-E prose asserts a winner regime the table shows never occurred: list scheduling (HEFT, CPOP) 0 wins, MLfm miscredited to graph partitioning, DKway named with 0 wins.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "main.tex:2417-2423 vs tables/catalogue.tex and tables/winners_family.tex, and re-checked on the rendered PDF (pdftotext p.19, lines 1275-1310 of /home/rohit/t15scratch/paper.txt). (a) 'list scheduling (HEFT, CPOP) takes tall narrow trees where the critical path dominates' -- catalogue.tex: HEFT 0/0.0%, CPOP 0/0.0%, DFSseed 0/0.0%; list-scheduling is absent from winners_family.tex (21+7+7+3+1 = 39). Tie-aware it is no better: list-scheduling appears in a champion tie set on exactly ONE instance in the whole suite, tiny_dense_1d (N=8, G=2, linear), where six families tie -- and that is the smallest instance in the suite, not a tall narrow tree. (b) 'graph partitioning (MLfm, RecBisect, DKway)' -- catalogue.tex classifies MLfm as 'multilevel' and winners_family.tex lists 'multilevel' as a separate family with 1 win; DKway has 0 wins and, tie-aware, is in a champion tie set on 1 instance only. (c) 'graph partitioning takes BALANCED topologies whose bisection structure aligns with recursive partitioning' is refuted by the tie-robust data: the graph-partition family wins outright under every tie-break on exactly one instance, large_unbal_torus -- an UNBALANCED torus (final.py).",
+   "what_is_true": "All three of r01's points, plus a fourth: the one regime the prose asserts for graph partitioning is contradicted by the single instance that survives tie-breaking.",
+   "consequence": "The regime narrative in VII-E is not merely unsupported by the tie structure; two of its three clauses are contradicted by the paper's own adjacent table. This is the single most damaging paragraph in the section because it is falsifiable by reading the facing page."
+  },
+  {
+   "issue": "D095",
+   "finding": "Sec. VII-E contradicts Table VIII and the winners-by-family table on three separate points, including 'Two algorithms never reach the hardware at all' followed by only one name.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Points one and two as under D025. Point three is worse than r14 states: main.tex:2428 'Two algorithms never reach the hardware at all' names only ExactBB (confirmed on rendered p.19), AND the count is false. /home/rohit/t15scratch/vii_e.py: exactly one S2 algorithm never appears as a simulated testbench label -- 2e/ExactBB, whose 390 compiles are all E_BYPASSED (size-gated); every other S2 appears (2f:49 and 2m:32 are the next rarest, both non-zero) and every S3 appears. Across all 40 instances the only other infeasibilities are 21 scattered E_EVAL_TIMEOUTs spread over 16 different S2 algorithms, none of which excludes an algorithm.",
+   "what_is_true": "r14 is right that the second algorithm is never named; the reason is that there is no second algorithm.",
+   "consequence": "A one-word fix ('Two' -> 'One') is available and mandatory regardless of what happens to the rest of the section."
+  },
+  {
+   "issue": "D097",
+   "finding": "'Changed the winning configuration on 35 of 39 instances' is not reproducible; 50.5% reconciles exactly.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "/home/rohit/t15scratch/d097.py over live_hw_results_p1_maxpe.csv, which carries both metrics. Cycles != CyclesGPU0 on 1,424 of 2,822 passing rows = 50.46% -> 50.5%, EXACT. Winner change under four definitions: argmin with first-in-file tie-break differs on 32/39; argmin SETS disjoint on 32/39; argmin sets differ at all on 38/39; argmin sets identical on 1/39 (large_unbal_torus). None is 35. r05 reported 33 for the first definition and I get 32; r06 reported 32 and I reproduce r06.",
+   "what_is_true": "The 50.5% is exact and should be kept. The '35 of 39' is not reproducible under any natural definition, and the reason is precisely the theme's subject: with 32 of 39 champions tied, 'the winning configuration' is not a well-defined object.",
+   "consequence": "Replace with the reproducible pair '50.5% of cycle counts moved, and the minimising configuration set changed on 38 of 39 instances (disjoint on 32)'. This sentence becomes an ASSET: it is the paper's own independent evidence that champions are fragile, and it costs nothing to say so."
+  },
+  {
+   "issue": "D129",
+   "finding": "Champions are the raw per-instance minimum; the authors' own analysis code filters 'degenerate collapsed-mapping' minima first.",
+   "classification": "FACTUAL",
+   "verdict": "REFUTED",
+   "observed": "The code discrepancy r08 reports is real and exactly as quoted: paper/scripts/gen_cost_tables.py:120-124 and gen_tournament.py:192 take the raw min, while analysis/c_and_cost.py:31-41 applies FILT=1.5 on makespan and prints a degenerate count. But the filter removes NOTHING from the published data. /home/rohit/t15scratch/degen.py applies c_and_cost.py's exact rule (makespan > 1.5 x min-makespan AND cycles < plausible-best) to the corrected max-over-PE dataset the paper uses: 0 degenerate testbenches across 0 instances. The 13-across-7-instances figure that c_and_cost.py prints comes from live_hw_results_p1_unified.csv, which it hardcodes at line 4 and which is the DEFECTIVE PE-0 dataset -- I confirmed 1,424 of its 2,822 rows carry different cycle values from maxpe (unified.py), i.e. exactly the 50.5% the paper discloses at main.tex:2148.",
+   "what_is_true": "No published champion is a degenerate collapsed-mapping trap. The paper's raw-min rule is safe on the data it uses.",
+   "consequence": "NO CHANGE to the paper. But a NEW artifact-integrity problem falls out of this check and is recorded separately below."
+  },
+  {
+   "issue": "D129-artifact (NOT IN THE DOCKET)",
+   "finding": "The shipped analysis script analysis/c_and_cost.py reads the defective PE-0 dataset and prints a winner distribution that flatly contradicts Table VIII.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Running the shipped script unmodified except for the results path (/home/rohit/t15scratch/c_and_cost_run.py) prints 'HW-WINNER methods S2: 2b:35, 2c:2, 2k:1, 2l:1  S3: 3e:17, 3a:11, 3b:5, 3c:2, 3i:2, 3d:2' against the paper's 2k:17/2b:7/2o:7 and 3a:24. Cause: analysis/c_and_cost.py:4 hardcodes HW=f'{RES}/live_hw_results_p1_unified.csv'. Computing winners directly from that file (unified.py) gives S2 {2b:30, 2c:7, 2n:1, 2k:1}, S3 {3a:20, 3c:8, 3b:6, 3e:3, 3i:1, 3d:1}, with 27 of 39 champions tied. Neither the release README nor MANIFEST.json marks unified as the superseded metric; only docs/PROJECT_NOTES.md:18 hints at it, and calls it 'THE crown jewel' at :140.",
+   "what_is_true": "An artifact reviewer who runs the one analysis script that reports winners gets a different answer from the paper, with no in-release warning.",
+   "consequence": "Cheapest adequate fix: a two-line header comment in analysis/c_and_cost.py and a one-line note in the release README marking live_hw_results_p1_unified.csv as the superseded PE-0 metric, retained only for the 50.5% comparison. Zero paper pages. If the winner analysis is withdrawn from the paper as recommended, this stops being a contradiction and becomes merely a labelling fix."
+  },
+  {
+   "issue": "D112",
+   "finding": "Only medians of rho and leakage are reported; the spread is large and one-sided.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "/home/rohit/t15scratch/selbias.py, recomputed per instance over all simulated configurations. rho: median 0.955 (paper 0.95), min 0.730 on small_bal_fat (r05's exact instance), max 0.988 on large_dense_hc, Q1 0.911, 9 instances below 0.90. Leakage at K=10: median 0.30 (paper 0.30), mean 0.338 (r05: 0.349), min 0.00, max 0.90, and 9 instances at or above 0.60 (large_bal_mesh 0.90, maxp_bal_2d 0.90, med_mod_ring 0.90, large_mod_ring 0.80, vlarge2_mod_ring 0.80, vlarge_mod_ring 0.80, max_mod_fat 0.70, vlarge2_dense_2d 0.60, vlarge_dense_2d 0.60). K=15 median 0.17 (paper 0.20; small definitional difference I could not close), K=30 median 0.10 (paper 0.10, exact).",
+   "what_is_true": "The dispersion is real, large, one-sided and unreported; r05's instance list reproduces. The direction is conservative for the paper (T11 established app:bias is direction-safe), so this is a disclosure problem, not a validity problem.",
+   "consequence": "Cheapest adequate fix is two numbers, not a new table: add min-max to the existing tab:selbias rows (rho 0.73-0.99; leakage at K=10 0.00-0.90) and one clause noting 9 of 39 instances exceed 0.6 leakage at K=10. Roughly 3 source lines. NOTE for the ledger: with 38 of 39 champions tied, 'the true top-K by cycles' is itself ill-defined at the boundary, so the leakage metric should be described as computed over distinct simulated images."
+  },
+  {
+   "issue": "T15-survives (NOT IN THE DOCKET)",
+   "finding": "Which statements about algorithm behaviour survive the tie structure?",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED_NARROWER",
+   "observed": "/home/rohit/t15scratch/{survive.py,regime.py,mc2.py,final.py}. SURVIVES: (1) tree DP takes the plurality -- 17-23 of 39 across all tie-breaks at configuration level, 18-23 at row level, and Lukes specifically 14-19 (published 17 sits inside). (2) tree DP's low-G tendency: G is significantly lower on instances where tree DP is in the champion tie set (n=23, median G=16) than where it is not (n=16, median G=192), Mann-Whitney U=101.5, z=-2.36, two-sided p=0.018. The paper asserts this without a test; it is one of the places the paper UNDERSTATES itself. (3) DSC/clustering wins outright under EVERY tie-break on exactly 3 instances, and they are exactly the three moderate-degree ring instances at G>=64: med_mod_ring (128,64), large_mod_ring (512,256), vlarge2_mod_ring (2048,512). Fully tie-invariant, and a cleaner regime statement than anything currently in VII-E. (4) hierarchical/ParSub wins outright on 7 instances under every tie-break, 5 of which are the largest in the suite (max_bal_2d 4096/1024, maxp_dense_hc 8192/1024, max_dense_hc 4096/512, vlarge_bal_mesh 2048/256, max_unbal_fat 3000/128). (5) The S2 FAMILY of the champion is unambiguous on 28 of 39 instances (29 at row level). (6) 'List scheduling never wins' survives in the stronger tie-aware form: at most 1 of 39 under any tie-break, 0 must-wins. DOES NOT SURVIVE: the Identity/61.5% claim and its interpretation; the graph-partition 7 and hierarchical 7 rows of tab:winners_family (published values are the max and min of their ranges respectively); the per-algorithm S3 block of tab:catalogue in its entirety; the mapping column of tab:perinstance_full; the prose regimes for graph partitioning and list scheduling; and the graph-partition/hierarchical distinction on fat-trees, where the tie set is exactly {graph partition, hierarchical} on four fat-tree instances (small_bal_fat, med_mod_fat, large_bal_fat, vlarge2_bal_fat) and those two families are measurement-indistinguishable there.",
+   "what_is_true": "Roughly half of VII-E's content survives, and the surviving half is more interesting than the half that dies.",
+   "consequence": "The section does not have to be cut. It has to be re-pointed at the tie-invariant statements, which are fewer, shorter and defensible."
+  },
+  {
+   "issue": "T15-tiebreak (NOT IN THE DOCKET)",
+   "finding": "Is there any principled tie-break rather than an arbitrary one?",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "No, and each candidate fails for a different checkable reason. (a) LEXICOGRAPHIC by algorithm id is maximally self-serving here: Identity's code is 3a, first in the ordering, so sorting testbench names gives Identity 31 of 39 (79.5%), higher than the published 24 -- a referee who tries this obvious fix will conclude the numbers were tuned. (b) A SECONDARY MEASURED QUANTITY does not exist: the only per-run measurements retained are Cycles (the tie), CyclesGPU0 (the disclosed defective metric), SimTime_s (host wall-clock, not a property of the design) and PerfAllGPUs. Breaking ties by the SUM of per-PE counters -- the only defensible candidate -- leaves 28 of 39 instances still tied and moves Identity from 24 to 28 (tie4.py), so it neither resolves nor stabilises anything. (c) SOFTWARE MAKESPAN is disqualified by the paper's own app:bias, which measures median leakage 0.30 at K=10 and concludes makespan is 'a good filter and a poor selector'. (d) COMPILE TIME favours Identity by construction (median 0.122 s, the cheapest of the ten S3 algorithms, vs 3.602 s for Spectral; timing.py) and is a property of the compiler implementation, not of the design. (e) DECISIVE: on 38 of 39 instances the tie set contains configurations with the SAME tb_hash, i.e. bit-identical IMEM images. No measurement of any kind can distinguish members of that set, because they are the same program. Any tie-break inside it is a statement about naming.",
+   "what_is_true": "There is no principled tie-break, and the impossibility is structural rather than a gap in the data.",
+   "consequence": "This forecloses the cheap 'just make the tie-break deterministic' response and forces either equivalence-class reporting or withdrawal. It is also the sentence that makes the honest presentation persuasive rather than defensive."
+  },
+  {
+   "issue": "T15-orthogonality (NOT IN THE DOCKET)",
+   "finding": "The tie structure is not only a defect; it is direct empirical corroboration of the paper's own orthogonality proposition, and the paper already ships the table that proves it.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "tables/dedup.tex, already in the paper, reports 7,200 compilations -> 2,920 unique tb_hash (40.6%) -> 622 unique asgn_hash (8.6%), i.e. 59.4% of the compiler's explored variation space produces literally the same program image. My independent count over the 40 sw_results.csv files reproduces 2,920 exactly (leader.py) and 7,200 exactly (tie2.py). Extending that to the champions: on 38 of 39 instances the best measured cycle count is achieved by a median of 10 distinct (S2,S3) configurations; on 27 of 39 by all ten S3 mappings; on exactly 1 (vlarge_bal_fat) by a unique configuration. main.tex:2437-2440 already draws the orthogonality conclusion from the invariance side ('2,822 attempts to break Claim 1 that all failed') but never from the collapse side.",
+   "what_is_true": "The finding that destroys the winner tables simultaneously strengthens the paper's central proposition, at zero cost, from data already tabulated.",
+   "consequence": "This is what makes withdrawal a NET GAIN rather than a loss, and it is the framing that maximises first-turn acceptance: the authors are not conceding an error, they are reporting a stronger result in place of a weaker one."
+  }
+ ],
+ "headline": "T15 is confirmed on every checkable point and is materially worse than the docket assumed, but the fix is a net improvement to the paper and saves pages. At the row level the docket's numbers reproduce exactly: 32 of 39 champions are tied (median 3, max 14), 30 of 39 span more than one mapping, 10 of 39 span more than one assignment family, and gen_tournament.py:192 breaks the tie with min() over parallel-worker arrival order. But the row level is the wrong denominator. The tournament deduplicates configurations by IMEM hash (src/sprs_tournament.py:1206-1216: the first arrival from imap_unordered becomes the leader and lends its s2/s3 to the testbench name; the other 59.4% are never simulated), so a single simulated row stands for a whole class of bit-identical programs. Expanding the classes from the released sw_results.csv files gives the true picture: 38 of 39 champions are tied, median tie-group size 10, max 90, and exactly ONE instance in the entire suite -- vlarge_bal_fat -- has a unique champion configuration. On 27 of 39 instances all ten S3 mappings achieve the champion cycle count. Identity's configuration-level bounds are [0,38]: there is no instance on which Identity is the unique best mapping, and its expected share under uniform credit is 4.9 of 39 (12.5%) against 3.9 (10%) by pure chance. The published 61.5% is not even a neutral draw from the tie: leader labels are systematically skewed toward Identity (506 of 2,920 classes, versus 160 for SFC) while class membership is exactly uniform (681 each), and Identity is the cheapest S3 to compute (median 0.122 s vs 3.602 s for Spectral), consistent with first-arrival ordering. No principled tie-break exists: lexicographic order is worse because Identity is literally code 3a (giving 31 of 39); the only secondary measured quantity, the summed per-PE counters, leaves 28 of 39 still tied; makespan is disqualified by the paper's own app:bias; and within an IMEM class no measurement can discriminate because the programs are identical. Sec. VII-E's regime narrative is worse than r01 and r14 reported: list scheduling is in a champion tie set on exactly one instance (tiny_dense_1d, the smallest in the suite, not a tall narrow tree); MLfm is miscredited; DKway has no wins under any tie-break; graph partitioning's one tie-invariant win is large_unbal_torus, an UNBALANCED topology, directly contradicting the clause that claims it takes balanced ones; and 'Two algorithms never reach the hardware' is false -- exactly one does not (ExactBB, 390 E_BYPASSED compiles), which is why only one is named. Against all that, three things survive cleanly and one improves: tree DP takes the plurality at 17-23 of 39 under every tie-break; its low-G tendency is real and now testable (median G=16 where tree DP is in the tie set vs 192 where it is not, Mann-Whitney p=0.018 -- the paper asserts this without a test and thereby understates itself); DSC wins outright under every tie-break on exactly the three moderate-degree ring instances at G>=64; and the S2 family of the champion is unambiguous on 28 of 39. Finally, r08's degenerate-minimum concern is REFUTED for the published data (0 degenerate testbenches on the corrected dataset; the 13 he saw come from the superseded PE-0 file that analysis/c_and_cost.py hardcodes) -- but that check surfaced a new artifact problem: the one shipped script that reports winners prints S2 2b:35 against the paper's 2k:17, with no in-release warning that the file it reads is the defective metric. The decisive structural fact is that none of this touches the paper's thesis. Claim 1, Property 2, the orthogonality proposition, the invariance table and the mutation campaign contain no winner attribution. Better: the collapse IS the orthogonality result. dedup.tex already reports that 59.4% of the compiler's variation space produces the same program image; the champion tie structure extends that to the optimum. Replacing the winner narrative with the equivalence-class statement therefore trades a contested, non-reproducible, referee-checkable claim for a robust one that corroborates the paper's central proposition, and it saves roughly 0.7 billed pages.",
+ "tie_structure": {
+  "instances_with_ties": 38,
+  "instances_total": 39,
+  "row_level_note": "Row level = one row per distinct simulated IMEM image. 32 of 39 tied; histogram {1:7, 2:11, 3:2, 4:5, 5:3, 7:7, 9:2, 10:1, 14:1}; median 3; max 14. Spans >1 S3 on 30/39, >1 S2 on 10/39, >1 S2 family on 10/39.",
+  "config_level_note": "Configuration level = all 180 (S2,S3) pairs per instance, expanding each simulated row into its IMEM-hash equivalence class (src/sprs_tournament.py:1206-1216 discards 59.4% of configurations as duplicates). 38 of 39 tied.",
+  "tie_group_sizes": "Configuration level: histogram {1:1, 2:1, 3:2, 6:1, 7:2, 8:2, 9:2, 10:17, 18:1, 20:8, 30:1, 90:1}; median 10; max 90 (tiny_dense_1d, i.e. half the 180-configuration space). Exactly one instance, vlarge_bal_fat (N=1024, G=128, fat-tree, 2k|3e), has a unique champion configuration. 27 of 39 have all ten S3 mappings tied at the champion.",
+  "unique_champions": {
+   "row_level": 7,
+   "config_level": 1
+  },
+  "mechanism": "gen_tournament.py:192 min() over CSV rows in parallel-worker completion order, composed with src/sprs_tournament.py:1206-1216 leader labelling by first arrival from imap_unordered. Leader-label distribution over 2,920 classes {3a:506, 3e:335, 3c:332, 3h:292, 3d:276, 3b:266, 3j:263, 3i:249, 3f:241, 3g:160} against exactly uniform membership {681 x7, 677, 667, 666}.",
+  "published_shares_ranges": {
+   "tree DP family 21 (53.8%)": "row [18,23] = [46.2%,59.0%]; config [17,23] = [43.6%,59.0%]; 3,000 random tie-breaks mean 20.8/19.7. ROBUST -- published value inside range.",
+   "graph partition family 7 (17.9%)": "row [1,7]; config [1,7]; random mean 3.7/3.6. PUBLISHED VALUE IS THE MAXIMUM OF ITS RANGE. Only 1 tie-invariant win (large_unbal_torus).",
+   "hierarchical family 7 (17.9%)": "row [7,15]; config [7,17]; random mean 10.3/11.6. PUBLISHED VALUE IS THE MINIMUM OF ITS RANGE.",
+   "clustering family 3 (7.7%)": "row [3,3]; config [3,3]. FULLY TIE-INVARIANT.",
+   "multilevel family 1 (2.6%)": "row [0,1]; config [0,1].",
+   "list-scheduling family 0 (0.0%)": "row [0,1]; config [0,1]. Appears in a tie set on 1 instance only (tiny_dense_1d).",
+   "Lukes 17 (43.6%)": "row [14,19]; config [14,19]. Published inside range.",
+   "RecBisect 7 (17.9%)": "row [1,7]; config [1,7]. Published at the maximum.",
+   "ParSub 7 (17.9%)": "row [7,15]; config [7,16]. Published at the minimum.",
+   "Frederickson 4 (10.3%)": "row [4,4]; config [3,5].",
+   "DSC 3 (7.7%)": "row [3,3]; config [3,3]. FULLY TIE-INVARIANT.",
+   "MLfm 1 (2.6%)": "row [0,1]; config [0,1].",
+   "DKway 0, HEFT 0, CPOP 0, DFSseed 0, Chretienne 0, Centroid 0, CPFD 0, ClHEFT 0, Spine 0, SubPack 0, LvlHLF 0, ExactBB 0": "config could-win at most 1 each; must-win 0. The zero entries are the most robust rows in tab:catalogue.",
+   "Identity 24 (61.5%)": "row [8,35] = [20.5%,89.7%], random mean 16.4 (published sits at the 93rd percentile of 3,000 draws); config [0,38] = [0%,97.4%], random mean 4.9 (12.5%). NOT A MEASUREMENT. Name-sorted tie-break gives 31; reversed CSV order gives 11; sum-of-per-PE-counters tie-break gives 28.",
+   "HopMin 4": "row [0,14]; config [0,35]; random mean 2.6/3.8.",
+   "MCF 4": "row [1,19]; config [1,38]; random mean 5.4/5.4.",
+   "TreeMatch 3": "row [0,14]; config [0,32]; random mean 2.4/3.4.",
+   "RAGreedy 2": "row [0,12]; config [0,35]; random mean 2.7/3.7.",
+   "QAP-SA 1 / Spectral 1": "row [0,11]/[0,14]; config [0,33]/[0,31]. Every S3 range overlaps every other. There is no mapping signal.",
+   "DRB 0, SFC 0, Tabu 0": "config [0,30], [0,37], [0,33]; random means 3.0, 4.8, 3.4. SFC's published 0 is inside a range whose mean is HIGHER than Identity's.",
+   "tab:perinstance_full asgn column": "tie-break-dependent on 11 of 39 rows (config level); the other 28 rows name the correct S2 algorithm under every tie-break.",
+   "tab:perinstance_full map column": "tie-break-dependent on 38 of 39 rows. Only vlarge_bal_fat's \\sv{MCF} is determinate.",
+   "tab:perinstance_full cycles and cyc/Omega columns": "TIE-INVARIANT (the minimum value itself does not depend on which member is named). Unaffected, per T11.",
+   "'changed the winning configuration on 35 of 39'": "Not reproducible: 32 (argmin, first-in-file), 32 (disjoint minimiser sets), 38 (sets differ at all), 1 (sets identical). The companion 50.5% IS exact (1,424/2,822 = 50.46%)."
+  }
+ },
+ "principled_tiebreak": "None exists, and the impossibility is structural rather than a data gap -- which is itself the most persuasive thing the paper can say. Five candidates were tested by execution. (1) Lexicographic by algorithm id is the worst option available: Identity's code is 3a, first in the ordering, so name-sorting raises the Identity share from 24 to 31 of 39 (79.5%). A referee who tries the obvious fix gets a number that looks tuned. (2) A secondary measured quantity: the only per-run measurements retained are Cycles (the tied quantity), CyclesGPU0 (the disclosed defective metric), SimTime_s (host wall-clock, a property of the simulation host, not the design) and the PerfAllGPUs per-PE vector. Breaking ties by the summed per-PE counters -- the only defensible candidate, 'least total PE occupancy among the fastest' -- leaves 28 of 39 instances STILL tied and moves Identity to 28, so it neither resolves nor stabilises. (3) Software makespan is disqualified by the paper's own app:bias, which measures median leakage 0.30 at K=10 and concludes makespan is a good filter and a poor selector; using it as the tie-break would import precisely the bias that appendix exists to disclose. (4) Compile time favours Identity by construction (median 0.122 s, cheapest of the ten S3 algorithms, against 3.602 s for Spectral) and is a property of the compiler implementation rather than of the design. (5) Decisive: on 38 of 39 instances the champion tie set contains configurations sharing a tb_hash, i.e. bit-identical IMEM images. Members of that set cannot be distinguished by any measurement whatsoever, because they are the same program. The only principled report is the equivalence class itself.",
+ "what_survives": "Six statements are tie-invariant and can be asserted without qualification. (1) Tree DP takes the plurality of instances: 17-23 of 39 across all tie-breaks (published 21). (2) Lukes specifically: 14-19 of 39 (published 17). (3) Tree DP's advantage is concentrated at low G, and this can now be stated with a test the paper currently omits: median G=16 on the 23 instances where tree DP is in the champion tie set versus median G=192 on the 16 where it is not, Mann-Whitney U=101.5, two-sided p=0.018. (4) DSC (clustering) wins outright under EVERY tie-break on exactly three instances, and they are exactly the three moderate-degree ring instances at G>=64 (med_mod_ring 128/64, large_mod_ring 512/256, vlarge2_mod_ring 2048/512) -- a sharper regime statement than anything now in VII-E. (5) Hierarchical assignment (ParSub) wins outright on seven instances, five of which are the largest in the suite (up to N=8192, G=1024). (6) The champion's S2 FAMILY is unambiguous on 28 of 39 instances, so family-level attribution is defensible where algorithm-level and mapping-level attribution are not. Also surviving, in stronger tie-aware form: the zero rows of tab:catalogue -- list scheduling, geometric, structural, exact and DKway win at most one instance under any tie-break and zero under every tie-break -- so 'list scheduling never wins' is safe while 'list scheduling takes tall narrow trees' is refuted. What does NOT survive: the entire S3 block of tab:catalogue; 'Identity wins 24 of 39 (61.5%)' and its interpretive sentence; the graph-partition and hierarchical rows of tab:winners_family as point estimates; the mapping column of tab:perinstance_full; the graph-partitioning and list-scheduling regime clauses in VII-E; and the graph-partition/hierarchical distinction on fat-trees, where the champion tie set is exactly {graph partition, hierarchical} on four fat-tree instances and the two are measurement-indistinguishable. And the fact that does the most work: the collapse corroborates Proposition 1. dedup.tex already reports that 59.4% of the compiler's variation space compiles to the same program image; the champion tie structure extends that to the optimum.",
+ "recommended_presentation": "Do NOT report equivalence classes with tie counts as a table, and do NOT report the winner distribution as ranges. Both keep the winner framing alive, cost pages, and invite the referee to ask why a distribution is being reported at all when the modal tie-group size is ten. WITHDRAW the winner framing from the paper and replace it with the equivalence-class result, which is shorter, stronger and already half-tabulated. Concretely, five changes. (A) Rewrite sec:results-tour to about ten lines with no winner distribution: state that the champion cycle count is achieved by a median of ten configurations on 38 of 39 instances and by all ten mapping algorithms on 27 of 39; that exactly one instance has a unique champion; that the mapping stage is therefore not measurably distinguishable on this workload; and that this is what Proposition 1 predicts -- 59.4% of the explored space already compiles to the same image (tab:dedup), and at the optimum the collapse is near-total. Then give ONLY the tie-invariant assignment statements: tree DP takes the plurality (17-23 of 39 depending on tie resolution), its advantage concentrates at low G (median G=16 versus 192, p=0.018), DSC wins outright on exactly the three high-G ring instances, and hierarchical assignment on the largest. Delete the graph-partitioning and list-scheduling regime clauses outright; fix 'Two algorithms' to 'One algorithm'. (B) DELETE tables/winners_family.tex from the paper. (C) MOVE app:algos, tab:catalogue and the algorithm-provenance citation paragraph to the companion, adding one 'tied at champion' column and one paragraph on the tie-break sensitivity, plus the full min-max table for every algorithm. The companion currently contains ZERO tournament material (grep over companion/main.tex: no hits for winner, tournament, catalogue or tie), so nothing is displaced and nothing is billed. In the paper, keep one sentence pointing at it. (D) In tab:perinstance_full, DROP the assignment and mapping columns and keep N, G, topology, cycles, cyc/Omega -- the two dropped columns are tie-break artifacts on 11 and 38 of 39 rows respectively, while cycles and cyc/Omega are tie-invariant and are load-bearing for T08/T11. This also narrows the table. (E) Fix main.tex:2149 to the reproducible pair: 50.5% of cycle counts moved and the minimising configuration set changed on 38 of 39 instances (disjoint on 32); present it as the paper's own independent evidence that per-instance champions are fragile, which is now consistent with (A) instead of contradicting it. Add three source lines to tab:selbias giving the rho and leakage min-max (D112). Outside the paper: two lines of comment in analysis/c_and_cost.py and one line in the release README marking live_hw_results_p1_unified.csv as the superseded PE-0 metric. The framing that matters for acceptance is that this is not a retraction. The authors are replacing a non-reproducible ranking with a reproducible collapse result that corroborates their own central proposition, and they should say so in one clause.",
+ "page_delta": "-0.70 billed pages net, of which roughly -0.30 is incremental beyond the -0.40 already claimed in T11_verify.json for the same material -- the ledger must not double-count. Breakdown, measured on the rendered PDF via pdftotext -layout (/home/rohit/t15scratch/paper.txt): sec:results-tour occupies 38 column-lines on p.19 plus the 7-line inline winners_family tabular, about 0.80 column = 0.40 page; the ten-line tie-aware replacement costs 0.10 column = 0.05 page, net -0.35. app:algos on p.23 is TABLE VIII (28 rows plus rules, about 0.85 column) plus 19 lines of prose and provenance, together about 1.15 columns = 0.58 page; moving all of it to the companion and leaving a one-sentence pointer costs 0.02 page, net -0.56. Those two alone are -0.91. Add back: +0.02 for the p-value and the DSC/ParSub regime clauses, +0.02 for the three tab:selbias dispersion lines, +0.01 for the corrected main.tex:2149 sentence. Dropping two \\sv{} columns from tab:perinstance_full narrows it but does not shorten it: about -0.02 page in practice, and it removes the need for the 39-row table to be scriptsize. Conservative net: -0.70 page, with -0.85 achievable if tab:perinstance_full also moves to the companion (it should not; T08 and T11 depend on its cycles and cyc/Omega columns). Cost of the alternatives, for comparison: reporting equivalence classes as a table with tie counts is +0.10 page and keeps the contested framing; reporting the family distribution as ranges is -0.10 page and still leaves two of five rows at the extremes of their intervals with no way to explain why. Withdrawal is both the cheapest and the strongest option, which is unusual and should be taken.",
+ "decision_ledger_entries": [
+  {
+   "issue": "T15-a: winner distribution is a scheduling artifact (D041/D049/D082 CONFIRMED)",
+   "decision": "REMOVE OR NARROW CLAIM",
+   "reason": "38 of 39 champions are ties at configuration level (median group 10, max 90, exactly one unique champion: vlarge_bal_fat); Identity's config-level bounds are [0,38] with expected share 4.9/39 under uniform credit vs 3.9 by chance; leader labels are skewed 506:160 toward Identity against exactly uniform membership. Verified in /home/rohit/t15scratch/{tie1.py,tie3.py,mc2.py,leader.py}.",
+   "cheaper_alternatives_rejected": [
+    {
+     "option": "Make the tie-break deterministic (sort by testbench name) and keep the tables",
+     "why_rejected": "Identity is code 3a, first lexicographically, so name-sorting RAISES its share to 31 of 39 (79.5%). Reproducible but visibly self-serving."
+    },
+    {
+     "option": "Break ties by a secondary measured quantity (summed per-PE counters)",
+     "why_rejected": "Leaves 28 of 39 still tied and moves Identity to 28; tie4.py. Members of an IMEM class are the same program and cannot be distinguished by any measurement."
+    },
+    {
+     "option": "Report the distribution as min-max ranges and keep tab:winners_family",
+     "why_rejected": "Two of five rows would be printed at the extremes of their own intervals (graph partition 7 = max of [1,7]; hierarchical 7 = min of [7,17]) with no explanation available. Saves only 0.10 page and keeps the contested framing."
+    }
+   ],
+   "required_change": "Delete tables/winners_family.tex and the S3 block of tab:catalogue from the paper. Delete 'At S3, Identity wins 24 of the 39 HW-validated instances (61.5%)' (main.tex:2423-2427) and the \\TournTopMap/\\TournTopMapShare macros. Rewrite sec:results-tour to ~10 lines reporting the equivalence-class result and only the tie-invariant assignment statements. Drop the asgn/map columns of tab:perinstance_full; keep cycles and cyc/Omega.",
+   "affected": [
+    "sec:results-tour",
+    "tab:winners_family",
+    "tab:catalogue",
+    "app:algos",
+    "tab:perinstance_full",
+    "paper/data/tournament_macros.tex",
+    "paper/scripts/gen_tournament.py",
+    "companion/main.tex"
+   ],
+   "dependencies": [
+    "T11 (same material, -0.40 already claimed there; do not double-count)",
+    "T08 (tab:perinstance_full cycles/Omega columns must survive)"
+   ],
+   "validation": "Re-run /home/rohit/t15scratch/mc2.py: every surviving numeric claim must lie inside the min-max over 3,000 random tie-breaks at BOTH row and configuration level, and must hold under CSV order, name-sorted order and reversed order.",
+   "page_delta": "-0.35 (sec:results-tour) plus -0.02 (table columns)",
+   "acceptance_delta": "large-positive",
+   "confidence": "high"
+  },
+  {
+   "issue": "T15-b: move the algorithm catalogue and winner distribution to the companion",
+   "decision": "EDIT",
+   "reason": "app:algos is 1.15 columns of billed space (TABLE VIII, 28 rows, plus 19 lines of prose) whose S3 half is refuted and whose S2 half is better expressed as four tie-invariant sentences. The companion contains zero tournament material, so the move is free and lossless.",
+   "cheaper_alternatives_rejected": [
+    {
+     "option": "Compress Table VIII in place to the six non-zero rows",
+     "why_rejected": "Saves only ~0.3 page and preserves the S3 block, which is exactly the refuted part. The zero rows are the most robust entries in the table and are worth keeping somewhere."
+    }
+   ],
+   "required_change": "Move app:algos, tab:catalogue and the algorithm-provenance citation paragraph to the companion; add a 'configurations tied at champion' column and a min-max column per algorithm there. Leave one sentence in the paper pointing to it.",
+   "affected": [
+    "app:algos",
+    "tab:catalogue",
+    "companion/main.tex",
+    "main.tex:431 roadmap sentence"
+   ],
+   "dependencies": [
+    "T15-a"
+   ],
+   "validation": "Companion compiles; the paper's roadmap sentence at main.tex:431 no longer promises a catalogue the paper does not contain.",
+   "page_delta": "-0.56",
+   "acceptance_delta": "positive",
+   "confidence": "high"
+  },
+  {
+   "issue": "T15-c: Sec. VII-E asserts regimes the data contradicts (D025/D095 CONFIRMED)",
+   "decision": "REWRITE",
+   "reason": "Verified: list scheduling is in a champion tie set on exactly one instance (tiny_dense_1d, N=8, the smallest in the suite); MLfm is classified multilevel not graph partition; DKway wins nothing under any tie-break; graph partitioning's single tie-invariant win is large_unbal_torus, an UNBALANCED topology, contradicting the clause that claims it takes balanced ones; and exactly one algorithm (ExactBB) never reaches hardware, not two (vii_e.py).",
+   "cheaper_alternatives_rejected": [
+    {
+     "option": "Fix only the three factual slips r01 and r14 name",
+     "why_rejected": "Leaves the graph-partition regime clause, which is contradicted by the only instance that survives tie-breaking, and leaves a regime narrative with no tie-invariant support."
+    }
+   ],
+   "required_change": "Delete the graph-partitioning and list-scheduling regime clauses (main.tex:2419-2423). Keep and strengthen the tree-DP clause with the test: median G=16 where tree DP is in the champion tie set vs 192 where it is not, Mann-Whitney p=0.018. Add the two tie-invariant regime facts: DSC wins outright on exactly the three moderate-degree ring instances at G>=64; hierarchical assignment on five of the six largest. Change 'Two algorithms never reach the hardware at all' to 'One algorithm'.",
+   "affected": [
+    "sec:results-tour",
+    "main.tex:2417-2432"
+   ],
+   "dependencies": [
+    "T15-a"
+   ],
+   "validation": "Every remaining regime clause must correspond to a family that wins under EVERY tie-break on the instances named (survive.py, final.py).",
+   "page_delta": "+0.02 (net inside T15-a's -0.35)",
+   "acceptance_delta": "positive",
+   "confidence": "high"
+  },
+  {
+   "issue": "T15-d: '35 of 39' is not reproducible (D097 CONFIRMED)",
+   "decision": "EDIT",
+   "reason": "50.5% reproduces exactly (1,424/2,822 = 50.46%); '35 of 39' matches none of four natural definitions (32, 32, 38, 1). d097.py.",
+   "cheaper_alternatives_rejected": [
+    {
+     "option": "Delete the second clause",
+     "why_rejected": "It is the paper's own strongest independent evidence that champions are fragile, and it now supports rather than contradicts the rewritten VII-E. Deleting it discards free corroboration."
+    }
+   ],
+   "required_change": "main.tex:2149-2150 -> 'That defect moved 50.5% of cycle counts, and the set of minimising configurations changed on 38 of 39 instances (disjoint from the corrected set on 32), so the measurements were repeated in full.'",
+   "affected": [
+    "sec:results-setup",
+    "main.tex:2149"
+   ],
+   "dependencies": [
+    "T15-a"
+   ],
+   "validation": "python3 /home/rohit/t15scratch/d097.py reproduces 50.46%, 38 and 32.",
+   "page_delta": "+0.01",
+   "acceptance_delta": "positive",
+   "confidence": "high"
+  },
+  {
+   "issue": "T15-e: only medians of rho and leakage reported (D112 CONFIRMED)",
+   "decision": "EDIT",
+   "reason": "rho ranges 0.730-0.988 with 9 of 39 below 0.90; leakage at K=10 ranges 0.00-0.90 with 9 of 39 at or above 0.60 and mean 0.338 > median 0.30 (selbias.py). Direction-safe per T11, so disclosure suffices.",
+   "cheaper_alternatives_rejected": [
+    {
+     "option": "Add a per-instance dispersion table or figure",
+     "why_rejected": "Costs 0.3-0.5 page for a limitation the paper already concedes and whose direction is conservative."
+    },
+    {
+     "option": "No change",
+     "why_rejected": "Two reviewers recomputed it; an unreported one-sided spread of 0.00-0.90 on the paper's own bias metric reads as selective reporting."
+    }
+   ],
+   "required_change": "Add min-max columns to tab:selbias and one clause: 'dispersion is wide and one-sided: rho 0.73-0.99, leakage at K=10 0.00-0.90 with 9 of 39 instances at or above 0.60'. Note that leakage is computed over distinct simulated images, since ties make top-K ill-defined at the boundary.",
+   "affected": [
+    "app:bias",
+    "tab:selbias",
+    "paper/scripts/gen_tournament.py"
+   ],
+   "dependencies": [],
+   "validation": "Regenerated tab:selbias matches /home/rohit/t15scratch/selbias.py.",
+   "page_delta": "+0.02",
+   "acceptance_delta": "positive",
+   "confidence": "high"
+  },
+  {
+   "issue": "T15-f: degenerate-minimum filter (D129)",
+   "decision": "NO CHANGE",
+   "reason": "REFUTED for the published data: applying analysis/c_and_cost.py's exact FILT=1.5 rule to the corrected max-over-PE dataset yields 0 degenerate testbenches across 0 instances (degen.py). The 13-across-7 figure comes from the superseded PE-0 file the script hardcodes.",
+   "cheaper_alternatives_rejected": [
+    {
+     "option": "Add a plausibility filter to gen_cost_tables.py and regenerate",
+     "why_rejected": "It would change nothing and would invite the question of why a filter is needed."
+    }
+   ],
+   "required_change": "None to the paper.",
+   "affected": [
+    "paper/scripts/gen_cost_tables.py",
+    "analysis/c_and_cost.py"
+   ],
+   "dependencies": [],
+   "validation": "python3 /home/rohit/t15scratch/degen.py prints 0 across 0.",
+   "page_delta": "0",
+   "acceptance_delta": "neutral",
+   "confidence": "high"
+  },
+  {
+   "issue": "T15-g: shipped analysis script contradicts Table VIII (new, not in docket)",
+   "decision": "CHANGE IMPLEMENTATION",
+   "reason": "analysis/c_and_cost.py:4 hardcodes live_hw_results_p1_unified.csv, the defective PE-0 dataset, and prints 'HW-WINNER methods S2: 2b:35' against the paper's 2k:17. No in-release warning exists; docs/PROJECT_NOTES.md:140 calls that file 'THE crown jewel'.",
+   "cheaper_alternatives_rejected": [
+    {
+     "option": "Delete the script from the release",
+     "why_rejected": "It also carries the S4 compute estimate that justifies dropping Phase 2; removing it loses evidence for another claim."
+    }
+   ],
+   "required_change": "Two-line header comment in analysis/c_and_cost.py and one line in the release README marking live_hw_results_p1_unified.csv as the superseded PE-0 metric retained only for the 50.5% comparison. No paper text.",
+   "affected": [
+    "analysis/c_and_cost.py",
+    "README.md",
+    "docs/PROJECT_NOTES.md:140"
+   ],
+   "dependencies": [
+    "T15-a (once winners leave the paper this is a labelling fix, not a contradiction)"
+   ],
+   "validation": "Fresh reader of the release cannot mistake unified for the reported metric.",
+   "page_delta": "0",
+   "acceptance_delta": "positive",
+   "confidence": "high"
+  }
+ ]
+}

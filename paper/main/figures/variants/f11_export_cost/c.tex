@@ -1,0 +1,69 @@
+% f11_export_cost variant c -- absolute time, not a ratio.
+% Data: experiments/w_final/W2/v004/COST.json, cost_table fields stock_us and
+%   fbt_us, rows backend=nccl, G=2, dtype=fp64, N=8, both arms; scalars from
+%   data/wround_macros.tex.  The excesses quoted in the annotations are
+%   fbt_us - stock_us at each size: 131, 67, 92, 63 us at 8 KiB to 512 KiB,
+%   then 274, 373, 1761, 13026 us at 2 MiB to 128 MiB.
+% Strategy: drop the ratio entirely. A ratio hides that the worst overheads
+%   are attached to the cheapest calls -- at \PinSmallSize{} the whole stock
+%   collective is \PinSmallStock~us, so a \PinSmallCost{}x overhead is about
+%   130 us of fixed launch cost, not 130 us of lost bandwidth. Plotting
+%   microseconds shows stock flat while pinned pays a size-independent
+%   surcharge, and lets a reader price the export in the units they budget in.
+% Scope: NCCL only; the gloo rows in the same file are excluded as a broken
+%   baseline (stock gloo at G=24 is \PinGlooBadRatio{}x SLOWER on
+%   \PinGlooBadLo{} than on \PinGlooBadHi{}).
+\begin{tikzpicture}
+\begin{axis}[
+  width=8.6cm, height=6.1cm,
+  xlabel={message size (K $=$ KiB, M $=$ MiB)},
+  ylabel={time per all-reduce ($\mu$s)},
+  xmode=log, log basis x=2, ymode=log, log basis y=10,
+  xmin=4600, xmax=2.6e8, ymin=24, ymax=48000,
+  xtick={8192,32768,131072,524288,2097152,8388608,33554432,134217728},
+  xticklabels={8\,K,32\,K,128\,K,512\,K,2\,M,8\,M,32\,M,128\,M},
+  ytick={30,100,300,1000,3000,10000,30000},
+  yticklabels={30,100,300,{1\,000},{3\,000},{10\,000},{30\,000}},
+  minor tick num=0,
+  tick label style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  grid=major, grid style={spGrid, very thin},
+  legend style={font=\tiny, at={(0.015,0.985)}, anchor=north west,
+                draw=spMute, fill=white, fill opacity=0.92, text opacity=1,
+                row sep=0.4pt, inner sep=2.5pt},
+  every axis plot/.append style={thick},
+  clip=false,
+]
+\addplot[spBlue, mark=*, mark size=1.5pt] coordinates {
+  (8192,57.42) (32768,35.17) (131072,43.29) (524288,106.34)
+  (2097152,162.36) (8388608,767.91) (33554432,2636.77) (134217728,10794.51)};
+\addlegendentry{stock \texttt{ncclAllReduce}}
+\addplot[spVerm, mark=square*, mark size=1.6pt, densely dashed, line width=1.1pt] coordinates {
+  (8192,188.81) (32768,102.61) (131072,135.07) (524288,169.41)
+  (2097152,436.22) (8388608,1140.43) (33554432,4397.90) (134217728,23820.17)};
+\addlegendentry{pinned-FBT, one chunk}
+\addplot[spPurple, mark=triangle*, mark size=2.1pt, dotted] coordinates {
+  (8192,342.66) (32768,285.05) (131072,234.99) (524288,283.29)
+  (2097152,454.95) (8388608,1202.46) (33554432,4137.29) (134217728,19928.21)};
+\addlegendentry{pinned-FBT, two chunks}
+% The flat stock region is the whole point.
+\draw[spBlue, thin, |-|] (axis cs:8192,27.5) -- (axis cs:5.24e5,27.5);
+\node[font=\tiny, anchor=north, align=center, text=spBlue]
+  at (axis cs:6.6e4,27.0)
+  {stock flat at $35$--$57~\mu$s: latency-bound};
+\node[font=\tiny, anchor=west, align=left, inner sep=1.5pt, text=spVerm]
+  at (axis cs:1.1e6,150)
+  {below $1$\,MiB the one-chunk arm\\[-1pt]
+   costs a roughly size-independent\\[-1pt]
+   $63$--$131~\mu$s more, on calls that\\[-1pt]
+   themselves take $35$--$106~\mu$s};
+\draw[spVerm!60, thin] (axis cs:1.05e6,150) -- (axis cs:5.6e5,140);
+\node[font=\tiny, anchor=south east, align=right, inner sep=1.5pt, text=spInk]
+  at (axis cs:2.4e8,26000)
+  {at \PinBigSize{}: $10{,}795 \to 23{,}820~\mu$s\\[-1pt]
+   ($\PinBigChunkOne\times$), and two chunks\\[-1pt]
+   recover to $19{,}928~\mu$s ($\PinBigChunkTwo\times$)};
+\node[font=\tiny, anchor=west, inner sep=2pt, draw=spMute, fill=white,
+      text=spInk] at (axis cs:5400,2600) {$G{=}2$, FP64, median of repeats};
+\end{axis}
+\end{tikzpicture}

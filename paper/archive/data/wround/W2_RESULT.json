@@ -1,0 +1,180 @@
+{
+ "work_item": "W2 -- repaired (cut-aligned) pinned-FBT vs stock all-reduce",
+ "preregistration": "/home/rohit/sprs-fix/experiments/PREREGISTRATION.md",
+ "hardware": {
+  "gpus": "2x NVIDIA RTX PRO 6000 Blackwell Server Edition, single node",
+  "interconnect": "PCIe (nvidia-smi topo = NODE) -- NO NVLINK",
+  "contention": "both GPUs were held at 100% utilisation by an unrelated user job for the whole measurement window; an isolated GPU kernel cost a fixed ~2.26 ms scheduling slice, so all timings use BATCHED regions (B back-to-back ops / B) and a co-timed 1-element-add floor probe is recorded beside every case",
+  "cpu": "72 cores, gloo over TCP loopback",
+  "comparability": "TBIK's <=10% figure is 4xH20 over NVLink on an uncontended node. These are NOT comparable fabrics and the two numbers must not be quoted side by side."
+ },
+ "H1_bitwise_reshape_invariance": {
+  "outcome": "SUPPORTS",
+  "cases": 32,
+  "cases_invariant_and_equal_R_can": 32,
+  "total_cells": 2414,
+  "world_sizes": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   12,
+   16,
+   24,
+   32,
+   48,
+   64
+  ],
+  "non_power_of_two_G": [
+   3,
+   5,
+   6,
+   7,
+   12,
+   24,
+   48
+  ],
+  "leaf_counts_N": [
+   3,
+   5,
+   6,
+   7,
+   8,
+   12,
+   100,
+   1000,
+   1023,
+   1024,
+   1500,
+   4095,
+   4096
+  ],
+  "non_power_of_two_N": [
+   3,
+   5,
+   6,
+   7,
+   12,
+   100,
+   1000,
+   1023,
+   1500,
+   4095
+  ],
+  "backends": [
+   "nccl (G=2, GPU)",
+   "gloo (G=2..64, CPU)"
+  ],
+  "deals": [
+   "lpt",
+   "contiguous"
+  ],
+  "statement": "every (N, M, dtype, backend, world size, deal, rank) cell returned ONE 64-bit root and it equalled the single-process canonical FBT(N) reduction R_can"
+ },
+ "H1_negative_control": {
+  "construction": "the paper-as-printed index-range partition (T16 proved it is not R_can)",
+  "cases": 4,
+  "cases_that_failed_as_they_must": 3,
+  "detail": {
+   "indexrange_N7_M1024_fp64_signed": {
+    "n_distinct": 1,
+    "cells_equal_R_can": 13,
+    "n_cells": 13
+   },
+   "indexrange_N1000_M1024_fp64_signed": {
+    "n_distinct": 3,
+    "cells_equal_R_can": 0,
+    "n_cells": 13
+   },
+   "indexrange_N1024_M1024_fp64_signed": {
+    "n_distinct": 2,
+    "cells_equal_R_can": 10,
+    "n_cells": 13
+   },
+   "indexrange_N1500_M1024_fp64_signed": {
+    "n_distinct": 3,
+    "cells_equal_R_can": 0,
+    "n_cells": 13
+   }
+  },
+  "verdict": "the checker demonstrably CAN fail: at N=1000 and N=1500 the printed construction produced 3 distinct roots over G in {2,3,8} and 0 of 13 cells equalled R_can. At N=1024 it coincides for some G (power-of-two N with G|N) and at N=7 it coincides entirely -- coincidence, not correctness."
+ },
+ "H2_cost": {
+  "outcome": "REFUTES the \"affordable, TBIK-comparable\" branch -- reported as measured, per the pre-registered UNFAVOURABLE branch (a listed irreducible risk)",
+  "protocol": "median over 15 batched regions of B back-to-back collectives (B=200/50/20 by size), after 2 warm-up batches; overhead = t_pinnedFBT / t_stock",
+  "nccl_G2_fbt_chunks1": {
+   "PREREGISTERED_HEADLINE": {
+    "definition": "geomean overhead at G=2, fp64, over the swept sizes (PREREGISTRATION.md:54)",
+    "n": 20,
+    "geomean": 2.5685,
+    "best": 1.4851,
+    "WORST": 3.9074
+   },
+   "pooled_all_dtypes_NOT_the_headline": {
+    "note": "fp64+fp32 pooled. Reported as the headline in an earlier revision; that deviated from the pre-registration and understated the overhead.",
+    "n": 28,
+    "geomean": 2.398
+   },
+   "fp32_only_context": {
+    "n": 8,
+    "geomean": 2.0197
+   }
+  },
+  "fp64_size_sweep_8KiB_to_128MiB": {
+   "geomean": 2.268,
+   "best": 1.485,
+   "WORST": 3.288
+  },
+  "non_power_of_two_N_at_128KiB": {
+   "8": 3.1203,
+   "3": 2.1892,
+   "5": 2.4982,
+   "6": 3.9074,
+   "7": 3.0124,
+   "12": 2.4323,
+   "100": 2.8957,
+   "1000": 2.3852,
+   "1023": 2.4977,
+   "1024": 3.2577,
+   "1500": 2.4547,
+   "4095": 3.458,
+   "4096": 2.9843
+  },
+  "structural_explanation": "At G=2 the pinned tree performs one directed send of the full M-vector plus a broadcast of the full M-vector = 2M bytes moved, against a ring all-reduce's M per rank; and it issues two DEPENDENT library calls from Python against one fused NCCL kernel, which dominates below ~1 MiB. The 2-chunk bidirectional variant recovers part of the bandwidth term at 128 MiB (1.85x vs 2.21x) and is much worse below 1 MiB (up to 29x) because it doubles the number of Python-level p2p calls.",
+  "full_table": "/home/rohit/sprs-fix/experiments/w_final/W2/v004/COST.json",
+  "CONTENTION_SENSITIVITY": {
+   "why": "The NCCL sweep ran while another user's job saturated both GPUs (observed again 2026-08-28: GPU1 100%, GPU0 72%, load avg 25). The point estimate is therefore contaminated; this bounds by how much.",
+   "median_based_reported": 2.5685,
+   "best_of_repeats_contention_robust": 2.0759,
+   "inflation_attributable_to_contention": "1.237x",
+   "points_with_median_within_5pct_of_best": "4/20",
+   "CONCLUSION_INVARIANT": "The pre-registered SUPPORT branch required roughly 1.0-1.3x. Both estimators exceed it (2.08x best-of-repeats, 2.57x median), so the REFUTE verdict does not depend on the contention correction. The point estimate does, and is reported as provisional.",
+   "status": "Re-measurement on a quiet machine still owed; the qualitative finding is not blocked on it."
+  }
+ },
+ "H3_load_imbalance": {
+  "outcome": "SUPPORTS, with a required paper change",
+  "source": "/home/rohit/sprs-fix/experiments/w_final/W2/v002/imbalance.json",
+  "statement": "the frontier assignment does not affect the root, so it is a free load-balancing choice. Greedy LPT: worst 1.969 over the 426 T16 pairs at G<=64, 1.996 over all 1546, 1.993 over 44,850 pairs with N<=300, NONE above 2. The natural contiguous deal reaches 2.48 (45 pairs above 2 at G<=64). The paper must SPECIFY LPT for the <=2 bound to hold."
+ },
+ "raw": {
+  "partA_correctness": "/home/rohit/sprs-fix/experiments/w_final/W2/v001/partA_correctness.json",
+  "imbalance": "/home/rohit/sprs-fix/experiments/w_final/W2/v002/imbalance.json",
+  "v003_invariance_and_unbatched_cost": "/home/rohit/sprs-fix/experiments/w_final/W2/v003/",
+  "v004_batched_cost": "/home/rohit/sprs-fix/experiments/w_final/W2/v004/",
+  "v005_clean_gloo_cost": "/home/rohit/sprs-fix/experiments/w_final/W2/v005/ (queued: v004 gloo cells at G>=24 were CPU-contended by W4)"
+ },
+ "DEVIATIONS_FROM_PREREGISTRATION": [
+  {
+   "id": "W2-H2-headline-dtype-pooling",
+   "found": "2026-08-28 (council challenger, verified independently)",
+   "what": "The reported headline geomean 2.398 pooled 8 fp32 rows with 20 fp64 rows; PREREGISTRATION.md:54 fixes the headline as fp64 at G=2.",
+   "correction": "fp64-only geomean 2.5685 (n=20).",
+   "direction": "The deviation moved the unfavourable number in the paper's favour.",
+   "status": "CORRECTED; pooled figure retained above for transparency."
+  }
+ ]
+}

@@ -1,0 +1,121 @@
+% f02_canonical_tree variant c -- FBT(8) built in four steps: the leaves are
+% placed, then each level is folded upward, and at every step the set of legal
+% moves has exactly one member per surviving pair.
+% Data: Definitions 1-3 of main.tex (sec:abi-tree); the heap arithmetic and the
+% leaf placement are the released implementation
+% (experiments/w_final/lib/pinned_fbt.py: leaf_index, children) and CBTree in
+% src/sprs_core.py.  The N=8 root word is the N=8 row of tables/invariance.tex.
+% Strategy: argue the ORDER, not the picture.  a states the definition and b
+% argues the addressing; both show a finished tree, which invites the reader to
+% ask whether some other tree would have done.  This variant answers that by
+% construction: once the leaf placement is fixed, no step below has a choice,
+% so FBT(N) is not one canonical tree among many -- it is the only tree the
+% rules can produce.  d makes the complementary argument from a counterexample.
+% Colour: settled structure is spBlue, leaf slots spSky, and the level folded at
+% each step is highlighted in spPurple so the eye lands on what changed; the
+% closing root is the confirmed invariant (spGreen). The highlight is doubled by
+% a heavier rule weight, so the step reads in greyscale too.
+% Target: IEEE single column (3.5in = 8.9cm); drawn width approx 8.6cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  inode/.style={draw=spBlue, circle, thick, inner sep=0pt, minimum size=4.2mm,
+                font=\tiny, fill=spBlueF, text=spInk},
+  new/.style={draw=spPurple!85!spInk, circle, line width=1.1pt, inner sep=0pt,
+              minimum size=4.2mm, font=\tiny, fill=spPurple!16, text=spInk},
+  lnode/.style={draw=spSky!80!spInk, rounded corners=0.8pt, thick, inner sep=0pt,
+                minimum size=4.0mm, font=\tiny, fill=spSkyF, text=spInk},
+  edg/.style={draw=spBlue!70, thin},
+  nedg/.style={draw=spPurple!85!spInk, line width=0.9pt},
+  cptn/.style={font=\tiny, align=left, anchor=north west, inner sep=0pt,
+              text width=3.50cm, text=spInk},
+  stp/.style={font=\tiny\bfseries, anchor=north west, inner sep=0pt, text=spBlue},
+]
+\def\p{0.53}          % leaf pitch
+\def\lv{0.56}         % level spacing
+\def\ox{0.30}         % left margin of the drawings
+\def\tx{4.40}         % left margin of the captions
+
+% ---------------------------------------------------------------------------
+% One stage is drawn by \stage{<base y>}{<levels folded so far, 0..3>}
+% Leaf i sits at x = \ox + i*\p; internal node centres are the midpoints of the
+% leaf span they cover, which is what the heap indexing already fixes.
+% ---------------------------------------------------------------------------
+\newcommand{\stage}[3]{%
+  % #1 = stage number, #2 = base y, #3 = levels folded
+  \foreach \i in {0,...,7} {
+    \pgfmathsetmacro{\xx}{\ox+\i*\p}
+    \node[lnode] (S#1L\i) at (\xx,#2) {\pgfmathparse{int(\i+7)}\pgfmathresult};
+  }
+  \ifnum#3>0
+    \foreach \n/\a/\b in {3/0/1, 4/2/3, 5/4/5, 6/6/7} {
+      \pgfmathsetmacro{\xx}{\ox+(\a+\b)*\p/2}
+      \pgfmathsetmacro{\yy}{#2+\lv}
+      \ifnum#3=1 \node[new] (S#1N\n) at (\xx,\yy) {\n};
+      \else      \node[inode] (S#1N\n) at (\xx,\yy) {\n};\fi
+      \ifnum#3=1 \draw[nedg] (S#1N\n) -- (S#1L\a); \draw[nedg] (S#1N\n) -- (S#1L\b);
+      \else      \draw[edg]  (S#1N\n) -- (S#1L\a); \draw[edg]  (S#1N\n) -- (S#1L\b);\fi
+    }
+  \fi
+  \ifnum#3>1
+    \foreach \n/\a/\b/\m in {1/3/4/1.5, 2/5/6/5.5} {
+      \pgfmathsetmacro{\xx}{\ox+\m*\p}
+      \pgfmathsetmacro{\yy}{#2+2*\lv}
+      \ifnum#3=2 \node[new] (S#1N\n) at (\xx,\yy) {\n};
+      \else      \node[inode] (S#1N\n) at (\xx,\yy) {\n};\fi
+      \ifnum#3=2 \draw[nedg] (S#1N\n) -- (S#1N\a); \draw[nedg] (S#1N\n) -- (S#1N\b);
+      \else      \draw[edg]  (S#1N\n) -- (S#1N\a); \draw[edg]  (S#1N\n) -- (S#1N\b);\fi
+    }
+  \fi
+  \ifnum#3>2
+    \pgfmathsetmacro{\xx}{\ox+3.5*\p}
+    \pgfmathsetmacro{\yy}{#2+3*\lv}
+    \node[new, draw=spGreen, fill=spGreenF] (S#1N0) at (\xx,\yy) {0};
+    \draw[nedg, draw=spGreen] (S#1N0) -- (S#1N1); \draw[nedg, draw=spGreen] (S#1N0) -- (S#1N2);
+  \fi
+}
+
+% ---- step 0 : the leaves, and only the leaves -------------------------------
+\stage{0}{0.00}{0}
+\node[stp] at (\tx,0.46) {Step 0 \ \ place the leaves};
+\node[cptn]  at (\tx,0.18)
+  {Slot $L[k]$ goes to heap index $k+(N{-}1)$, so $L[0..7]$ occupy $7..14$
+   ascending. Nothing else is placed, and nothing else \emph{can} be: indices
+   $0..N{-}2$ are not leaves.};
+
+% ---- step 1 : fold level 3 ---------------------------------------------------
+\stage{1}{1.62}{1}
+\node[stp] at (\tx,2.66) {Step 1 \ \ fold once};
+\node[cptn]  at (\tx,2.38)
+  {Every leaf pair $(2n{+}1,2n{+}2)$ has one parent $n$. Leaves $7..14$ pair as
+   $(7,8),(9,10),(11,12),(13,14)$ into $3,4,5,6$. No leaf may pair with a
+   non-sibling: $\lfloor(n{-}1)/2\rfloor$ is a function.};
+
+% ---- step 2 : fold level 2 ---------------------------------------------------
+\stage{2}{3.62}{2}
+\node[stp] at (\tx,5.18) {Step 2 \ \ fold again};
+\node[cptn]  at (\tx,4.90)
+  {The four new nodes are themselves a sibling set: $(3,4)\to1$, $(5,6)\to2$.
+   The rule that produced them is the rule that consumes them, so the second
+   level is forced by the first.};
+
+% ---- step 3 : the root -------------------------------------------------------
+\stage{3}{6.12}{3}
+\node[stp] at (\tx,8.24) {Step 3 \ \ close at the root};
+\node[cptn]  at (\tx,7.96)
+  {$(1,2)\to0$ exhausts the index range: $2N{-}1=15$ nodes, all placed. The
+   emission order is the post-order
+   $\pi_8=\langle3,4,1,5,6,2,0\rangle$, and the root is
+   $\Rcan(8,L)=$ \texttt{0x40E1948E978D4FDF} (Table~I).};
+\node[font=\tiny, anchor=west, text=spGreen] at (2.63,7.80) {root};
+
+% ---- the claim the sequence supports ----------------------------------------
+\node[anchor=north west, font=\tiny, align=left, inner sep=0pt, text width=7.95cm,
+      text=spInk] at (-0.20,-1.15)
+  {At no step was there a choice. Fixing the leaf placement fixes every
+   parent, because $\mathrm{parent}(n)=\lfloor(n{-}1)/2\rfloor$ is single-valued
+   --- so $\FBT(N)$ is not a canonical representative selected from a family of
+   admissible trees, it is the only tree the placement admits. That is what lets
+   the ABI pin a bit-exact root without also pinning the topology, the mapping
+   or the schedule: those choose \emph{where} each node runs, never \emph{which}
+   pair it adds.};
+\end{tikzpicture}

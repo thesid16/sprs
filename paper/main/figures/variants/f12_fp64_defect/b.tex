@@ -1,0 +1,96 @@
+% f12_fp64_defect variant b -- the defect as bits, on one recorded vector.
+% Data: the operand pair and the two results are recorded verbatim in
+%   data/wround/W3_fp64.json, record "accept_pre" (first of the five failing
+%   examples printed by tests/fp64/test_sw_rtl_equiv.py):
+%     a = 3ff208357be4a807, b = bfd95563a0475dd3,
+%     as-submitted = 3fe765b927a5a125, correctly rounded = 3fe765b927a5a124.
+%   Every bit string below is re-derived from rtl/fp64_add.sv on that pair:
+%   |dE|=2, tail = 10 (exactly 1/2 guard unit), align_round=1, align_low=0,
+%   sticky=1, lzc=2.  Counts from data/wround_macros.tex.
+% Strategy: the mechanism at bit granularity on a real vector, where variant a
+%   gives it as a datapath.  This is the only variant that shows why the
+%   borrow alone LOOKS sufficient: on this vector it returns the correct
+%   fraction, but it represents an exact tie as a value below the midpoint,
+%   and the third edit is what restores (guard, sticky) to the truth.  The
+%   error here is not a rounding decision gone wrong but a difference that is
+%   one unit too large surviving a rounding rule that cannot see it.
+\begin{tikzpicture}[
+  lab/.style={font=\tiny, anchor=base east, text=spInk},
+  bits/.style={font=\ttfamily\scriptsize, anchor=base west, inner sep=0pt,
+               text=spInk},
+  hl/.style={font=\ttfamily\scriptsize, anchor=base west, inner sep=0.7pt,
+             draw=spVerm, fill=spVermF, text=spInk},
+  hlA/.style={hl, draw=spAmber, fill=spAmberF},
+  hlG/.style={hl, draw=spGreen, fill=spGreenF},
+  note/.style={font=\tiny, anchor=base west, align=left, text=spInk},
+  hdr/.style={font=\tiny\bfseries, anchor=base west, text=spInk},
+]
+\def\bx{1.72}
+% ---------------------------------------------------------------- preamble
+\node[font=\tiny, anchor=base west, text=spInk] at (0,0)
+  {$a=\texttt{3ff208357be4a807}$,\ \ $b=\texttt{bfd95563a0475dd3}$\ \
+   (signs differ: effective subtraction)};
+\node[font=\tiny, anchor=base west, text=spInk] at (0,-0.30)
+  {$|\Delta e| = 2$, so two bits leave the small mantissa during alignment.
+   Low 12 bits shown.};
+% ------------------------------------------------------------- alignment
+\node[hdr] at (0,-0.78) {alignment};
+\node[lab] at (\bx,-1.10) {\texttt{m\_big}};
+\node[bits] (mb) at (\bx,-1.10) {000000001110};
+\node[lab] at (\bx,-1.42) {\texttt{m\_small}};
+\node[bits] (ms) at (\bx,-1.42) {111011101001};
+\node[hl] (tl) at (ms.base east) {10};
+\node[lab] at (\bx,-1.74) {\texttt{m\_aligned}};
+\node[bits] (ma) at (\bx,-1.74) {111011101001};
+\node[note] at (4.15,-1.30)
+  {the two dropped bits are the \emph{tail} $t$:\\[1pt]
+   \texttt{10} $=$ exactly $\tfrac12$ guard unit\\[1pt]
+   \texttt{align\_round}$=1$, \texttt{align\_low}$=0$,\\[1pt]
+   \texttt{sticky}$=1$ --- recorded, and, as\\[1pt]
+   submitted, never subtracted};
+\draw[spVerm!65, thin] (tl.south) -- ++(0,-0.16) -- (4.05,-1.90);
+% ------------------------------------------------ the three results
+\node[hdr] at (0,-2.30) {after subtract, \texttt{lzc}$=2$, one-bit
+                          renormalising left shift};
+\node[font=\tiny, anchor=base west, text=spInk] at (0,-2.60)
+  {\texttt{m\_sum} $=$ \texttt{...000100100101} without the borrow,
+   \texttt{...000100100100} with it.};
+\node[font=\tiny, anchor=base east, text=spInk] at (\bx,-2.98) {\texttt{m\_norm}:};
+\node[font=\tiny, anchor=base west, text=spInk] at (\bx,-2.98) {\texttt{frac} bits};
+\node[font=\tiny, anchor=base west, text=spInk] at (\bx+1.62,-2.98) {$g$};
+\node[note] at (4.15,-2.98) {\ \ \ $g$\ \ \ \texttt{sticky}\ \ \ verdict};
+% row 1: as submitted
+\node[lab, text=spVerm] at (\bx,-3.32) {as submitted};
+\node[bits] (r1) at (\bx,-3.32) {00100100101};
+\node[hl] (g1) at (r1.base east) {0};
+\node[note, text=spVerm] at (4.15,-3.32) {\ \ \ 0\ \ \ \ \ \ 1\ \ \ \ \ \
+  no round-up $\rightarrow$ \texttt{...125}};
+% row 2: borrow only
+\node[lab, text=spAmber] at (\bx,-3.66) {$+$ borrow (edit 2)};
+\node[bits] (r2) at (\bx,-3.66) {00100100100};
+\node[hlA] (g2) at (r2.base east) {0};
+\node[note, text=spAmber] at (4.15,-3.66) {\ \ \ 0\ \ \ \ \ \ 1\ \ \ \ \ \
+  no round-up $\rightarrow$ \texttt{...124}};
+% row 3: full repair
+\node[lab, text=spGreen] at (\bx,-4.00) {$+$ rescale (edit 3)};
+\node[bits] (r3) at (\bx,-4.00) {00100100100};
+\node[hlG] (g3) at (r3.base east) {1};
+\node[note, text=spGreen] at (4.15,-4.00) {\ \ \ 1\ \ \ \ \ \ 0\ \ \ \ \ \
+  \emph{tie} $\rightarrow$ even $\rightarrow$ \texttt{...124}};
+\draw[spMute!60, thin] (0.02,-3.12) -- (8.55,-3.12);
+% ------------------------------------------------------------ conclusion
+\node[draw=spMute, rounded corners=1.5pt, fill=spGrid, align=left, text=spInk,
+      text width=8.34cm, inner sep=3.5pt, font=\tiny,
+      anchor=north west] at (0,-4.34)
+  {Correctly rounded: \texttt{3fe765b927a5a124}. \textcolor{spVerm}{\textbf{Row 1}} is the
+   as-submitted adder: the difference is one unit too large, and the guard bit
+   it lands on is $0$, so the rounding rule never sees the excess ---
+   \FpCtrlUlp~ulp, silently. \textcolor{spAmber}{\textbf{Row 2}} returns the right fraction for
+   the wrong reason: $(g,\texttt{sticky})=(0,1)$ claims the value lies below
+   the midpoint when it lies exactly on it. \textcolor{spGreen}{\textbf{Row 3}} restores the
+   truth, and round-half-to-even then decides. Row~2 is right here and wrong
+   on \FpPartialPct{} of effective subtractions (\FpPartialErrors{} of
+   \FpPartialVectors, all $-1$~ulp): a partial repair that looks plausible on
+   the vectors you happen to try is the reason correctness is claimed from
+   the sweep and its control, not from the patch.};
+\end{tikzpicture}

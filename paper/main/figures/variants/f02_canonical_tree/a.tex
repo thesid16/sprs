@@ -1,0 +1,75 @@
+% f02_canonical_tree variant a -- FBT(8): heap indexing, leaf enumeration and
+% operand binding, all on one drawing.
+% Data: Definitions 1-3 and eq. (2) of main.tex (sec:abi-tree); the leaf-index
+% closed form n-(N-1) is the released implementation
+% (experiments/w_final/lib/pinned_fbt.py, leaf_index); the root word is the
+% N=8 row of tables/invariance.tex.
+% Strategy: the DEFINITION, stated once and completely -- every node carries its
+% heap index, every leaf its enumeration slot, and one internal node is expanded
+% into the COMPUTE it emits. b argues the addressing, c the evaluation order,
+% d why the choice is not free.
+% Colour: the tree is the canonical structure (spBlue); leaf slots are the data
+% the ABI does not constrain (spSky); the pinned root word is the confirmed
+% invariant (spGreen); the operand-binding callout is an annotation on the
+% drawing, not a series (spPurple). Node shape -- circle for internal, square
+% for leaf -- still carries the distinction without colour.
+% Target: IEEE single column (3.5in = 8.9cm); drawn width approx 8.6cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  inode/.style={draw=spBlue, circle, thick, inner sep=0pt, minimum size=5.2mm,
+                font=\scriptsize, fill=spBlueF, text=spInk},
+  lnode/.style={draw=spSky!80!spInk, rounded corners=1pt, thick, inner sep=0pt,
+                minimum size=5.0mm, font=\scriptsize, fill=spSkyF, text=spInk},
+  edg/.style={draw=spBlue!70, thin},
+  bindedg/.style={draw=spPurple!80!spInk, very thick},
+  fbtlbl/.style={font=\tiny, inner sep=1pt},
+]
+\def\lp{0.93}
+% ---- leaves: heap index inside, enumeration slot beneath --------------------
+\foreach \i in {0,...,7} {
+  \pgfmathsetmacro{\x}{\i*\lp}
+  \node[lnode] (L\i) at (\x,0) {\pgfmathparse{int(\i+7)}\pgfmathresult};
+  \node[fbtlbl, below=0.7mm of L\i, text=spSky!60!spInk] {$L[\i]$};
+}
+\foreach \n/\a/\b in {3/0/1, 4/2/3, 5/4/5, 6/6/7} {
+  \pgfmathsetmacro{\x}{(\a+\b)*\lp/2}
+  \node[inode] (N\n) at (\x,0.95) {\n};
+  \draw[edg] (N\n) -- (L\a);  \draw[edg] (N\n) -- (L\b);
+}
+\node[inode] (N1) at ({1.5*\lp},1.90) {1};
+\node[inode] (N2) at ({5.5*\lp},1.90) {2};
+\draw[bindedg] (N1) -- (N3); \draw[bindedg] (N1) -- (N4);
+\draw[edg] (N2) -- (N5); \draw[edg] (N2) -- (N6);
+\node[inode, draw=spGreen, fill=spGreenF, line width=1.1pt] (N0) at ({3.5*\lp},2.85) {0};
+\draw[edg] (N0) -- (N1); \draw[edg] (N0) -- (N2);
+\node[fbtlbl, anchor=west, text=spGreen] at ({3.5*\lp+0.34},2.85)
+  {root $=\Rcan(8,L)$};
+% the two operands of node 1, named
+\node[fbtlbl, text=spPurple!80!spInk, fill=white, inner sep=0.5pt, anchor=east]
+  at ($(N1)!0.55!(N3)+(-0.5mm,0.5mm)$) {left};
+\node[fbtlbl, text=spPurple!80!spInk, fill=white, inner sep=0.5pt, anchor=west]
+  at ($(N1)!0.55!(N4)+(0.5mm,0.5mm)$) {right};
+
+% ---- the operand binding, expanded at that node -----------------------------
+\node[draw=spPurple, rounded corners=1.5pt, fill=spPurple!7, font=\tiny, align=left,
+      inner sep=2.4pt, text width=7.85cm, anchor=south west] (BIND) at (-0.32,3.28)
+  {\textbf{operand binding at $v{=}1$} (Def.~3): exactly one \texttt{COMPUTE},
+   with $\mathtt{addr\_a}{=}\mathrm{dmem}(3)$ and
+   $\mathtt{addr\_b}{=}\mathrm{dmem}(4)$ --- a pure function of the node $v$.
+   Neither $G$, nor topology, mapping, refinement or schedule appears in it.};
+\draw[spPurple!80!spInk, thin, -{Stealth[length=1.5mm]}]
+  ($(BIND.south west)+(0.9,0)$) to[out=-90,in=140] ($(N1.north west)+(0.4mm,-0.4mm)$);
+
+% ---- the rules, stated ------------------------------------------------------
+\node[anchor=north west, font=\tiny, align=left, inner sep=0pt,
+      text width=8.35cm, line width=0pt, text=spInk] at (-0.34,-0.72)
+  {$\FBT(N)$ has $2N{-}1$ nodes; children of $n$ at $2n{+}1$ and $2n{+}2$;
+   internal $\{0,\dots,N{-}2\}$ are circles and leaves
+   $\{N{-}1,\dots,2N{-}2\}$ squares, so every internal node has exactly two
+   children.\\[1.4pt]
+   Leaf enumeration $\mathrm{idx}(n)=n-(N{-}1)$: the $k$-th smallest
+   \emph{heap} index takes $L[k]$. That is left-to-right \emph{visual} order
+   only when $N$ is a power of two.\\[1.4pt]
+   Internal post-order $\pi_8=\langle 3,4,1,5,6,2,0\rangle$; campaign root at
+   $N{=}8$ is \texttt{0x40E1948E978D4FDF} (Table~I).};
+\end{tikzpicture}

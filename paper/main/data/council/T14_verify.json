@@ -1,0 +1,201 @@
+{
+ "theme": "T14",
+ "title": "Repair the formal apparatus so Claim 1's argument closes, and fix the assumption structure",
+ "status": "FINAL",
+ "method_note": "All factual checks executed against the frozen snapshot. Compiler-image measurements use snapshot/src/sprs_core.py driven over snapshot/results/results instance list; RTL checks by direct read of snapshot/rtl/*.sv. Scratch scripts in /home/rohit/t14scratch (remaining.py, comm2.py, gcigap.py, recycle.py).",
+
+ "verdicts": [
+  {
+   "issue": "D054",
+   "finding": "Argument A3 applies F-sb-mono to addresses the paper's own Remark excludes, so Claim 1 does not close for recycled local temporaries. Proposed remedy: restrict Claim 1's hypothesis to programs without address recycling.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED_NARROWER",
+   "observed": "The LOCAL DEFECT is real and verbatim. main.tex:981-983 (A2): 'the scoreboard bit scoreboard[a] of each non-identity address transitions 0->1 exactly once in a program, at the clock edge of the unique write'. main.tex:986-987 (A3): 'Under F-sb-mono, once scoreboard[a] is set, DMEM[a] contains the unique committed value at address a.' F-sb-mono is scoped 'For every receive buffer a' (main.tex:765-766). For a recycled local temporary there is no 'unique write', so A3's inference is invalid as written. HOWEVER the proposed remedy is refuted three ways. (1) Recycling is universal: measured over 562 compiled configurations (all TEST_INSTANCES with N<=2048 x all STAGE2_METHODS), 108,607 recycled addresses and 397,422 reuse events; recycling occurs in every configuration. Restricting Claim 1 to non-recycling programs would exclude 100% of the evaluated suite. (2) The repair material is ALREADY IN THE PAPER: C-sw is correctly scoped at main.tex:711-718 ('Single-writer allocation for remote destinations ... Local temporaries are exempt: the allocator reuses them, and their safety comes from in-order issue rather than from single assignment'), and rem:recycle (main.tex:734-758) gives the two-case argument. The defect is that A2/A3 drop a scoping their own definitions carry, 200 lines earlier. (3) The conclusion is true and I verified it directly: over the same 562 configurations, UNSAFE_read_after_overwrite = 0 -- no operand is ever read after the write that recycles its slot.",
+   "what_is_true": "A2 and A3 are false as written and must be rescoped. Claim 1's hypothesis must NOT be restricted to non-recycling programs.",
+   "consequence": "REWRITE A2/A3 to the two-case form already stated in C-sw and rem:recycle, with a cross-reference. Cost: ~4 lines, no new content.",
+   "commands": "/home/rohit/t14scratch/remaining.py -> {'reuse_events':397422,'UNSAFE_read_after_overwrite':0,'recycled_addrs':108607} over 562 configs",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "D089",
+   "finding": "The single-writer invariant is stated in two contradictory forms; A2/A3 are false as written for recycled local temporaries. Reviewer could not tell which form the paper intends.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Both forms located verbatim and they are genuinely contradictory. NARROW form, main.tex:711-718 (C-sw): '...for every receive buffer a != 0, the emitted image contains exactly one write to (p,a), and that write is remote. Local temporaries are exempt.' BROAD form, main.tex:1824-1832 (Sec. V-C): 'every non-identity DMEM address on every PE is the destination of exactly one instruction in the emitted IMEM ... Together, (i)-(iii) imply C-sw: each non-identity address is written exactly once per program.' The broad form is FALSE on the emitted images: 108,607 recycled addresses over 562 configurations; in the large instances up to 35 distinct local writers to a single address (max_unbal_fat, N=3000, S2=2j).",
+   "what_is_true": "The reviewer's open question is resolvable: the paper INTENDS the narrow form. C-sw, F-sb-mono and rem:recycle are all correctly scoped; Sec. V-C and A2/A3 are the sloppy restatements. So the fix direction is unambiguous -- correct Sec. V-C and A2/A3 to match the definitions, not the other way round.",
+   "consequence": "EDIT Sec. V-C's invariant sentence to say 'every receive buffer'; the three-line proof at main.tex:1826-1832 is then correct as stated (item (iii) is already the receive-buffer case).",
+   "commands": "grep -n on main.tex:711-718, 765-766, 981-987, 1824-1832; measurement as D054",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "NEW-1 (found in verification; no reviewer raised it)",
+   "finding": "rem:recycle's stated reason is false for 31.3% of reuse events: it asserts a recycled slot has 'exactly one remaining reader ... the very COMPUTE that overwrites it', but most reuses have ZERO remaining readers, and 30% of reuses are a GENERATE, not a COMPUTE.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "main.tex:742-745: 'A recycled slot has exactly one remaining reader at the moment it is reused --- the very COMPUTE that overwrites it --- and on an in-order pipeline that instruction reads its operands in DE strictly before it writes back in EX.' Measured over 562 configurations / 397,422 reuse events: rem_readers_1_selfcompute = 273,009 (68.7%) matches the Remark; rem_readers_0 = 124,413 (31.3%) does NOT -- the slot was freed after its last reader and reused by an unrelated instruction. Separately gen_into_recycled = 119,018 (29.9%) of reuses are a GENERATE writing the recycled slot, and a GENERATE is not 'the COMPUTE that overwrites it'. rem_readers_1_other = 0 and rem_readers_ge2 = 0, so there is no third behavioural class -- only these two.",
+   "what_is_true": "The Remark's CONCLUSION (recycling is safe) holds -- UNSAFE_read_after_overwrite = 0. Its stated REASON covers only 68.7% of the cases. This is exactly the 'zero-remaining-reader case' that D054's required_evidence asked to be covered, so the reviewer's instinct was right even though he had no measurement.",
+   "consequence": "EDIT rem:recycle to state both cases: (a) zero remaining readers -- the slot was freed after its last consumer, safety is immediate; (b) one remaining reader, the overwriting COMPUTE itself -- safety from DE-before-EX. Cost: ~2 lines. This makes the Remark's claim true rather than 69%-true.",
+   "commands": "/home/rohit/t14scratch/remaining.py",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "NEW-2 (found in verification; no reviewer raised it) -- MISSING NECESSARY INVARIANT",
+   "finding": "The RTL contains a GCI in-flight address interlock that is the sole protection for a GENERATE writing into a recycled slot. It appears nowhere in the paper's fifteen assumptions, nor in the companion.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "rtl/btree_fsm_fast.sv:523-534 defines gci_data_hazard: DE stalls any COMPUTE/SEND whose operand address equals gci_pend_addr while gci_pending is set, or equals gci_dest_addr on the gci_start cycle. The RTL comment at line 522 reads 'GCI hazard: belt-and-suspenders with scoreboard (catches in-flight GCI)'. It is necessary, not belt-and-suspenders, in exactly one case: when the GENERATE's destination is a RECYCLED slot, scoreboard[a] is already 1 (set by the previous writer), so scoreboard_hazard (line 514-521) does NOT fire and F-sb-gate cannot stall the consumer. Measured: 29,097 of 82,084 GENERATEs (35.4%) in the N<=512 instances target a recycled address, and every one of them is followed by a read of that slot. GENERATE is asynchronous: opcode 4'h1 only asserts gci_start (line 613-616); the value is committed later by the GCI agent (line 421) with GCI_LATENCY = 4 (rtl/noc_ni.sv:26). The compiler's GCI gap leaves min 6 / median 12 cycles, i.e. 2 cycles of slack over the 4-cycle latency, and the gci_write_held retry latch (line 419-421, 731-737) delays the GCI write by one cycle for every cycle PIU wins the arbiter; piu_dmem_wr can assert on consecutive cycles (line 338-341, gated only on piu_active), so the delay is bounded only by incoming packet traffic. GREP CONFIRMS ABSENCE: 'gci_data_hazard', 'gci_pend_addr', 'in-flight GCI' return zero hits in paper/main.tex and companion/main.tex.",
+   "what_is_true": "The omission is certain (grep). The NECESSITY is argued from the RTL structure and the 2-cycle slack, not demonstrated by a failing execution -- I did not build an RTL variant with the interlock removed. That experiment is unnecessary: the cheapest adequate fix is to NAME the invariant that already exists.",
+   "consequence": "ADD one fabric invariant, F-gci-haz, ~3 lines. This is the single change that makes Claim 1's hypothesis list actually sufficient. It also supplies the CORRECT reason for the paper's own F-arb necessity argument (see D177d/NEW-3).",
+   "commands": "sed -n '490,545p' rtl/btree_fsm_fast.sv ; sed -n '405,425p' ; sed -n '596,628p' ; grep -rn 'gci_data_hazard' paper/main.tex companion/main.tex (0 hits) ; /home/rohit/t14scratch/gcigap.py -> {'gen':82084,'gen_recycled':29097,'gen_recycled_read':29097}, cycle gap min 6 median 12",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "NEW-3 (found in verification) -- the paper's F-arb necessity argument is garbled but its conclusion is right",
+   "finding": "sec:write-arb's scenario for why the GCI retry latch is necessary-for-correctness cannot happen as described, but F-arb IS necessary for Claim 1 via a different path.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED_NARROWER",
+   "observed": "main.tex:1505-1510: 'Without the GCI retry latch, a PIU/GCI collision would silently drop the leaf value; the destination's scoreboard would never be set by GCI (PIU wins so the bit is set, but to the wrong value)'. For the PIU write to set THE DESTINATION's bit, PIU and GCI must target the same address -- but C-sw (main.tex:711-718) makes receive buffers and local temporaries disjoint by construction, and I verified that disjointness holds on every emitted image (overlap_recycled_remote = 0 over 562 configs). So the described scenario is impossible. What actually happens without the retry latch: gci_pending clears, the leaf value is lost, and if the target is FRESH the scoreboard is never set -> stall -> watchdog -> fail-stop (harmless to Claim 1); if the target is RECYCLED the scoreboard is already set -> silent wrong root. The recycled case is the real reason, and it is the same case as NEW-2.",
+   "what_is_true": "F-arb is genuinely necessary-for-correctness (the paper's conclusion stands), but only through the recycled-slot path, which the paper never identifies.",
+   "consequence": "REWRITE the two-sentence justification at main.tex:1505-1510 to the recycled-slot path. Net zero lines. Also moves F-arb from the Property-2 cluster into Claim 1's cluster in Fig. 2 (D007/D057).",
+   "commands": "/home/rohit/t14scratch/remaining.py -> overlap_recycled_remote=0, recycled_addrs=108607, remote_addrs=215107",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "D055",
+   "finding": "FADD commutativity 'for all 64-bit (a,b)' is false under the paper's own NaN rule, invalidating the justification for excluding operand-swap mutations. Reviewer supplies counterexample (qNaN, -1.0).",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED_NARROWER",
+   "observed": "THE REVIEWER'S COUNTEREXAMPLE IS REFUTED. rtl/fp64_add.sv:69-73 takes the sign from whichever operand is NaN: 'if (a_is_nan) result = {a[63],...,a_frac[50:0]}; else if (b_is_nan) result = {b[63],...,b_frac[50:0]};'. Computing the reviewer's pair a=0x7FF8000000000001, b=0xBFF0000000000000 against a faithful model of that RTL: fadd(a,b) = 7FF8000000000001 and fadd(b,a) = 7FF8000000000001 -- EQUAL. Single-NaN addition is commutative: 19,983/19,983 targeted single-NaN pairs commuted. Differential test over 600,400 pairs (400,000 uniform random 64-bit, 400 structured corner-value crossings, 200,000 equal-exponent opposite-sign cancellation pairs) found exactly ONE non-commutative class: (NaN, NaN), 19 hits; targeted NaNxNaN gave 20,000/20,000 non-commutative. I also read the whole datapath (fp64_add.sv:85-175): zero/subnormal FTZ, Inf handling, the e_a>=e_b tie-break with sign-flip on borrow, and sticky computation are all operand-symmetric. THE REAL DEFECT IS DIFFERENT: the paper's rule 5 (main.tex:1087-1091) says the output sign 'equals sign(a)' unconditionally, which MISDESCRIBES its own RTL. The reviewer derived a true contradiction from false prose.",
+   "what_is_true": "fadd is commutative for all (a,b) not both NaN. The paper's rule-5 prose is wrong about the RTL. The mutation-exclusion justification is sound for this campaign: leaves are L[i] = (i+1)*1000.0 + ((37i+13) mod 100)/100 + 0.007 (main.tex:2037-2039), all positive normals, N<=8192, so sums stay under ~3.4e10 and no NaN or Inf can arise.",
+   "consequence": "EDIT rule 5 prose to match the RTL ('sign and payload are taken from a if a is NaN, else from b'), and qualify both commutativity sentences as 'for all (a,b) not both NaN'. Note the commutativity sentence is DUPLICATED verbatim at main.tex:1176-1177 and 2112-2114 -- delete one. Net -2 lines.",
+   "commands": "/home/rohit/t14scratch/comm2.py -> non-commutative buckets: {('NaN','NaN'): 19}; NaNxNaN 20000/20000; singleNaN 0/19983; reviewer ce equal=True",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "D007 + D057",
+   "finding": "Fig. 2 draws four of fifteen assumptions with no edges, contradicting its own caption and Claim 1; C-leaf and F-arb are load-bearing but unconnected.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Verbatim confirmed. main.tex:925-930 carries the comment '% ROW 0: Unconnected Leaves (Tucked neatly at the bottom)' placing C-alpha, F-id, C-leaf, C-route; the edge block main.tex:936-955 draws no edge from any of them. Caption main.tex:959 nonetheless says the fifteen 'support four arguments (A1--A4) which establish Claim 1 ... and Property 2'. Load-bearing checks: C-leaf is used by Composition at main.tex:1005-1006 ('initial values coming from the C-leaf-enforced GENERATE writes'); F-arb is declared 'necessary-for-correctness' for the root VALUE at main.tex:1510-1514 yet routed only to the fail-stop box. Conversely the figure is RIGHT that C-alpha and F-id are unused: F-id is admitted dead at main.tex:1124-1126 ('The identity slot DMEM[0] is reserved but unused in the present workload'), and C-alpha (compilation determinism, main.tex:698-704) is not needed by Claim 1 at all because Claim 1 already quantifies universally over all assignments, mappings, refinements and schedules -- a claim that holds for every compiler output does not need the compiler to be a pure function.",
+   "what_is_true": "The figure is not merely mis-drawn; it is a more honest account of the argument than Claim 1's hypothesis list. The defect is in the CLAIM's list, and the figure should be redrawn from the corrected list.",
+   "consequence": "One figure, redrawn from correct_assumption_list below. Removing three nodes and connecting the rest makes it narrower, not wider.",
+   "commands": "sed -n '900,960p' paper/main.tex; sed -n '1118,1130p'; sed -n '1500,1515p'",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "D125",
+   "finding": "(a) T's type; (b) Claim 1's missing feasibility hypothesis; (c) Omega six-vs-seven; (d) undefined Phase 3.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "(a) CONFIRMED, and worse than stated -- see D156. (b) CONFIRMED: Claim 1 quantifies 'Let N in NN' and 'for all (G, topology) in T' with no feasibility hypothesis, while main.tex:1207 states 'The fabric supports a cluster of up to MAX_ROUTERS = 4096 PEs' (rtl/noc_pkg.sv:13) and main.tex:2030-2032 documents configurations that do not compile at all ('10 rejections on max_mod_fat, 8 on maxp_mod_fat ... a property of the 512-entry budget'). Claim 1 therefore asserts a bit-value for configurations that produce no image. (c) CONFIRMED: main.tex:1943 'The six constituents are, informally:' followed by exactly six terms (lb_span, lb_gen, lb_instr, lb_comm, lb_gather, lb_bis), against main.tex:2382 'a lower bound assembled from seven separately-derived constraints'. Line 2382 is the error. (d) CONFIRMED: main.tex:2060 'We use a two-phase tournament' with only Phase 1 and Phase 2 in the description list (2062-2068), yet 'Phase 3' is referenced at 2065, 2073, 2079 and 'Phase 1/3 metric gap' at 2782.",
+   "what_is_true": "All four sub-items reproduce exactly. All are one-line fixes except (b), which needs one clause.",
+   "consequence": "EDIT: (b) add 'for which build_schedule emits an image within the per-PE DMEM and router budgets' to Claim 1 -- this is the C-mem precondition already settled in T04; (c) 'seven' -> 'six'; (d) 'two-phase' -> 'three-phase' plus a one-line Phase 3 item.",
+   "commands": "grep -n '4096\\|six constituents\\|separately-derived\\|Phase 3' paper/main.tex ; grep -n MAX_ROUTERS rtl/noc_pkg.sv",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "D156",
+   "finding": "The symbol T is overloaded across three kinds of set; schedule s and the operator in Eq. (3) are never defined.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Three incompatible types confirmed verbatim, and the first two collide within seven lines of each other. (i) SET OF PAIRS, main.tex:470-471: 'For every (G, topology) in T (the declared family of supported direct networks)'. (ii) SET OF TOPOLOGIES, main.tex:477-479: 'The family T contains flat direct networks ... linear, ring, 2D mesh, 2D torus, hypercube, and fat-tree' -- and again in Claim 1 itself, main.tex:815, 'Let T be the family of flat direct-network topologies', which then writes 'for all (G, topology) in T' at main.tex:819, a type error inside a single claim. (iii) SET OF WORKER COUNTS, main.tex:2000: 'forced to the same tree shape across all G in T'. Glyph collision also confirmed: Prop. 1 writes routing tables T_1, T_2 (main.tex:1037-1038) one glyph from \\T. Undefined symbols confirmed: 's' occurs exactly once in the paper, at main.tex:821 inside Claim 1's quantifier, and is never defined; Eq. (3) at main.tex:593 writes 'postorder(FBT(4)) \\cdot_{internal}' and the operator \\cdot_{internal} occurs nowhere else.",
+   "what_is_true": "All confirmed. Cheapest fix is to fix the TYPE once: define T as a set of topologies and write 'for all G <= MAX_ROUTERS and all topology in T'.",
+   "consequence": "EDIT Def. 1, Claim 1, Sec. VI-C; rename routing tables to rho_1, rho_2; define s in one clause ('s, the instruction schedule emitted by build_schedule'); and demote Eq. (3) to inline prose ('the post-order sequence restricted to internal nodes; for N=4, pi_4 = <1,2,0>'), which removes a numbered display.",
+   "commands": "sed -n '465,480p;585,600p;813,822p;1035,1045p;1996,2006p' paper/main.tex",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "D159",
+   "finding": "The abstract promises a 'theorem' the paper does not contain; claim/property/proposition/theorem used inconsistently.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Confirmed by count. 'grep -c begin{theorem}' returns 0: the \\newtheorem{theorem} declared at main.tex:71 is never instantiated. The abstract (main.tex:160-161) and contribution C1 (main.tex:326-327) both promise 'an explicit mapping/topology orthogonality theorem'; main.tex:551 calls it 'stated and proven as an explicit mini-theorem'; what exists is \\begin{proposition} at main.tex:1035, rendering as Proposition 1, whose body is a structuralargument -- an environment the paper itself defines as 'A code-inspection argument is not a proof' (main.tex:84-86). Label/render mismatches confirmed: label 'thm:orth' on a proposition; label 'prop:2' on what renders as a Property.",
+   "what_is_true": "Confirmed. Note the paper already has an honest disclaimer at main.tex:846-851 ('We label these a claim and a property rather than a mechanised theorem') -- the abstract simply contradicts it.",
+   "consequence": "EDIT three visible strings: 'theorem' -> 'proposition' at main.tex:161 and 327, 'mini-theorem' -> 'proposition' at 551; delete the unused \\newtheorem at line 71. Labels are invisible to readers and need not change. This is a pure REMOVE-OVER-CLAIM fix and referees reward it.",
+   "commands": "grep -c 'begin{theorem}' paper/main.tex -> 0 ; grep -n 'theorem\\|proposition' paper/main.tex",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "D177",
+   "finding": "Six small algebraic/terminological errors (a) unit roundoff, (b) log_G N monotonicity, (c) A1 misattribution, (d) four write agents vs three-way priority, (e) string concatenation, (f) Mbit vs Mibit.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED_NARROWER",
+   "observed": "(a) CONFIRMED, main.tex:215 'with u the unit in the last place' after the bound (N-1) u sum|x_i|; in Higham's bound u is the unit roundoff 2^-53, a constant. (b) CONFIRMED, main.tex:2291: 'at k=G it is log_G N. This term grows with G' -- log_G N = ln N / ln G is DECREASING in G. (c) CONFIRMED, main.tex:1510 'violating A1 (sampled-read determinism)': A1 is named 'Operand binding' (main.tex:963) and 'Sampled-FADD determinism' is A4 (main.tex:997), so the label and the gloss name two different arguments and neither is the right one -- see NEW-3 for what the failure actually is. (e) CONFIRMED, main.tex:2503 offers 'string concatenation' as 'a non-associative combine'; concatenation is associative (it is non-COMMUTATIVE). (f) CONFIRMED as a unit-label error: 26,208 x 4096 = 107,347,968 bits = 102.375 Mibit = 107.3 Mbit, and the paper reports ~102, so the quantity is Mibit and the label says Mbit. (d) CONFIRMED BUT THE TRUTH IS DIFFERENT AND SIMPLER THAN THE REVIEWER'S: there is no unstated fourth agent -- there are only THREE DMEM write agents. rtl/btree_fsm_fast.sv:364-378 is a three-way priority mux over piu_dmem_wr, gci_dmem_wr, fsm_dmem_wr, and the scoreboard set block (lines 711-718) has exactly the same three arms. GENERATE does not write DMEM at all: opcode 4'h1 asserts only gci_start/gci_dest_addr (lines 613-616) and never fsm_dmem_wr, so the paper's own gloss 'GENERATE (the FSM path that closes a GENERATE by committing its fetched value)' (main.tex:1440-1442) is wrong about its own RTL -- GENERATE commits through GCI. 'Four write agents' appears at main.tex:1200, 1379, 1421, 1439, 1491.",
+   "what_is_true": "All six are real. (d) resolves in the paper's favour: correcting 'four' to 'three' makes F-arb's three-way priority COMPLETE, closing the gap the reviewer identified rather than requiring a new arbitration rule.",
+   "consequence": "EDIT: (a) 'the unit roundoff (2^-53 for binary64)'; (b) 'this term shrinks with G; what grows is the ABI's relative penalty log_2 G'; (c) re-attribute to the recycled-slot path of NEW-3; (d) 'four' -> 'three' in five places incl. Fig. 5 label; (e) 'non-associative' -> 'non-commutative'; (f) 'Mbit' -> 'Mibit'. All are word-level; net ~0 lines.",
+   "commands": "sed -n '205,216p;1435,1500p;2283,2298p;2496,2510p' paper/main.tex ; sed -n '355,380p;596,628p;705,722p' rtl/btree_fsm_fast.sv ; python3 -c 'print(26208*4096/2**20, 26208*4096/1e6)'",
+   "confidence": "high"
+  },
+
+  {
+   "issue": "D186",
+   "finding": "u in Eq. (1) is described as 'the unit in the last place'; in Higham's bound u is the unit roundoff.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Duplicate of D177(a), independently raised by a second reviewer in a different view. main.tex:215. The paper uses 'ulp' correctly elsewhere (main.tex:585-586, 'root values differing by one ulp'), so this is a localised slip, not a conceptual confusion.",
+   "what_is_true": "Confirmed; corroborated across two reviewers and two views.",
+   "consequence": "Merge with D177(a): single four-word edit.",
+   "commands": "sed -n '205,216p' paper/main.tex",
+   "confidence": "high"
+  }
+ ],
+
+ "headline": "Every factual finding in T14 reproduces, but the theme's framing question -- 'do we close the argument, or restrict Claim 1 to programs without address recycling?' -- has a decisive answer: restriction is not available. Address recycling occurs in all 562 compiled configurations I measured (108,607 recycled addresses, 397,422 reuse events), so restricting Claim 1 would exclude 100% of the evaluated suite. The argument does close, and more cheaply than the panel supposed, because the repair material is already in the paper: C-sw (main.tex:711-718) and F-sb-mono (765-766) are correctly scoped to receive buffers and rem:recycle already gives a two-case argument. The defects are that Sec. V-C (1824-1832) and Arguments A2/A3 (981-987) restate those definitions without their scoping, which is an editing failure, not a gap in the reasoning. Verification also produced three findings no reviewer reached. First, rem:recycle's stated reason covers only 68.7% of reuses -- 31.3% have zero remaining readers and 29.9% are recycled by an asynchronous GENERATE rather than by 'the very COMPUTE that overwrites it'. Second, and most consequential, the RTL contains an interlock (gci_data_hazard, btree_fsm_fast.sv:523-534) which is the ONLY thing protecting a GENERATE that targets a recycled slot -- the scoreboard cannot protect it, because the bit is already set -- and this invariant appears nowhere in the paper or the companion; naming it is what actually makes Claim 1's hypothesis list sufficient. Third, the paper's own justification for F-arb being necessary-for-correctness describes a collision that C-sw makes impossible, though its conclusion is right for the recycled-slot reason instead. On the FADD question the reviewer's counterexample is refuted outright -- the RTL takes the sign from whichever operand is NaN, so single-NaN addition commutes, and across 600,400 differential pairs the only non-commutative class is NaN+NaN -- but a real defect sits underneath it: the paper's rule 5 misdescribes its own RTL. The net effect on Claim 1 is that its fifteen hypotheses are the wrong fifteen: three (C-alpha, C-conn, F-id) are unnecessary, three are missing, and four belong to Property 2 rather than to Claim 1. Fixing the list is what the figure has been silently telling the reader all along, and the whole repair is shorter than the text it replaces.",
+
+ "does_claim1_close": "yes-with-corrected-assumptions",
+
+ "correct_assumption_list": {
+  "necessary": [
+   {"id":"C-sw","note":"as already scoped at main.tex:711-718 -- receive buffers only; local temporaries exempt"},
+   {"id":"C-bind","note":"operand binding; Def. opbind"},
+   {"id":"C-leaf","note":"used directly by Composition, main.tex:1005-1006; currently drawn unconnected in Fig. 2"},
+   {"id":"C-mem","note":"MISSING. Compilability precondition: per-PE DMEM <= 512 entries and G <= MAX_ROUTERS = 4096. Settled in T04 as the real constraint; also closes D125(b)"},
+   {"id":"F-sb-mono","note":"as already scoped -- receive buffers only"},
+   {"id":"F-sb-gate","note":""},
+   {"id":"F-fw","note":"adjacent-cycle write-to-read race"},
+   {"id":"F-fadd","note":"purity; commutativity is NOT needed by Claim 1, only by the mutation-exclusion argument"},
+   {"id":"F-arb","note":"MOVE from Property 2 to Claim 1. Necessary via the recycled-GENERATE path (NEW-3), not via the paper's stated collision"},
+   {"id":"F-inorder","note":"MISSING. In-order single-PE issue: a COMPUTE reads its operands in DE strictly before writing back in EX. rem:recycle relies on it explicitly but it is never listed"},
+   {"id":"F-gci-haz","note":"MISSING. GCI in-flight interlock, rtl/btree_fsm_fast.sv:523-534. Sole protection when a GENERATE targets a recycled slot, because scoreboard[a] is already set. 29,097 such GENERATEs measured"}
+  ],
+  "unnecessary": [
+   {"id":"C-alpha","reason":"Claim 1 already quantifies universally over all assignments, mappings, refinements and schedules. A statement true of every compiler output does not need the compiler to be a pure function of its seed. Fig. 2 already draws it unconnected. Keep the paragraph as a reproducibility note; remove from Claim 1's hypotheses."},
+   {"id":"C-conn","reason":"Settled in T04: connectedness is NOT necessary for operand binding; C-mem is the real constraint, with a DMEM counterexample. Note main.tex:706-710 currently calls it 'a load-bearing invariant without which the binding discipline fails', which T04 refutes. Keep as a description of the S2.5 repair pass; remove from Claim 1's hypotheses."},
+   {"id":"F-id","reason":"The paper itself states DMEM[0] is 'reserved but unused in the present workload' (main.tex:1124-1126) and FBT(N) has no single-child internal nodes. Dead for Claim 1. Fig. 2 already draws it unconnected."}
+  ],
+  "moved_to_property2_only": [
+   {"id":"C-route","reason":"A violation cannot corrupt the root value; F-misroute converts it to a stall and F-watchdog to P_ERROR. It is a liveness precondition. Restate Claim 1 as conditional on normal termination (not P_ERROR, not watchdog) and C-route leaves the hypothesis list."},
+   {"id":"F-misroute","reason":"fail-stop only"},
+   {"id":"F-credit","reason":"fail-stop only"},
+   {"id":"F-watchdog","reason":"fail-stop only"}
+  ],
+  "missing": ["C-mem","F-inorder","F-gci-haz"],
+  "arithmetic": "15 listed - 3 unnecessary + 3 missing = 15, of which 11 support Claim 1 and 4 support Property 2. The paper's rhetorical phrase 'fifteen assumptions' survives unchanged; only the membership shifts.",
+  "claim1_restatement": "Under C-sw, C-bind, C-leaf, C-mem and F-sb-mono, F-sb-gate, F-fw, F-fadd, F-arb, F-inorder, F-gci-haz, for every N and every topology in T with G <= MAX_ROUTERS for which build_schedule emits an image within budget, and every valid assignment, mapping, refinement and schedule, IF the program terminates normally THEN the observed 64-bit root equals R_can(N, L)."
+ },
+
+ "recommended_actions_ranked_by_cost": [
+  {"rank":1,"action":"REMOVE OR NARROW CLAIM","what":"Rewrite Claim 1's hypothesis list to the 11 above, add the normal-termination antecedent and the compilability clause. Drop C-alpha, C-conn, F-id from the list (keep their prose elsewhere).","page_delta":"-0.10"},
+  {"rank":2,"action":"EDIT","what":"Rescope Sec. V-C:1824-1832 and Arguments A2/A3:981-987 to receive buffers, cross-referencing C-sw and rem:recycle. Add the zero-remaining-reader case to rem:recycle.","page_delta":"+0.03"},
+  {"rank":3,"action":"EDIT","what":"Add F-inorder and F-gci-haz as fabric-invariant bullets (~6 lines); rewrite the F-arb justification at 1505-1510 to the recycled-slot path (net zero).","page_delta":"+0.08"},
+  {"rank":4,"action":"EDIT","what":"Redraw Fig. 2 from the corrected list: three nodes removed, no orphans, F-arb re-routed to Claim 1. Narrower figure.","page_delta":"-0.05"},
+  {"rank":5,"action":"EDIT","what":"Terminology and algebra sweep: theorem->proposition (3 strings + delete unused \\newtheorem); T typed once; rho for routing tables; define s; Eq.(3) inlined; seven->six; two-phase->three-phase; four->three write agents (5 places); unit roundoff; log_G monotonicity; non-commutative; Mibit; delete the duplicated commutativity sentence.","page_delta":"-0.10"},
+  {"rank":6,"action":"EDIT","what":"Fix FADD rule 5 prose to match fp64_add.sv:69-73 and qualify commutativity as 'not both NaN', with one clause noting eq:leaves admits no NaN/Inf.","page_delta":"+0.01"}
+ ],
+
+ "no_new_experiments_required": "Every finding is repaired by rescoping, renaming, or naming an invariant that already exists in the RTL. The only candidate experiment -- rebuilding the fabric with gci_data_hazard removed to exhibit a failing execution -- is unnecessary: the cheapest adequate fix for an unlisted-but-implemented invariant is to list it, and a Q1 referee would not reject for the absence of a counterfactual RTL variant of the authors' own design.",
+
+ "page_delta": "-0.13 (net: -0.25 from list pruning, figure narrowing, inlining Eq. 3 and deleting the duplicated commutativity sentence; +0.12 from two new invariant bullets, the zero-reader case, the Phase 3 item and Claim 1's two added clauses)",
+
+ "verdict_counts": {"CONFIRMED": 8, "CONFIRMED_NARROWER": 4, "REFUTED": 0, "UNVERIFIABLE": 0, "INTERPRETIVE": 0, "total": 12, "note": "12 verdicts cover the theme's 10 docket issues (D177 absorbs D186's duplicate; D007 and D057 merged as one figure verdict) plus 3 new findings raised in verification. One reviewer sub-claim -- D055's (qNaN,-1.0) counterexample -- is refuted inside a CONFIRMED_NARROWER verdict."}
+}

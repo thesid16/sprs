@@ -1,0 +1,78 @@
+% f09_omega variant c -- the 39 ratios grouped by topology, rows ordered by
+%   topology median.
+% Data: figures/omega_by_instance.tex (from scripts/gen_figures.py over
+%   /home/rohit/sprs-fix/data/results/live_hw_results_p1_maxpe.csv, max-over-PEs).
+%   Per-topology min / median / max are computed from exactly those 39 ratios:
+%   linear 1.349/1.389/1.833, hypercube 1.552/1.854/3.604,
+%   torus 1.495/2.264/9.068, mesh 1.625/2.584/4.062,
+%   fat-tree 1.833/3.396/8.043, ring 2.333/4.484/7.095.
+%   Suite minimum \SlackBest{} (macro) and suite median 2.34.
+% Strategy: ask which FABRIC the compiler lands furthest from the bound on --
+%   a question neither the per-instance plot (a) nor the rank plot (b) answers.
+%   Ring is the honest headline: its best instance (2.33x) is worse than the
+%   suite median, so ring is uniformly far from Omega, while linear holds the
+%   \SlackBest{} minimum. (The manifest's "outlier in both directions" is not
+%   what the data shows -- ring is an outlier only on the far side.)
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn at 8.6cm.
+% Topology hues, identical to f08 and f09a (shared palette).
+\colorlet{ctorus}{spBlue}
+\colorlet{cfattree}{spVerm}
+\colorlet{chypercube}{spGreen}
+\colorlet{cring}{spPurple}
+\colorlet{cmesh}{spAmber}
+\colorlet{clinear}{spInk}
+\begin{tikzpicture}
+\begin{axis}[
+  width=8.6cm, height=5.6cm,
+  xlabel={champion cycles $/\ \Omega$},
+  xmin=1.0, xmax=10.1, ymin=0.35, ymax=7.9,
+  xtick={1,2,3,4,5,6,7,8,9},
+  ytick={1,2,3,4,5,6},
+  yticklabels={ring, fat-tree, mesh, torus, hypercube, linear},
+  yticklabel style={font=\scriptsize, text=spInk},
+  xticklabel style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  grid=major, major grid style={spGrid, very thin},
+  clip=false,
+]
+% suite median over all 39 instances
+\addplot[spMute, dashed, thick, forget plot] coordinates {(2.34,0.35) (2.34,6.45)};
+% min--max range bars, one per topology
+\addplot[clinear!35, line width=1.6pt, forget plot] coordinates {(1.349,6) (1.833,6)};
+\addplot[chypercube!35, line width=1.6pt, forget plot] coordinates {(1.552,5) (3.604,5)};
+\addplot[ctorus!35, line width=1.6pt, forget plot] coordinates {(1.495,4) (9.068,4)};
+\addplot[cmesh!35, line width=1.6pt, forget plot] coordinates {(1.625,3) (4.062,3)};
+\addplot[cfattree!35, line width=1.6pt, forget plot] coordinates {(1.833,2) (8.043,2)};
+\addplot[cring!35, line width=1.6pt, forget plot] coordinates {(2.333,1) (7.095,1)};
+% the individual instances
+\addplot[only marks, mark=x, mark size=2.2pt, line width=0.8pt, clinear, forget plot]
+  coordinates {(1.349,6) (1.38,6) (1.398,6) (1.833,6)};
+\addplot[only marks, mark=triangle*, mark size=1.6pt, chypercube, forget plot]
+  coordinates {(1.552,5) (1.771,5) (1.812,5) (1.854,5) (2.111,5) (3.375,5) (3.604,5)};
+\addplot[only marks, mark=*, mark size=1.5pt, ctorus, forget plot]
+  coordinates {(1.495,4) (1.969,4) (2,4) (2.083,4) (2.229,4) (2.3,4) (3.875,4)
+               (4.13,4) (6.861,4) (9.068,4)};
+\addplot[only marks, mark=pentagon*, mark size=1.7pt, cmesh, forget plot]
+  coordinates {(1.625,3) (2.167,3) (3,3) (4.062,3)};
+\addplot[only marks, mark=square*, mark size=1.5pt, cfattree, forget plot]
+  coordinates {(1.833,2) (2.34,2) (3.188,2) (3.333,2) (3.458,2) (3.812,2)
+               (4.583,2) (8.043,2)};
+\addplot[only marks, mark=diamond*, mark size=1.8pt, cring, forget plot]
+  coordinates {(2.333,1) (3.077,1) (4.159,1) (4.81,1) (4.969,1) (7.095,1)};
+% per-topology medians, drawn as open vertical ticks so they read in greyscale
+\addplot[clinear, line width=1.1pt, forget plot] coordinates {(1.389,5.78) (1.389,6.22)};
+\addplot[chypercube!70!spInk, line width=1.1pt, forget plot] coordinates {(1.854,4.78) (1.854,5.22)};
+\addplot[ctorus!70!spInk, line width=1.1pt, forget plot] coordinates {(2.264,3.78) (2.264,4.22)};
+\addplot[cmesh!70!spInk, line width=1.1pt, forget plot] coordinates {(2.584,2.78) (2.584,3.22)};
+\addplot[cfattree!70!spInk, line width=1.1pt, forget plot] coordinates {(3.396,1.78) (3.396,2.22)};
+\addplot[cring!70!spInk, line width=1.1pt, forget plot] coordinates {(4.484,0.78) (4.484,1.22)};
+% annotations, collected into one box above the data so nothing overlaps a row
+\node[font=\tiny, anchor=north east, align=left, inner sep=2.5pt, text=spInk,
+      draw=spMute, fill=white] at (axis cs:10.05,7.85)
+  {bar $=$ min--max, tick $=$ topology median\\
+   dashed $=$ suite median $2.34$\\
+   \textcolor{spGreen}{suite minimum $\SlackBest\times$ is a linear instance}\\
+   \textcolor{cring}{ring's best ($2.33\times$) is worse than any other
+   topology's best}};
+\end{axis}
+\end{tikzpicture}

@@ -1,0 +1,28 @@
+% GENERATED — do not edit by hand.
+% script : scripts/gen_tables.py
+% source : /home/rohit/sprs-fix/data/results/live_hw_results_p1_maxpe.csv
+% date   : 2026-08-28
+% note   : 2822 passing HW configs; every N has exactly 1 distinct root; root column recomputed from src/sprs_core.py (EXPECTED is a function of N and alu_op alone), not scanned from the unreleased TB corpus; mutation columns filled
+\begin{tabular}{@{}rrrrlrrr@{}}
+\toprule
+$N$ & compiled & HW-val. & HW configs & 64-bit root result & Div. & Addr-sub & Leaf-corr. \\
+    & $(G,\text{topo})$ & $(G,\text{topo})$ & (passing) & & & detected & detected \\
+\midrule
+8     & 2 & 2 & 28 & \texttt{0x40E1948E978D4FDF} & 0 & 6/6 & 6/6 \\
+10    & 1 & 1 & 17 & \texttt{0x40EADBA0A3D70A3E} & 0 & 3/3 & 3/3 \\
+16    & 1 & 1 & 21 & \texttt{0x41009A44BC6A7EFA} & 0 & 3/3 & 3/3 \\
+32    & 3 & 3 & 102 & \texttt{0x41201D1FCED91687} & 0 & 6/6 & 6/6 \\
+50    & 1 & 1 & 25 & \texttt{0x413374911999999A} & 0 & 3/3 & 3/3 \\
+100   & 1 & 1 & 33 & \texttt{0x415343B08CCCCCCD} & 0 & 3/3 & 3/3 \\
+128   & 6 & 6 & 371 & \texttt{0x415F7E8FF9581062} & 0 & 6/6 & 6/6 \\
+200   & 1 & 1 & 44 & \texttt{0x41732B4046666667} & 0 & 3/3 & 3/3 \\
+500   & 1 & 1 & 98 & \texttt{0x419DDCAB2C000000} & 0 & 3/3 & 3/3 \\
+512   & 6 & 6 & 456 & \texttt{0x419F4FA404418938} & 0 & 6/6 & 6/6 \\
+1024  & 5 & 5 & 425 & \texttt{0x41BF47D2026872B1} & 0 & 2/2 & 2/2 \\
+1500  & 1 & 1 & 104 & \texttt{0x41D0C665F8400000} & 0 & 2/2 & 2/2 \\
+2048  & 4 & 4 & 437 & \texttt{0x41DF43E900FBE76D} & 0 & 2/2 & 2/2 \\
+3000  & 1 & 1 & 77 & \texttt{0x41F0C4F764200000} & 0 & 2/2 & 2/2 \\
+4096  & 3 & 3 & 331 & \texttt{0x41FF41F48085A1CB} & 0 & 2/2 & 2/2 \\
+8192  & 3 & 2 & 253 & \texttt{0x421F40FA40427EFA} & 0 & 1/1 & 2/2 \\
+\bottomrule
+\end{tabular}

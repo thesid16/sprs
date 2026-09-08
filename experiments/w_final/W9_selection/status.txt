@@ -1,0 +1,42 @@
+START 2026-08-28T13:39:40.518097
+instances=39 candidate_algorithms=16
+
+=== LOO (one instance held out) ===
+  estimator          n     mean   median      max    %opt
+  oracle            39    1.000    1.000    1.000  100.0%
+  portfolio_k4      39    1.002    1.000    1.099   97.4%
+  portfolio_k3      39    1.011    1.000    1.118   87.2%
+  portfolio_k2      39    1.030    1.007    1.220   48.7%
+  cond_topology     39    1.049    1.000    1.389   53.8%
+  single_global     39    1.080    1.014    1.760   41.0%
+  portfolio_k1      39    1.080    1.014    1.760   41.0%
+  cond_nbucket      39    1.105    1.024    1.879   38.5%
+  random_single     39 7648.056    3.565209736.416    0.0%
+
+=== GROUP-topology (6 groups held out whole) ===
+  estimator          n     mean   median      max    %opt
+  oracle            39    1.000    1.000    1.000  100.0%
+  portfolio_k4      39    1.039    1.000    1.675   89.7%
+  portfolio_k3      39    1.046    1.000    1.675   82.0%
+  portfolio_k2      39    1.071    1.012    1.760   43.6%
+  single_global     39    1.080    1.014    1.760   41.0%
+  portfolio_k1      39    1.080    1.014    1.760   41.0%
+  cond_topology     39    1.080    1.014    1.760   41.0%
+  cond_nbucket      39    1.222    1.024    4.416   38.5%
+  random_single     39 7648.056    3.565209736.416    0.0%
+
+=== GROUP-Nbucket (5 groups held out whole) ===
+  estimator          n     mean   median      max    %opt
+  oracle            39    1.000    1.000    1.000  100.0%
+  portfolio_k4      39    1.002    1.000    1.099   97.4%
+  portfolio_k3      39    1.011    1.000    1.118   87.2%
+  portfolio_k2      39    1.030    1.007    1.220   48.7%
+  cond_topology     39    1.050    1.000    1.411   53.8%
+  single_global     39    1.080    1.014    1.760   41.0%
+  portfolio_k1      39    1.080    1.014    1.760   41.0%
+  cond_nbucket      39    1.080    1.014    1.760   41.0%
+  random_single     39 7648.056    3.565209736.416    0.0%
+
+shipped stability claim: k=4 portfolio identical in 39/39 LOO folds
+
+DONE 2026-08-28T13:39:40.765161 -> /home/rohit/sprs-fix/experiments/w_final/W9_selection/RESULT.json

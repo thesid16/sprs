@@ -1,0 +1,27 @@
+% GENERATED — do not edit by hand.
+% script : scripts/gen_tablestyle.py
+% source : figures/_palette.tex (colours) + the LaTeX preamble of
+%          main.tex, which loads booktabs/array/xcolor but NOT colortbl
+% date   : 2026-09-08
+% note   : \input by every generated table; defines the shared row
+%          tint, magnitude bar and range-span macros exactly once
+% ---- shared table style (figures/_palette.tex); see scripts/gen_tablestyle.py.
+% main.tex does not load colortbl, so a row tint is a zero-size rule emitted at
+% the start of the row and painted under the cells that follow it.
+% Defined once per document: these files are \input INSIDE float environments,
+% so the definitions must be global or the second table finds them gone.
+\makeatletter
+\@ifundefined{spwd}{\begingroup\globaldefs\@ne
+  \newlength{\spwd}%
+  \newsavebox{\spbox}%
+  \newcommand{\spmeasure}[1]{\sbox{\spbox}{#1}\spwd=\wd\spbox}%
+  \newcommand{\spband}[1]{\rlap{\raisebox{0pt}[0pt][0pt]{\textcolor{#1}{%
+    \rule[-\dimexpr\arraystretch\dp\strutbox+0.35pt\relax]{\spwd}%
+    {\dimexpr\arraystretch\ht\strutbox+\arraystretch\dp\strutbox+0.7pt\relax}}}}}%
+  \newcommand{\spbar}[2]{\textcolor{#1}{\rule[0.04em]{#2}{0.40em}}}%
+  \newcommand{\spspan}[4]{\makebox[#1][l]{\rlap{\textcolor{spSkyF}%
+    {\rule[0.04em]{#1}{0.40em}}}\hspace*{#2}\textcolor{#3}%
+    {\rule[0.04em]{#4}{0.40em}}}}%
+  \newcommand{\sphd}[1]{\textbf{#1}}%
+\endgroup}{}
+\makeatother

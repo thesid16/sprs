@@ -1,0 +1,182 @@
+% f04_fabric variant c -- the fabric as a cycle chart: GENERATE, COMPUTE and
+% SEND on one PE, the packet crossing the NoC, and the receiving PE releasing a
+% COMPUTE, with every gap read off the RTL rather than assumed.
+% Target: IEEE double column (figure*).  Fixed 16.9cm canvas -- the standalone
+% wrapper is varwidth=17cm, so 17.6cm would be cropped in the guide preview.
+% Data : rtl/noc_ni.sv (GCI state machine: gci_run/gci_ctr, GCI_LATENCY=4 ->
+%          \GciLatency; gci_done is registered one cycle after gci_ctr reaches
+%          GCI_LATENCY-1, and the DMEM write plus scoreboard set land one cycle
+%          after that, so gci_start -> visible presence bit is \GciLatency+2 = 6);
+%        rtl/btree_fsm_fast.sv (IF/DE/EX; if_advance = de_advance = ex_advance &&
+%          !de_hazard; scoreboard_hazard, gci_data_hazard, ex_send_blocked;
+%          piu_active accept-then-write, two cycles; combinational fp64_add;
+%          TIMEOUT_MAX 10,000 and WATCHDOG_MAX -> \WatchdogMax);
+%        rtl/link_tx.sv (credit-gated tx_valid), rtl/noc_router.sv;
+%        data/claim_macros.tex, data/campaign_macros.tex.
+% Strategy: TIME, not structure.  a traces one packet through the boxes and b
+% partitions the invariants by layer; both are static, so neither can show the
+% thing the prose spends most of its words on -- that a PE never waits on a
+% clock, it waits on a presence bit, and that every latency in the machine is
+% either a fixed RTL constant or explicitly topology-dependent.  Reading down a
+% column gives the machine state in that cycle; reading across a row gives one
+% unit's duty cycle.  d dissects the router instead.
+% Colour: the instruction stream is the compliant datapath (spBlue -- pale while
+% a stage merely holds, solid while it does work); a commit, meaning a DMEM
+% write and the presence bit it sets, is confirmed (spGreen, heavy rule), and
+% the bands where a presence bit stays 1 are the same green, tinted; every stall
+% is the presence gate holding rather than a fault, so it is contended, not
+% violating (spAmber).  The one duration the RTL does not fix is drawn on the
+% blue path but hatched in spMute.  The two rows whose agents write DMEM with no
+% instruction -- PIU and GCI -- carry spPurple labels, as in variants a and b.
+% The fill ramp (held < issue < execute < stall < commit) and the rule weights
+% carry the same ordering with the colour stripped.
+\begin{tikzpicture}[
+  font=\scriptsize,
+  rowlbl/.style={font=\tiny, anchor=east, align=right, inner sep=0pt, text=spInk},
+  grp/.style={font=\tiny\bfseries, anchor=west, inner sep=0pt, text=spInk},
+  cyc/.style={font=\tiny, anchor=south, inner sep=0.5pt, text=spMute},
+  note/.style={font=\tiny, inner sep=1pt, align=left, text=spInk},
+  % the five block roles -- fill value AND rule weight order them without colour
+  fHold/.style ={draw=spBlue!60, fill=spBlue!5,  line width=0.3pt,
+                 dash pattern=on 1.3pt off 1.1pt},
+  fIss/.style  ={draw=spBlue,    fill=spBlueF,   line width=0.3pt},
+  fEx/.style   ={draw=spBlue,    fill=spBlue!22, line width=0.45pt},
+  fStl/.style  ={draw=spAmber!85!spInk, fill=spAmber!55, line width=0.45pt},
+  fCom/.style  ={draw=spGreen!80!spInk, fill=spGreen!60, line width=0.7pt},
+  fPres/.style ={draw=spGreen,   fill=spGreenF,  line width=0.3pt},
+]
+\def\W{0.655}   % one cycle
+\def\H{0.46}    % one row
+\def\X{3.15}    % left edge of cycle 0
+\def\Y{8.05}    % top edge of row 0
+
+\newcommand{\cxx}[1]{\X+#1*\W}
+\newcommand{\ryy}[1]{\Y-#1*\H}
+
+% a filled block: {row}{first cycle}{span}{role style}{label}
+\newcommand{\blk}[5]{%
+  \filldraw[#4]
+    (\cxx{#2}+0.04,\ryy{#1}-\H+0.05) rectangle (\cxx{#2}+#3*\W-0.04,\ryy{#1}-0.05);
+  \node[font=\tiny, inner sep=0pt, text=spInk]
+    at (\cxx{#2}+#3*\W/2,\ryy{#1}-\H/2) {#5};}
+\newcommand{\hblk}[4]{%
+  \filldraw[draw=spBlue, line width=0.3pt, pattern=north east lines,
+            pattern color=spMute]
+    (\cxx{#2}+0.04,\ryy{#1}-\H+0.05) rectangle (\cxx{#2}+#3*\W-0.04,\ryy{#1}-0.05);
+  \node[font=\tiny, inner sep=1pt, fill=white, fill opacity=0.85, text opacity=1,
+        text=spInk]
+    at (\cxx{#2}+#3*\W/2,\ryy{#1}-\H/2) {#4};}
+
+\path (0,0.42) rectangle (16.9,8.72);
+
+% ---- cycle ruler -----------------------------------------------------------
+\foreach \c in {0,...,19} {
+  \draw[spGrid, very thin] (\cxx{\c},\ryy{13}) -- (\cxx{\c},\Y);
+  \node[cyc] at (\cxx{\c}+\W/2,\Y+0.04) {\c};
+}
+\draw[spGrid, very thin] (\cxx{20},\ryy{13}) -- (\cxx{20},\Y);
+\node[font=\tiny, anchor=east, text=spMute] at (\X-0.10,\Y+0.14) {cycle};
+\draw[spMute, semithick] (\X,\Y) -- (\cxx{20},\Y);
+\foreach \r in {5,8} \draw[spMute!60, thin] (0.05,\ryy{\r}) -- (\cxx{20},\ryy{\r});
+\draw[spMute, semithick] (0.05,\ryy{13}) -- (\cxx{20},\ryy{13});
+
+% =====================================================================
+% BAND 1 -- the emitting PE, p
+% =====================================================================
+\node[grp, rotate=90, anchor=center, align=center] at (0.20,\ryy{3}) {PE $p$ \ \sv{btree\_fsm\_fast}};
+
+\node[rowlbl] at (\X-0.10,\ryy{1}-\H/2) {\textsf{IF} IMEM read};
+\blk{1}{0}{1}{fIss}{\texttt{i2}}
+\blk{1}{1}{6}{fHold}{held}
+\blk{1}{7}{1}{fIss}{---}
+
+\node[rowlbl] at (\X-0.10,\ryy{2}-\H/2) {\textsf{DE} presence gate};
+\blk{2}{0}{1}{fIss}{\texttt{i1}}
+\blk{2}{1}{6}{fStl}{\sv{de\_hazard}}
+\blk{2}{7}{1}{fIss}{\texttt{i2}}
+\blk{2}{8}{1}{fStl}{}
+
+\node[rowlbl] at (\X-0.10,\ryy{3}-\H/2) {\textsf{EX} add / TX enq.};
+\blk{3}{0}{1}{fEx}{\texttt{i0}}
+\blk{3}{7}{1}{fEx}{\texttt{i1}}
+\blk{3}{9}{1}{fEx}{\texttt{i2}}
+
+\node[rowlbl, text=spPurple!85!spInk] at (\X-0.10,\ryy{4}-\H/2) {GCI agent (\sv{noc\_ni})};
+\blk{4}{1}{4}{fIss}{\sv{gci\_ctr}$=0..3$}
+\blk{4}{5}{1}{fCom}{\sv{done}}
+
+\node[rowlbl] at (\X-0.10,\ryy{5}-\H/2) {DMEM wr / \sv{scoreboard}};
+\blk{5}{6}{14}{fPres}{\sv{scoreboard[$d$]}$=1$, monotone}
+\blk{5}{5}{1}{fCom}{wr $d$}
+\blk{5}{7}{1}{fCom}{wr $e$}
+
+% the interval the figure is named for -- drawn inside the empty left half of row 5
+\draw[{Stealth[length=1.6mm]}-{Stealth[length=1.6mm]}, semithick, spInk]
+  (\cxx{0}+0.06,\ryy{5}-\H/2) -- (\cxx{5}-0.02,\ryy{5}-\H/2);
+\node[note, fill=white, inner sep=0.8pt, anchor=center]
+  at (\cxx{2.5},\ryy{5}-\H/2) {GCI gap $=\GciLatency{+}2=6$\,cy};
+
+% =====================================================================
+% BAND 2 -- the network
+% =====================================================================
+\node[grp, rotate=90, anchor=center] at (0.20,\ryy{6}-\H) {network};
+\node[rowlbl] at (\X-0.10,\ryy{6}-\H/2) {TX $\to$ \sv{link\_tx}};
+\blk{6}{9}{1}{fEx}{enq}
+\blk{6}{10}{1}{fCom}{\sv{tx\_v}}
+\node[note, anchor=west, text=spMute] at (\cxx{11}+0.10,\ryy{6}-\H/2)
+  {sends only while \sv{credits}$>0$};
+
+\node[rowlbl] at (\X-0.10,\ryy{7}-\H/2) {NI $+$ \sv{noc\_router}};
+\hblk{7}{11}{4}{$\ge 1$ hop}
+
+% =====================================================================
+% BAND 3 -- the receiving PE, q
+% =====================================================================
+\node[grp, rotate=90, anchor=center] at (0.20,\ryy{10}-\H) {PE $q$ (receiver)};
+\node[rowlbl, text=spPurple!85!spInk] at (\X-0.10,\ryy{9}-\H/2) {PIU (RDMA-push)};
+\blk{9}{15}{1}{fIss}{acc}
+\blk{9}{16}{1}{fCom}{wr}
+
+\node[rowlbl] at (\X-0.10,\ryy{10}-\H/2) {\sv{scoreboard[$e'$]}};
+\blk{10}{17}{3}{fPres}{$=1$}
+
+\node[rowlbl] at (\X-0.10,\ryy{11}-\H/2) {\textsf{DE} at $q$};
+\blk{11}{0}{17}{fStl}{a \texttt{COMPUTE} at $q$ stalled here the whole time --- waiting on a \emph{bit}, not a cycle count}
+\blk{11}{17}{1}{fIss}{\texttt{go}}
+
+\node[rowlbl] at (\X-0.10,\ryy{12}-\H/2) {\textsf{EX} at $q$};
+\blk{12}{18}{1}{fEx}{\texttt{add}}
+\draw[-{Stealth[length=1.6mm]}, semithick, spGreen]
+  (\cxx{17.5},\ryy{10}-\H) -- (\cxx{17.5},\ryy{11});
+
+% =====================================================================
+% legend and the argument
+% =====================================================================
+\filldraw[fCom]
+  (0.10,\ryy{13}-0.42) rectangle (0.42,\ryy{13}-0.16);
+\node[note, anchor=west] at (0.48,\ryy{13}-0.29) {commit};
+\filldraw[fStl]
+  (1.55,\ryy{13}-0.42) rectangle (1.87,\ryy{13}-0.16);
+\node[note, anchor=west] at (1.93,\ryy{13}-0.29) {stall (presence gate)};
+\filldraw[fIss]
+  (4.55,\ryy{13}-0.42) rectangle (4.87,\ryy{13}-0.16);
+\node[note, anchor=west] at (4.93,\ryy{13}-0.29)
+  {issue \quad $\texttt{i0}=$\texttt{GENERATE}\,$d$; \ $\texttt{i1}=$\texttt{COMPUTE}\,$e\!\gets\! d+\mathrm{DMEM}[0]$; \ $\texttt{i2}=$\texttt{SEND}\,$e\to q$ \quad (\texttt{DMEM[0]} is the identity, always present)};
+
+\node[note, anchor=north west, text width=16.7cm] at (0.05,\ryy{13}-0.62)
+  {\textbf{Reading the chart.} Every stall in it is a presence gate, never a
+   timer: the compiler emits no delays and no barriers. The GCI gap is
+   \GciLatency{} cycles counted in \sv{gci\_ctr}, $+1$ to register \sv{gci\_done},
+   $+1$ for the DMEM write and the scoreboard set --- the only fixed non-unit
+   latency inside a PE --- and cycles 1--6 are held twice over, by
+   \sv{scoreboard[$d$]}$=0$ and again by \sv{gci\_data\_hazard}, which catches
+   the in-flight case the scoreboard cannot see. The hatched row is the only
+   quantity the figure declines to name, because it is set by the adjacency the
+   compiler loaded rather than by the RTL. Changing either row changes
+   \emph{when} the bottom row fires, never \emph{whether} it fires or what it
+   computes --- which is why the root word is identical across all
+   \CampPassing{} passing runs while their cycle counts are not. Should either
+   stall fail to clear, \sv{stall\_timer} $\ge 10{,}000$ or the retirement
+   watchdog $\ge \WatchdogMax$ ends the run in \sv{P\_ERROR} with a recorded
+   \sv{error\_pc}, so the chart has no path to a wrong answer, only to a halt.};
+\end{tikzpicture}

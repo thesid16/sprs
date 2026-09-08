@@ -1,0 +1,44 @@
+% ======================================================================
+% GENERATED FILE -- DO NOT EDIT BY HAND
+% Generator : paper/scripts/gen_selection.py
+% Generated : 2026-08-28T04:11:01.025985Z
+% Inputs    : /home/rohit/sprs-fix/data/results/live_hw_results_p1_maxpe.csv (2822 passing HW rows)
+%             <P1>/<inst>/sw_results.csv (40 x 180 = 7200 rows)
+%             /home/rohit/sprs-fix/benchmarks/instances.csv (N, G, topology)
+% Method    : champion equivalence class C_i = configurations whose MEASURED cycle
+%             count equals the per-instance minimum, with every simulated row expanded
+%             into its IMEM-hash (tb_hash) equivalence class. Tie-invariant by
+%             construction; independent of the CSV-arrival-order tie-break.
+% Coverage  : 39 of 40 instances have HW results (maxp_mod_fat excluded).
+% Regret    : measured cycles of the recommended set (min over its members, min over
+%             the ten S3 mappings) divided by the instance optimum. 1.000 = optimal.
+% Validation: portfolio membership re-selected exhaustively in each of 39
+%             leave-one-out folds; the k=1..4 selections were identical in 39/39 folds.
+% Layout note: typeset at \scriptsize with tightened column separation to fit
+% one IEEE column. Data unchanged from the generator.
+% ======================================================================
+
+\begin{table}[!t]
+\centering
+\caption{Derived algorithm-selection rule. For each regime, the S2 assignment algorithms a practitioner should run; the S3 mapping may be fixed to Identity throughout (Sec.~\ref{sec:selrule}). ``Opt.'' counts instances on which the recommended set attains the hardware-measured minimum cycle count exactly.}
+\label{tab:selection_rule}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}l@{\hspace{4pt}}r@{\hspace{4pt}}>{\raggedright\arraybackslash}p{0.215\linewidth}@{\hspace{4pt}}r@{\hspace{3pt}}r@{\hspace{3pt}}r@{}}
+\toprule
+Regime & $n$ & \multicolumn{1}{l}{Run these S2} & Opt. & Mean & Worst \\
+ & & \multicolumn{1}{l}{algorithms} & & regret & regret \\
+\midrule
+Default (any $N$, $G$, topology) & 39 & DSC, Lukes, Frederickson, ParSub & 38/39 & 1.003 & 1.099 \\
+\midrule
+\quad restricted to non-ring & 33 & Lukes, Frederickson, ParSub & 32/33 & 1.003 & 1.099 \\
+\quad restricted to ring$^{\dagger}$ & 6 & DSC, ParSub & 4/6 & 1.019 & 1.063 \\
+Budget $k{=}1$: $N\ge 2048$ & 10 & ParSub & 7/10 & 1.094 & 1.607 \\
+Budget $k{=}1$: $N<2048$, non-ring & 24 & Lukes & 17/24 & 1.076 & 1.853 \\
+Budget $k{=}1$: $N<2048$, ring$^{\dagger}$ & 5 & DSC & 2/5 & 1.092 & 1.300 \\
+Budget $k{=}2$ (any instance) & 39 & DSC, ParSub & 19/39 & 1.030 & 1.220 \\
+Budget $k{=}3$ (any instance) & 39 & DSC, Lukes, ParSub & 34/39 & 1.011 & 1.118 \\
+\bottomrule
+\multicolumn{6}{@{}p{0.95\linewidth}@{}}{\footnotesize $^{\dagger}$Rests on six (resp.\ five) ring instances of which three are positive; reported for completeness, not recommended as a standalone rule. No (N-bucket $\times$ topology) cell in the suite holds more than three instances, so no cell-level rule is derivable.}\\
+\end{tabular}
+\end{table}

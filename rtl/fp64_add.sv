@@ -99,6 +99,9 @@ module fp64_add (
             logic [54:0] m_big, m_small, m_aligned;
             logic [10:0] shift_amt;
             logic        sticky;   // OR of all bits shifted out during alignment
+            logic        align_round;  // MSB of the alignment tail (weight 1/2 guard-unit)
+            logic        align_low;    // OR of the alignment tail below align_round
+            logic        sub_borrow;   // effective subtraction consumed a borrow
             logic        effective_sub;
             logic [55:0] m_sum;  // 56 bits for possible carry
             logic [54:0] m_norm;
@@ -125,28 +128,46 @@ module fp64_add (
 
             // Align mantissas (right-shift smaller by exponent difference)
             // Track sticky bit: OR of all bits shifted out
+            // The tail is split into its MSB (align_round, weight 1/2 of a guard
+            // unit) and everything below it (align_low).  sticky is their OR and
+            // is bit-identical to the previous single-expression form; the split
+            // is what makes the effective-subtraction borrow roundable.
             if (shift_amt > 11'd54) begin
-                m_aligned = 55'd0;
-                sticky = |m_small;
+                m_aligned   = 55'd0;
+                align_round = 1'b0;                // m_small[54:] is zero, so bit
+                align_low   = |m_small;            // shift_amt-1 >= 54 is zero too
             end else if (shift_amt == 11'd0) begin
-                m_aligned = m_small;
-                sticky = 1'b0;
+                m_aligned   = m_small;
+                align_round = 1'b0;
+                align_low   = 1'b0;
             end else begin
-                m_aligned = m_small >> shift_amt;
-                // Sticky = OR of the shift_amt least-significant bits of m_small
-                sticky = |(m_small & ~({55{1'b1}} << shift_amt));
+                m_aligned   = m_small >> shift_amt;
+                align_round = m_small[shift_amt - 11'd1];
+                align_low   = |(m_small & ~({55{1'b1}} << (shift_amt - 11'd1)));
             end
+            sticky = align_round | align_low;
 
             // Effective operation
             effective_sub = (s_a != s_b);
 
+            sub_borrow = 1'b0;
             if (!effective_sub) begin
                 // Same sign: add mantissas
                 m_sum = {1'b0, m_big} + {1'b0, m_aligned};
                 s_r = s_a;
             end else begin
-                // Different signs: subtract (big - aligned, big is always >= aligned)
-                m_sum = {1'b0, m_big} - {1'b0, m_aligned};
+                // Different signs: subtract (big - aligned, big is always >= aligned).
+                // The bits truncated during alignment form a tail 0 < t < 1 guard
+                // unit whenever sticky=1.  The exact difference is
+                //     m_big - m_aligned - t
+                // so the raw m_big - m_aligned is too large by t and the ADDITION
+                // rounding rule below (guard && (sticky || lsb)) then rounds a
+                // value lying just BELOW the midpoint up, giving +1 ulp.  Borrow
+                // the tail here: the remainder becomes r = 1 - t, still strictly
+                // inside (0,1), so sticky stays 1 and the same rounding rule is
+                // now the correct one.
+                sub_borrow = sticky;
+                m_sum = {1'b0, m_big} - {1'b0, m_aligned} - {55'd0, sticky};
                 s_r = s_a;
                 // If result is negative (shouldn't happen since big >= small in magnitude)
                 // but handle exponent-equal case where fractions may differ
@@ -197,6 +218,19 @@ module fp64_add (
                                 m_norm = m_sum[54:0] << (lzc - 1);
                             else
                                 m_norm = 55'd0;
+                            // When a borrow was taken the remainder is r = 1 - t.
+                            // A left shift by one scales it to 2r, which leaves
+                            // (0,1) whenever t <= 1/2, i.e. whenever the tail is
+                            // not strictly greater than half a guard unit.  Carry
+                            // that whole unit into m_norm and recompute whether
+                            // anything is left below.  (For effective subtraction
+                            // a borrow implies m_sum >= 2^52, so lzc is 1 or 2 and
+                            // this is the only shift amount that can occur.)
+                            if (sub_borrow && (lzc == 2)) begin
+                                if (!(align_round && align_low))
+                                    m_norm = m_norm + 55'd1;   // 2r >= 1
+                                sticky = !(align_round && !align_low); // 2r-carry != 0
+                            end
                             if (e_norm > (lzc - 1))
                                 e_norm = e_norm - (lzc - 1);
                             else begin

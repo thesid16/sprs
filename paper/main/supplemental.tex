@@ -1,0 +1,286 @@
+%% =====================================================================
+%%  Supplemental material for
+%%  "Bitwise-Reproducible Reduction Across Cluster Reshape:
+%%   A Compiler/Fabric ABI"
+%%
+%%  Standalone companion document.  It carries the three appendices that
+%%  were typeset with the manuscript in earlier versions: the fifteen
+%%  assumptions, the assignment-algorithm catalogue with suite coverage,
+%%  and the reproducibility record.  Nothing here is new; every number
+%%  comes from the same generated macro files in data/ and the same
+%%  generated tables in tables/ that main.tex uses, so the two documents
+%%  cannot drift.
+%%
+%%  Build:  pdflatex supplemental && bibtex supplemental && pdflatex x2
+%%  Cross-references into the main paper resolve through main.aux (xr),
+%%  so build main.tex first.
+%% =====================================================================
+
+\documentclass[journal,10pt]{IEEEtran}
+
+% ---------- math and typesetting ----------
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+
+% ---------- graphics and figures ----------
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning,shapes.geometric,shapes.multipart,arrows.meta,%
+                calc,fit,backgrounds,patterns,decorations.pathreplacing,%
+                chains,scopes}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% ---------- tables ----------
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% ---------- citations and links ----------
+\usepackage{cite}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+\usepackage[table]{xcolor}
+\input{figures/_palette.tex}
+\usepackage{colortbl}
+\input{figures/_tablestyle.tex}
+
+% ---------- cross-references into the main manuscript ----------
+% Section, table, claim and definition numbers below are those of the main
+% paper, pulled from its .aux file rather than retyped, so a renumbering
+% there cannot leave a wrong number here.
+\usepackage{xr}
+\makeatletter
+\IfFileExists{main.aux}{\externaldocument[main-]{main}}{}
+\makeatother
+
+% ---------- theorem environments (numbering follows the main paper) ----------
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{claim}{Claim}
+\newtheorem{property}{Property}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newenvironment{structuralargument}{\begin{proof}[Structural argument]}{\end{proof}}
+
+% ---------- editorial placeholders ----------
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO:\,#1]}}}
+
+% ---------- convenience macros (identical to main.tex) ----------
+\newcommand{\FBT}{\ensuremath{\mathrm{FBT}}}
+\newcommand{\fadd}{\ensuremath{\mathrm{fadd}_{\mathrm{rtl}}}}
+\newcommand{\Rcan}{\ensuremath{R_{\mathrm{canonical}}}}
+\newcommand{\sprs}{\textsc{SPRS}}
+\newcommand{\sv}[1]{\texttt{#1}}
+\newcommand{\T}{\ensuremath{\mathcal{T}}}
+\newcommand{\asgn}{\ensuremath{\alpha}}
+\newcommand{\map}{\ensuremath{\mu}}
+
+\hyphenation{bit-wise re-duction topo-logy topo-logies score-board}
+
+\newcommand{\PENDING}[2]{\textbf{[PENDING #1: #2]}}
+\input{data/tournament_macros}
+\input{data/resource_macros}
+\input{data/coverage_macros}
+\input{data/claim_macros}
+\input{data/results_macros}
+\input{data/fabric_macros}
+\input{data/campaign_macros}
+\input{data/wround_macros}
+
+\begin{document}
+
+\title{Supplemental Material for\\
+``Bitwise-Reproducible Reduction Across Cluster Reshape:\\
+A Compiler/Fabric ABI''}
+
+\author{%
+Siddharth~Patel,
+Aman~Awasthi,
+Akshansh~Chaurasia,
+and~Rohit~Singh%
+\thanks{The authors are with the Department of Electrical Engineering, Shiv Nadar University, India.
+E-mail: \{sp839, aa634, ac198, rohit.singh\}@snu.edu.in}%
+}
+
+\maketitle
+
+\noindent
+This companion carries three appendices to the manuscript: the fifteen
+assumptions on which Claim~\ref{main-claim:1} and Property~\ref{main-prop:2} rest
+(\S\ref{app:assumptions}); the assignment-algorithm catalogue and the
+instance-suite coverage table (\S\ref{app:algos}); and the reproducibility
+record, including what each per-run verdict is and the standing disclosure
+that the software oracle is not independent of the RTL
+(\S\ref{app:repro}). Section, table, claim, definition and equation numbers
+that are not defined here are the manuscript's own, resolved from its
+auxiliary file rather than retyped. Every number is generated from the same
+data files the manuscript uses, so the two documents cannot disagree.
+
+% =====================================================================
+\appendices
+\section{The Fifteen Assumptions}\label{app:assumptions}
+% =====================================================================
+
+Five compiler obligations, discharged by the compiler or the user; ten fabric
+invariants, established by RTL inspection. The four marked~$\dagger$ are
+hypotheses of Property~\ref{main-prop:2} only: violating one can stop a run but
+cannot alter a root the fabric does produce.
+
+\emph{Compiler obligations.}
+\textsf{C-sw} (single-writer allocation for remote destinations): partitioning
+each PE's DMEM into \emph{receive buffers} --- addresses named as
+\texttt{target\_addr} by a remote \texttt{SEND} --- and \emph{local
+temporaries}, the image contains for every PE $p$ and receive buffer
+$a \neq 0$ exactly one write to $(p,a)$, and it is remote. Local temporaries
+are exempt: the allocator reuses them and their safety comes from in-order
+issue rather than single assignment. The scoping is load-bearing and the two
+classes are disjoint by construction; on the emitted images of
+\RecycleConfigs{} configurations the recycled and remotely-written address
+sets never intersect, and no operand is read after the write that recycles its
+slot (\RecycleUnsafe{} such events in \RecycleEvents{}).
+\textsf{C-bind} and \textsf{C-leaf} are Defs.~\ref{main-def:opbind}
+and~\ref{main-def:leafbind}, checked as post-conditions on the emitted image.
+\textsf{C-mem} (memory feasibility): every PE names at most
+$\sv{DMEM\_DEPTH} = \DmemDepth$ distinct DMEM addresses and every emitted
+router id is below the adjacency sentinel (\RouterIdBits{} bits, at most
+\RouterIdMax). Neither is enforced at run time --- the fabric truncates DMEM
+and \texttt{SEND} target addresses to \SendAddrBits{} bits, so an over-budget
+image aliases two addresses onto one slot silently, and out-of-range router
+ids alias onto low ids, which is what stopped one instance from ever settling
+(\S\ref{main-sec:limitations}, L0) --- but both are cheap to discharge, peak
+occupancy being an $O(N)$ read-off the allocator already maintains.
+$\dagger$\,\textsf{C-route}: the emitted tables encode destination-correct,
+loop-free paths. We claim those two properties only; the tables are
+minimal-distance rather than dimension-ordered, so we do not claim an acyclic
+channel-dependency graph.
+
+\emph{Fabric invariants.}
+\textsf{F-sb-mono}: for every receive buffer $a$, \texttt{scoreboard[a]}
+transitions $0\to1$ at most once per program, at the clock edge of the unique
+remote write, and stays set until reset.
+\textsf{F-sb-gate}: \texttt{COMPUTE} stalls \textsf{DE}$\to$\textsf{EX} until
+both operand bits are $1$, \texttt{SEND} until its source bit is.
+\textsf{F-fw}: a DMEM read at cycle $t$ returns the value committed by the
+unique write at cycle $\leq t$, even across the adjacent-cycle race.
+\textsf{F-inorder}: each PE issues in order through
+\textsf{IF}$\to$\textsf{DE}$\to$\textsf{EX}, one instruction at a time,
+sampling both operands at the \textsf{DE} read port strictly before writing
+back in \textsf{EX} --- which is what makes local-temporary reuse safe, since
+the scoreboard cannot, a recycled slot's bit being already set.
+\textsf{F-gci-haz}: from \sv{gci\_start} until the GCI agent commits,
+\textsf{DE} stalls any \texttt{COMPUTE} or \texttt{SEND} naming the pending
+destination.
+\textsf{F-arb}: strict priority $\mathrm{PIU} > \mathrm{GCI} > \mathrm{FSM}$
+with a GCI retry latch; no write is silently dropped.
+\textsf{F-fadd}: \sv{fp64\_add.sv} is combinational and stateless, its output
+a pure function of the two 64-bit inputs sampled at the EX clock edge.
+$\dagger$\,\textsf{F-credit}: per link and interval,
+$\#\mathrm{credit\_returns} \leq \#\mathrm{buffer\_reads}$ with bounded wait.
+$\dagger$\,\textsf{F-misroute}: packets whose \sv{dest\_gpu\_id} does not
+match the local PE are dropped, not silently consumed.
+$\dagger$\,\textsf{F-watchdog}: a stall exceeding
+$\sv{WATCHDOG\_MAX} = \WatchdogMax$ cycles raises \texttt{P\_ERROR}, as does
+an invalid opcode immediately.
+
+
+% =====================================================================
+\section{Assignment Algorithms and Suite Coverage}\label{app:algos}
+% =====================================================================
+
+\begin{table}[!t]
+\caption{Assignment (S2) algorithms by family, with champion-class membership
+  across the \TournNInst{} HW-validated instances --- the share of instances
+  on which the algorithm produces a configuration whose measured cycle count
+  equals the instance minimum. $\star$ marks the four members of the derived
+  portfolio (\S\ref{main-sec:selrule}). Membership is invariant to the tie
+  structure of \S\ref{main-sec:results-classes}; a win count is not, which is why
+  this column replaces the winner shares of earlier versions.}
+\label{tab:catalogue}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\input{tables/catalogue}
+\end{table}
+
+\begin{table}[!t]
+\caption{Instance-suite cell counts by $N$-bucket and topology; rows and
+  columns both sum to the \SuiteSize-instance total. \SuiteThinCells{} of the
+  populated cells hold two instances or fewer and \SuiteEmptyCells{} are
+  empty, which is the basis for L5.}
+\label{tab:coverage}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\input{tables/coverage}
+\end{table}
+
+Table~\ref{tab:catalogue} lists the eighteen assignment algorithms, ordered
+by family and deliberately not by membership: below the top four they are not
+distinguishable from one another on a suite of this size and should be read as
+a block. A zero share does not mean an algorithm is useless --- it means the
+algorithm never matched the instance minimum here, and several zero-share
+algorithms are close seconds. Where an algorithm is not evaluable on every
+instance the denominator is the eligible subset; \sv{ExactBB} in particular is
+size-gated beyond $N \approx 64$, so its figure reflects unavailability rather
+than defeat. The mapping stage is absent by design: all ten mapping algorithms
+attain the champion cycle count on \ClsAllMappings{} of \TournNInst{}
+instances, so no per-mapping share is reportable. Provenance for the
+implementations from the literature: list scheduling follows HEFT and
+CPOP~\cite{topcuoglu2002heft} and Hu's level-based bound~\cite{hu1961parallel};
+tree dynamic programming follows Lukes~\cite{lukes1974efficient}; clustering
+follows DSC~\cite{yang1994dsc}; multilevel and graph partitioning follow
+Karypis and Kumar~\cite{karypis1998multilevel} with Fiduccia--Mattheyses
+refinement~\cite{fiduccia1982linear}. The remainder are our own constructions
+and are marked as such in the released source. Table~\ref{tab:coverage} gives
+the coverage the suite achieves; its unevenness is what bounds every
+scale-dependent statement in \S\ref{main-sec:selrule}.
+
+% =====================================================================
+\section{Reproducibility}\label{app:repro}
+% =====================================================================
+
+\emph{Artefacts.} The ten fabric sources of \S\ref{main-sec:results}, the
+compiler and its testbench generator, the mutation harness for both injected
+classes, the pinned-FBT implementation of \S\ref{main-sec:pinfbt} and the result
+files behind every table and figure are released with the paper and will be
+deposited under a persistent identifier; the three FPGA bring-up wrappers need
+IP and board constraints we do not redistribute. Everything reported here was
+tested under Vivado xsim 2025.2 on Linux. The compiler is Python~3.9+,
+deterministic under insertion-ordered dict semantics, with RNG seeds pinned at
+$42$.
+
+\emph{What each verdict is.} The per-run verdict is the emitted testbench's
+comparison of the fabric's result against the canonical root carried as a
+compile-time \sv{EXPECTED} constant. The \textsf{C-*} obligations are a
+static audit over the released images (\S\ref{main-sec:compiler}), not checks that
+ran inside the compile loop. We ship no SystemVerilog assertion suite and no
+claim here rests on one.
+
+\emph{The oracle is not independent, and this is where that is recorded.}
+The Python $\fadd$ mirror is a transcription of \sv{fp64\_add.sv}, not an
+independent model: it is bit-identical to the repaired RTL on
+\FpAcceptVectors{} vectors (\FpAcceptMismatch{} mismatches), and on the
+as-submitted pair --- the negative control --- the two agree with each other
+while both disagree with correctly-rounded addition on \FpCtrlErrors{} of
+\FpCtrlVectors{} vectors (\S\ref{main-sec:fabric-fadd}, L13).
+
+\emph{Reproducing a root.} Leaf $i$ carries $L_i$ from~\eqref{main-eq:leaves}, and
+every HW-validated configuration at the same $N$ produces a $64$-bit root
+whose hash matches the corresponding column of Table~\ref{main-tab:invariance}.
+
+% IEEEtran.bst is not installed in this build environment; ieeetr is the
+% IEEE base style shipped with TeX Live and produces the same numbering.
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\end{document}

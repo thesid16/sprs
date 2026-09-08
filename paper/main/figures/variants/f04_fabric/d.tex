@@ -1,0 +1,199 @@
+% f04_fabric variant d -- inside one noc_router: VC steering, the route table,
+% the two-level round-robin allocator, the crossbar, the shared egress FIFO and
+% the credit path -- and the fact that not one fail-stop detector is in any of it.
+% Target: IEEE double column (figure*).  Fixed 16.9cm canvas -- the standalone
+% wrapper is varwidth=17cm, so 17.6cm would be cropped in the guide preview.
+% Data : rtl/noc_router.sv (the three stages named in its own header; VC steering
+%          on rx_data[64 -: VC_W]; ibuf_wen = rx_valid && ibuf_wrdy; route_table
+%          [ROUTE_TABLE_DEPTH] config-only, no reset, initial '0; rr_ptr[oport]
+%          over NUM_PORTS*NUM_VCS candidates, advanced only on a grant; one
+%          egress sync_fifo per port shared across VCs; credit_pending/credit_pulse
+%          serialiser), rtl/link_tx.sv (8-bit credits, init RX_BUF_DEPTH,
+%          tx_valid = send_en && credits>0, credit-only, no ARQ),
+%          rtl/sync_fifo.sv, rtl/btree_fsm_fast.sv (the detectors that do exist:
+%          invalid_opcode, stall_timer >= TIMEOUT_MAX 10,000, watchdog >=
+%          WATCHDOG_MAX -> \WatchdogMax, all terminating in P_ERROR with error_pc;
+%          piu_misroute).  data/fabric_macros.tex, data/resource_macros.tex,
+%          data/claim_macros.tex.
+% Strategy: ONE MODULE, AND WHAT IT DOES NOT CONTAIN.  a and b show the router as
+% a box in a system; c shows it as a latency.  This variant opens it, and in
+% doing so makes the argument neither of the others can: the manifest asks for
+% the fail-stop detectors to be marked on the router, and the honest answer is
+% that there are none -- every fault site inside the router is silent by
+% construction, and fail-stop is a property established one layer up, where a
+% lost or misdelivered flit shows up as an operand that never becomes present.
+% Marking the absent detectors is the point of the drawing.
+% Colour: the forward flit path is the compliant datapath (spBlue, heavy) and
+% the combinational blocks that steer it are spBlue on a tint; storage --- VC
+% FIFOs, route table, egress FIFO, pending-credit register --- is spSky, as in
+% variant a, and the backward credit loop is the same sky hue, dashed.  The four
+% circled sites are spAmber, the caution register: they are not confirmed-safe
+% (spGreen) and not violations (spVerm), they are places where a loss would be
+% SILENT because nothing looks.  The one spVerm object in the drawing is the
+% panel naming the detectors that do exist, all of them outside this module.
+% Circle shape, numbering, dash pattern and rule weight carry every one of those
+% distinctions with the colour stripped.
+\begin{tikzpicture}[
+  font=\scriptsize,
+  bx/.style   ={draw=spBlue, semithick, rounded corners=1.2pt, align=center,
+                inner sep=2pt, font=\tiny, text=spInk},
+  mem/.style  ={bx, draw=spSky!80!spInk, fill=spSkyF},
+  logic/.style={bx, fill=spBlueF},
+  ar/.style   ={-{Stealth[length=1.7mm,width=1.3mm]}, semithick, spMute},
+  hot/.style  ={-{Stealth[length=2.0mm,width=1.6mm]}, line width=1pt, spBlue},
+  cred/.style ={-{Stealth[length=1.7mm,width=1.3mm]}, semithick,
+                spSky!80!spInk, densely dashed},
+  stg/.style  ={font=\tiny\bfseries, anchor=south west, inner sep=0pt, text=spInk},
+  sil/.style  ={circle, draw=spAmber!85!spInk, line width=0.7pt, fill=spAmber!35,
+                inner sep=0pt, minimum size=3.4mm, font=\tiny\bfseries,
+                text=spInk},
+  note/.style ={font=\tiny, align=left, inner sep=1pt, text=spInk},
+]
+\path (0,0.02) rectangle (16.9,8.86);
+
+% ---- stage frames ----------------------------------------------------------
+\draw[spMute, dotted, thick, rounded corners=3pt] (0.12,4.42) rectangle (4.62,8.30);
+\draw[spMute, dotted, thick, rounded corners=3pt] (4.86,4.42) rectangle (9.34,8.30);
+\draw[spMute, dotted, thick, rounded corners=3pt] (9.58,4.42) rectangle (13.10,8.30);
+\node[stg] at (0.12,8.36) {Stage 1 --- input buffering};
+\node[stg] at (4.86,8.36) {Stage 2 --- routing $+$ allocation};
+\node[stg] at (9.58,8.36) {Stage 3 --- switch traversal $+$ egress};
+
+% =====================================================================
+% STAGE 1
+% =====================================================================
+\node[bx, fill=white, minimum width=3.90cm, minimum height=0.52cm] (IN) at (2.37,7.92)
+  {one of $P$ input ports: \sv{rx\_valid}, \sv{rx\_data[95:0]}};
+\node[logic, minimum width=3.90cm, minimum height=0.86cm, text width=3.70cm]
+  (STEER) at (2.37,7.02)
+  {\textbf{VC steering} --- \sv{rx\_data[64 -: VC\_W]}\\
+   a \emph{header} bit above the FP64 payload, so the VC never depends on the
+   value being carried};
+\node[mem, minimum width=1.80cm, minimum height=0.62cm] (V0) at (1.42,5.92)
+  {VC0 \sv{sync\_fifo}};
+\node[mem, minimum width=1.80cm, minimum height=0.62cm] (V1) at (3.32,5.92)
+  {VC1 \sv{sync\_fifo}};
+\node[note, anchor=north, text width=3.85cm, text=spMute] (S1N) at (2.50,5.42)
+  {\NumVcs{} VCs $\times$ \BufDepthSim{} flits per port in every emitted
+   testbench (RTL default \BufDepthRtl).\\
+   \sv{ibuf\_wen = rx\_valid \&\& ibuf\_wrdy}.};
+\draw[hot] (IN) -- (STEER);
+\draw[ar] (STEER.south) -- (1.42,6.23);
+\draw[ar] (STEER.south) -- (3.32,6.23);
+\node[sil] (M1) at (0.46,6.28) {1};
+
+% =====================================================================
+% STAGE 2
+% =====================================================================
+\node[mem, minimum width=3.95cm, minimum height=0.96cm, text width=3.75cm]
+  (RC) at (7.10,7.78)
+  {\textbf{route table} --- \sv{route\_table[\,pkt[95:80] \& (DEPTH$-$1)\,]}
+   $\to$ egress port. \sv{ROUTE\_TABLE\_DEPTH} $=4096$; write-only config port,
+   no reset, \sv{initial} all-zero.};
+\node[logic, minimum width=3.95cm, minimum height=1.12cm, text width=3.75cm]
+  (AL) at (7.10,6.20)
+  {\textbf{two-level round-robin} --- for each output port, \sv{rr\_ptr[oport]}
+   scans all $P\times\NumVcs{}$ (port,\,VC) candidates and takes the first that
+   wants it: one winner per output port per cycle, \sv{rr\_ptr} advancing only
+   on a grant.};
+\node[note, anchor=north, text width=4.10cm, text=spMute] at (7.10,5.42)
+  {Both stages are combinational --- the router holds no state between a flit
+   reaching the head of its VC and its egress write.};
+\draw[hot] (V1.east) -- (4.74,5.92) -- (4.74,7.78) -- (RC.west);
+\draw[hot] (RC) -- (AL);
+\node[sil] (M2) at (9.06,7.78) {2};
+
+% =====================================================================
+% STAGE 3
+% =====================================================================
+\node[logic, minimum width=3.00cm, minimum height=0.62cm] (XB) at (11.34,7.82)
+  {\textbf{crossbar} $P\times P$};
+\node[mem, minimum width=3.00cm, minimum height=0.80cm, text width=2.80cm]
+  (OB) at (11.34,6.82)
+  {\textbf{egress FIFO}, one per port, \emph{shared} across VCs --- VCs exist on
+   the input side only};
+\node[logic, minimum width=3.00cm, minimum height=0.92cm, text width=2.80cm]
+  (LT) at (11.34,5.66)
+  {\sv{link\_tx} --- \sv{tx\_valid = send\_en \&\& credits>0};
+   \sv{credits} 8\,b, reset to \sv{RX\_BUF\_DEPTH}. Credit-only, no ARQ.};
+\draw[hot] (AL.east) -- (9.46,6.20) -- (9.46,7.82) -- (XB.west);
+\draw[hot] (XB) -- (OB);
+\draw[hot] (OB) -- (LT);
+\draw[hot] (LT.south) -- (11.34,4.86);
+\node[note, anchor=north, text=spMute, fill=white, inner sep=1.2pt]
+  at (11.34,4.84) {to the next router, or to port~0's NI};
+\node[sil] (M3) at (13.32,5.66) {3};
+
+% =====================================================================
+% CREDIT RETURN -- the loop that closes the drawing
+% =====================================================================
+\node[logic, minimum width=2.60cm, minimum height=0.66cm, text width=2.40cm]
+  (CN) at (2.37,3.72)
+  {\sv{new\_reads} $=\sum_v$ \sv{ibuf\_ren[p][v]}};
+\node[mem, minimum width=3.10cm, minimum height=0.66cm, text width=2.90cm]
+  (CP) at (6.10,3.72)
+  {\sv{credit\_pending[p]}, \CreditCtrBits{} bits --- wraps at a backlog of
+   \CreditCtrWrap};
+\node[logic, minimum width=2.60cm, minimum height=0.66cm, text width=2.40cm]
+  (CU) at (9.60,3.72)
+  {\sv{credit\_pulse[p]} --- at most one credit per cycle};
+\draw[cred] (V0.west) -- (0.24,5.92) -- (0.24,3.72) -- (CN.west);
+\draw[cred] (CN) -- (CP);
+\draw[cred] (CP) -- (CU);
+\draw[cred] (CU.east) -- (11.34,3.72) -- (11.34,4.10);
+\node[note, anchor=west, text=spMute] at (11.50,3.72) {and upstream, as \sv{credit\_out}};
+\node[sil] (M4) at (7.90,3.30) {4};
+
+% =====================================================================
+% THE FOUR MARKED SITES -- the caution register, not a failure register
+% =====================================================================
+\node[note, anchor=north west, text width=12.80cm] (SITES) at (0.14,2.92)
+  {\textbf{\textcolor{spAmber!80!spInk}{The circled sites are the four places a
+   flit or a credit can be lost or misdelivered inside this module. None of them
+   has a detector, and that is deliberate, not an omission.}}\\[2pt]
+   \textbf{\textcolor{spAmber!80!spInk}{1}} \ A flit arriving at a full VC FIFO
+   is dropped: \sv{ibuf\_wen}
+   requires \sv{ibuf\_wrdy}, and the \sv{else} branch is silence. The credit
+   protocol is supposed to make this unreachable; nothing checks that it did.\\
+   \textbf{\textcolor{spAmber!80!spInk}{2}} \ \sv{route\_table} has no reset and
+   initialises to zero, so a
+   destination the compiler never wrote routes to port~0 --- the local NI ---
+   and is delivered to the wrong PE rather than refused.\\
+   \textbf{\textcolor{spAmber!80!spInk}{3}} \ \sv{credits} is a free-running
+   up/down counter with no bound
+   check; a leaked or duplicated credit is indistinguishable from a correct one.\\
+   \textbf{\textcolor{spAmber!80!spInk}{4}} \ The pending-credit register is
+   \CreditCtrBits{} bits and wraps at
+   \CreditCtrWrap{}. It is provably never reached at $\NumVcs$ VCs, but the
+   wrap itself is unguarded.};
+\begin{scope}[on background layer]
+  \node[draw=spAmber, line width=0.4pt, fill=spAmberF, rounded corners=3pt,
+        fit=(SITES), inner sep=3.5pt] {};
+\end{scope}
+
+% =====================================================================
+% WHERE FAIL-STOP ACTUALLY LIVES
+% =====================================================================
+\draw[spVerm, semithick, dashed, rounded corners=3pt, fill=spVermF]
+  (13.26,0.10) rectangle (16.80,3.30);
+\node[note, anchor=north west, text width=3.26cm, font=\tiny] at (13.40,3.16)
+  {\textbf{\textcolor{spVerm}{Where the detectors are.}}\\[2pt]
+   Not here. Every one of them is in \sv{btree\_fsm\_fast}, on the far side of
+   the network:\\[2pt]
+   $\bullet$ \sv{invalid\_opcode} (any code $>$\,\sv{4'h3})\\
+   $\bullet$ \sv{stall\_timer} $\ge 10{,}000$\\
+   $\bullet$ \sv{watchdog} $\ge \WatchdogMax$ retirement-free cycles\\[2pt]
+   each latching \sv{P\_ERROR} with the offending \sv{error\_pc}; plus
+   \sv{piu\_misroute}.};
+
+\node[note, anchor=north west, text width=12.80cm] at (0.14,0.48)
+  {\textbf{Why that is enough.} Sites 1--4 can only make a flit \emph{not arrive},
+   or arrive \emph{somewhere else}. Either way the operand slot the receiving
+   \texttt{COMPUTE} is waiting on never has its presence bit set, the instruction
+   never leaves \textsf{DE}, and the retirement watchdog converts the network
+   fault into a halt with a recorded \sv{error\_pc}. A router that detected its
+   own faults would add a second, redundant reporting path; a router that
+   silently \emph{repaired} them --- retry, reorder, drop-and-continue --- would
+   break the property, because the run would finish with a plausible wrong root
+   instead of stopping.};
+\end{tikzpicture}

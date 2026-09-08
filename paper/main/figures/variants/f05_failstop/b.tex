@@ -1,0 +1,84 @@
+% f05_failstop variant b -- one operand's path, from the wire to either a
+% retired COMPUTE or P_ERROR, as a decision tree.
+% Data: rtl/btree_fsm_fast.sv -- PIU ingress and the misroute drop
+%       (l.311-321: piu_pkt[95:80] == gpu_id else drop, flag, return credit),
+%       the DMEM write and scoreboard set (l.336-337, l.712-713), the DE
+%       presence gate (l.514-521), invalid_opcode (l.758), watchdog
+%       (l.775-785) and the P_RUN traps (l.813-827); packet field widths from
+%       rtl/btree_pkg.sv l.62-67. WATCHDOG_MAX is \WatchdogMax.
+%       Named assumptions and Property 2 from main.tex.
+% Strategy: follow ONE operand rather than draw the machine. Every named
+% assumption that can strand a packet enters at the same point, and every
+% path that does not set a presence bit funnels into one halt -- which is the
+% claim of Property 2 stated as a route, not as a state space.
+% Colour: the compliant route down the left is spBlue and ends in spGreen, the
+% retired COMPUTE. Everything on the right -- the entry causes, the misroute
+% drop, the stall that never clears and the two P_ERROR terminals -- is spVerm,
+% so the halt reads as one continuous column rather than as four separate
+% outcomes. The converse bound in the closing note is the single spAmber
+% caution, as in f04 variant b. Box weight (terminals heavy, steps light), the
+% dashed cause frame and the yes/no edge labels carry the split without colour.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  bx/.style={draw=spBlue, line width=0.4pt, rounded corners=2pt, fill=spBlueF,
+             font=\scriptsize, align=center, inner sep=2.5pt, text width=26mm,
+             text=spInk},
+  dec/.style={draw=spBlue, line width=0.55pt, fill=white, font=\scriptsize,
+              align=center, inner sep=2.5pt, text width=26mm, text=spInk},
+  bxv/.style={bx, draw=spVerm, fill=spVermF},
+  fail/.style={bx, draw=spVerm, fill=spVerm!22, line width=0.9pt},
+  good/.style={bx, draw=spGreen, fill=spGreen!22, line width=0.8pt},
+  src/.style={draw=spVerm, dashed, line width=0.4pt, rounded corners=2pt,
+              fill=white, font=\tiny, align=left, inner sep=2.5pt, text=spInk},
+  ar/.style={-{Latex[length=1.6mm,width=1.2mm]}, draw=spBlue, line width=0.4pt},
+  arG/.style={ar, draw=spGreen},
+  arV/.style={-{Latex[length=1.8mm,width=1.35mm]}, draw=spVerm, line width=0.6pt},
+  yn/.style={font=\tiny, inner sep=1pt, text=spInk},
+]
+% ---- the entry causes -------------------------------------------------
+\node[src, anchor=north west] (CAUSE) at (-0.30,0.55)
+  {\emph{four ways an operand fails to arrive}\\
+   \textsf{F-misroute} wrong \sv{dest\_gpu\_id} \ \ \textsf{F-credit} lost credit / NI FIFO drop\\
+   \textsf{C-route} unreachable destination \ \ \textsf{C-bind} slot no agent writes};
+
+% ---- the chain --------------------------------------------------------
+\node[dec] (D1) at (1.85,-1.30)
+  {\sv{piu\_pkt[95:80]}\\$=$ \sv{gpu\_id}?};
+\node[bx]  (WR) at (1.85,-2.65)
+  {write \sv{DMEM[}\sv{piu\_pkt[79:70]}\sv{]};\\
+   \sv{scoreboard[addr]}$\leftarrow 1$};
+\node[dec] (D2) at (1.85,-4.05)
+  {at \textsf{DE}: both\\\sv{scoreboard} bits $1$?};
+\node[good] (GO) at (1.85,-5.45)
+  {\textsf{EX}: \sv{COMPUTE} retires\\(\textsf{F-fadd}); \sv{watchdog}$\leftarrow 0$};
+
+\node[bxv] (DROP) at (5.30,-1.30)
+  {drop the packet,\\return the credit,\\write nothing};
+\node[bxv] (STALL) at (5.30,-4.05)
+  {\textsf{DE} stalls;\\\sv{watchdog}$+{+}$ each cycle\\with no retirement};
+\node[fail] (ERR) at (5.30,-5.60)
+  {\sv{watchdog} $\geq$ \WatchdogMax\\$\Rightarrow$ \sv{P\_ERROR}, \sv{error\_pc} latched\\
+   \sv{all\_done} never asserted};
+
+\draw[arV] (CAUSE.south -| D1) -- (D1);
+\draw[ar] (D1) -- node[yn, left]{yes} (WR);
+\draw[ar] (WR) -- (D2);
+\draw[arG] (D2) -- node[yn, left]{yes} (GO);
+\draw[arV] (D1) -- node[yn, above]{no} (DROP);
+\draw[arV] (D2) -- node[yn, above]{no} (STALL);
+\draw[arV] (DROP) -- node[yn, right, align=left]{the bit stays $0$}  (STALL);
+\draw[arV, line width=0.9pt] (STALL) -- (ERR);
+
+% ---- the immediate trap ----------------------------------------------
+\node[fail, anchor=north west, text width=38mm] (OPC) at (-0.30,-6.45)
+  {a fourth entry, off this path:\\\sv{ex\_opcode} $>$ \sv{4'h3} raises\\
+   \sv{P\_ERROR} at once, no wait};
+
+\node[font=\tiny, anchor=north west, align=left, text=spInk] at (3.75,-6.50)
+  {Every path that does not set a presence\\
+   bit ends at the same halt: nothing\\
+   reaches the root unchecked. But the\\
+   \textcolor{spAmber!80!spInk}{check is presence, not value} --- an\\
+   operand present and wrong retires\\
+   normally (Property 2's converse bound).};
+\end{tikzpicture}

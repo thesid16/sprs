@@ -1,0 +1,222 @@
+%% SPRS conference talk (~20 minutes).
+%% Figures are \input from the paper's own variant sources, so the slides show the
+%% same vectors the paper prints -- nothing is redrawn or exported for the talk.
+\documentclass[aspectratio=169,10pt]{beamer}
+\usetheme{default}
+\usecolortheme{seagull}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamercolor{frametitle}{fg=black}
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\setbeamertemplate{itemize items}[circle]
+\input{preamble}
+
+\title{Bitwise-Reproducible Reduction Across Cluster Reshape}
+\subtitle{A Compiler/Fabric ABI}
+\author{}
+\date{}
+
+\begin{document}
+
+\begin{frame}\titlepage\end{frame}
+
+% ---------------------------------------------------------------- 1. problem
+\begin{frame}{The same sum, twice, different answers}
+\begin{columns}[T]
+\begin{column}{0.52\textwidth}
+\small
+Reduce the \emph{identical} bytes on a cluster.\\[2pt]
+Reshape it. Reduce again.
+\begin{itemize}\small
+  \item Floating-point addition is not associative.
+  \item Changing the worker count changes \emph{which operands pair}.
+  \item So the bit pattern changes.
+\end{itemize}
+\vspace{4pt}
+We measured it rather than asserting it: across \GpuWorldSizes{} world sizes,
+\GpuRootsDistinct{} distinct roots on identical input.
+\end{column}
+\begin{column}{0.46\textwidth}
+\figvar[1.0]{f01_premise/a}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Why this matters}
+\begin{itemize}
+  \item Debugging: a run that cannot be reproduced cannot be bisected.
+  \item Regulation and audit: ``same input, same output'' is often a requirement.
+  \item Elasticity: cloud clusters reshape \emph{by design}.
+\end{itemize}
+\vspace{6pt}
+\begin{block}{The usual answers}
+Fix the worker count (gives up elasticity), or sort/compensate at every step
+(costly, and still order-dependent under reshape).
+\end{block}
+\end{frame}
+
+% ---------------------------------------------------------------- 2. theory
+\begin{frame}{The idea: name one order, and make it a contract}
+\begin{columns}[T]
+\begin{column}{0.46\textwidth}\small
+Fix a \emph{canonical} reduction tree $\FBT(N)$ --- heap-indexed, leaves in
+ascending index order.
+
+\vspace{4pt}
+The result is defined by the \emph{tree}, not by the machine that walks it.
+
+\vspace{4pt}
+The compiler must prove it emits that tree; the fabric must refuse to execute
+anything else.
+\end{column}
+\begin{column}{0.52\textwidth}
+\figvar[1.0]{f02_canonical_tree/a}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Claim 1 --- the root does not depend on the topology}
+\figvar[0.86]{f03_claim1/a}
+\vspace{-2pt}
+\begin{center}\small
+Routes differ. The reduction DAG does not. The 64-bit root does not.
+\end{center}
+\end{frame}
+
+% ---------------------------------------------------------------- 3. hardware
+\begin{frame}{The fabric enforces it below the software}
+\figvar[0.80]{f04_fabric/a}
+\end{frame}
+
+\begin{frame}{Property 2 --- fail-stop, not wrong-answer}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}\small
+A missing or misrouted operand must \emph{halt} the run.
+
+\vspace{4pt}
+It must never silently produce a different root --- a wrong answer that looks
+like a right one is the failure mode that matters.
+\end{column}
+\begin{column}{0.50\textwidth}
+\figvar[1.0]{f05_failstop/a}
+\end{column}
+\end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------- 4. software
+\begin{frame}{The compiler discharges the obligations}
+\figvar[0.82]{f06_compiler/a}
+\end{frame}
+
+% ---------------------------------------------------------------- 5. co-run
+\begin{frame}{The campaign}
+\begin{columns}[T]
+\begin{column}{0.46\textwidth}
+\figvar[1.0]{f07_campaign/a}
+\end{column}
+\begin{column}{0.50\textwidth}\small
+\begin{itemize}\small
+  \item \CampAttempted{} compilations attempted
+  \item \CampPassing{} passing hardware runs
+  \item \TournNInst{} of \SuiteSize{} instances hardware-validated
+  \item 6 topologies, $N$ from 8 to 8192
+\end{itemize}
+\vspace{4pt}
+The 40th instance elaborates completely; the simulator emits no kernel for it.
+We report that, and assert no cause.
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Cross-topology invariance holds}
+\begin{itemize}
+  \item Every passing configuration yields a single root per instance.
+  \item Mutation testing: the oracle is not vacuous --- reordering
+        \emph{does} change the root, at \OrderLRDiff{} of the sixteen leaf counts.
+\end{itemize}
+\vspace{6pt}
+\figvar[0.62]{f09_omega/a}
+\end{frame}
+
+\begin{frame}{Which algorithm should you actually run?}
+\begin{columns}[T]
+\begin{column}{0.54\textwidth}
+\figvar[1.0]{f10_selection/a}
+\end{column}
+\begin{column}{0.42\textwidth}\small
+A portfolio of \textbf{four} configurations, run and minimised over:
+\begin{itemize}\small
+  \item \SelUnseenTopoMean{} mean regret on a topology it \emph{never saw}
+        (95\% CI [\SelUnseenTopoLo, \SelUnseenTopoHi])
+  \item vs \SelCondTopoMean{} for a rule that \emph{conditions} on topology
+\end{itemize}
+\vspace{4pt}
+Ignoring topology beats conditioning on it.
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{What it costs, in software}
+\begin{columns}[T]
+\begin{column}{0.56\textwidth}
+\figvar[1.0]{f11_export_cost/a}
+\end{column}
+\begin{column}{0.40\textwidth}\small
+Pre-registered, and unfavourable:
+\begin{itemize}\small
+  \item \PinCostGeo$\times$ stock \texttt{ncclAllReduce} at $G{=}2$
+  \item provisional --- measured under GPU contention
+  \item about half of it is algorithmic at $G{=}2$, not an implementation defect
+\end{itemize}
+\vspace{4pt}
+We pre-registered this comparison before running it, and report the branch we hit.
+\end{column}
+\end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------- 6. honesty
+\begin{frame}{What we got wrong}
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}\small
+Our own FP64 adder had a defect on effective subtraction --- and our Python
+oracle was a transcription of that RTL, so it agreed.
+
+\vspace{4pt}
+Found by scoring against references \emph{external} to the design: exact
+rationals and the host FPU.
+
+\vspace{4pt}
+\FpAcceptErrors{} errors on \FpAcceptVectors{} vectors after repair, beside a
+control that fires on \FpCtrlErrors{} of \FpCtrlVectors{}.
+\end{column}
+\begin{column}{0.48\textwidth}
+\figvar[1.0]{f12_fp64_defect/a}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Limitations we are not hiding}
+\begin{itemize}
+  \item No silicon: RTL simulation of a single-chip fabric.
+  \item No measured same-fabric $\eta$ at non-power-of-two scale. At
+        power-of-two, $\eta = 1$ is a \emph{theorem}, not a measurement.
+  \item The suite confounds $N$ and $G$; no cell-level recommendation is derivable.
+  \item The software export is slower than stock NCCL, and we say by how much.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Takeaway}
+\begin{block}{}
+Reproducibility across reshape is achievable as an \emph{interface contract}:
+the compiler proves the order, the fabric refuses anything else, and the
+result stops depending on the shape of the machine.
+\end{block}
+\vspace{6pt}
+\begin{itemize}
+  \item Bitwise-identical roots across six topologies.
+  \item Fail-stop rather than silently wrong.
+  \item A four-configuration portfolio that transfers to unseen topologies.
+\end{itemize}
+\end{frame}
+
+\end{document}

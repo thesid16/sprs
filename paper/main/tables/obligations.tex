@@ -1,0 +1,33 @@
+% GENERATED — do not edit by hand.
+% script : scripts/gen_assumptions.py
+% source : rtl/*.sv and src/sprs_core.py (line numbers located by
+%          literal anchor at generation time; a missing or duplicated
+%          anchor aborts the script rather than emitting a stale one)
+% date   : 2026-09-08
+% note   : 5 live compiler obligations + 2 withdrawn in this version
+\begin{table*}[!t]
+\caption{The compiler's obligations, the pass that discharges each, and the line of \sv{src/sprs\_core.py} that does it (located by anchor at generation time). The one thing to take from it: none of the five live obligations is enforced by the fabric at run time --- every one is a property of the emitted image, which is why they are checkable statically and why the two passes that would enforce them dynamically (S2.5, S5) were never invoked.}
+\label{tab:obligations}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.25}
+\input{tables/_style}
+\def\spTBL{%
+\begin{tabularx}{\textwidth}{@{}l l X l X@{}}
+\toprule
+\spband{spBlueF}\sphd{Obligation} & \sphd{Pass} & \sphd{What the compiler must guarantee} & \sphd{Discharged at} & \sphd{How it is checked} \\
+\midrule
+\textsf{C-sw} & S6 & Every receive buffer on every PE has exactly one writer, and that writer is remote & \sv{sprs\_core.py:5143--5175} & constructed, not assumed: post-order frees a local slot only after its consumer has read it, and receive slots are allocated in a separate never-freed pass \\
+\spband{spGrid}\textsf{C-bind} & S1, S6 & Every \texttt{COMPUTE} for internal node $v$ binds $(\mathrm{left}(v),\mathrm{right}(v))$ & \sv{sprs\_core.py:5264} & static post-condition on the emitted image: \BindComputes{} \texttt{COMPUTE} and \BindSends{} \texttt{SEND} over \BindConfigs{} configurations, \BindViolations{} violations \\
+\textsf{C-leaf} & S6 & Every \texttt{GENERATE} for leaf $k$ delivers $L[\mathrm{idx}(k)]$ into the slot bound to $k$ & \sv{sprs\_core.py:5405--5589} & same audit; and the clean counterexample --- all \MutLeaf{} leaf-corruption mutants terminate normally with a wrong root \\
+\spband{spGrid}\textsf{C-mem} & post-cond. & At most \sv{DMEM\_DEPTH} $=\DmemDepth$ distinct DMEM addresses per PE, and every router id below the adjacency sentinel & \sv{sprs\_core.py:5034} & an $O(N)$ read-off of peak occupancy the allocator already maintains; S5, the enforcement pass, was never invoked \\
+\textsf{C-route} & S6 & Emitted routing tables encode destination-correct, loop-free paths on the declared topology & \sv{sprs\_core.py:681} & by construction per topology family; a violation is converted to a fail-stop by \textsf{F-misroute} and \textsf{F-watchdog} \\
+\midrule
+\multicolumn{5}{@{}l}{\spband{spAmberF}\emph{Named in earlier versions of this ABI and withdrawn (\S\ref{sec:abi-assumptions})}} \\
+\textsf{C-$\alpha$} & --- & Compilation is a deterministic function of its seed & --- & \emph{not an obligation here}: Claim~\ref{claim:1} quantifies over every image the compiler can emit, so it does not need the compiler to be a pure function \\
+\spband{spGrid}\textsf{C-conn} & S2.5 & Each PE's node set is a connected subtree & \sv{sprs\_core.py:1436} & \emph{not an obligation here}: operand binding holds for any assignment; what disconnection costs is DMEM, which is what \textsf{C-mem} bounds. S2.5 was never invoked \\
+\bottomrule
+\end{tabularx}
+}%
+\spmeasure{\spTBL}\spTBL
+\end{table*}

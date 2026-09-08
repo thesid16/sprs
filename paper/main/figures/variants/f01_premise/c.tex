@@ -1,0 +1,79 @@
+% f01_premise variant c -- where the divergence is created, as a dataflow.
+% Data: experiments/w_final/W1/RESULT.json (design field: "leaf i's M-vector is
+%       a pure function of i, so nothing about the data changes when the job is
+%       reshaped -- only who holds which leaf and in what order the partial sums
+%       combine"; reshape_axis 14 configurations / 14 distinct roots) and
+%       experiments/w_final/W1/v003/raw/A_gloo_G{2,4}_fp64.json for the two
+%       printed results (N=1000, M=1024, fp64, signed; leading 64 bits of the
+%       recorded SHA-256 over the reduced vector). Backend scope from
+%       sec:results-premise: above G=2 the sweep is the gloo/CPU backend.
+% Strategy: argue WHERE, not whether. Everything upstream of the dashed cut is
+% bit-identical between the two rows; the two boxed stages downstream are the
+% only difference, and they are exactly the two sources named in the Problem
+% section -- partition choice and reassociation inside the reducer.
+% Colour: the shared prefix is confirmed-identical (spGreen); the G=2 row is the
+% reference order (spBlue), the G=4 row the reshaped one (spVerm); the two boxed
+% stages that create the difference are drawn heavy in their row colour. Row
+% position and box weight carry the same distinction without colour.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  bxB/.style={draw=spBlue, fill=white, line width=0.35pt, align=center,
+              font=\tiny, inner sep=2pt, minimum height=0.52cm, rounded corners=1pt},
+  bxV/.style={draw=spVerm, fill=white, line width=0.35pt, align=center,
+              font=\tiny, inner sep=2pt, minimum height=0.52cm, rounded corners=1pt},
+  hotB/.style={draw=spBlue, fill=spBlueF, line width=0.9pt, align=center,
+               font=\tiny, inner sep=2pt, minimum height=0.52cm, rounded corners=1pt},
+  hotV/.style={draw=spVerm, fill=spVermF, line width=0.9pt, align=center,
+               font=\tiny, inner sep=2pt, minimum height=0.52cm, rounded corners=1pt},
+  inb/.style={draw=spGreen, fill=spGreenF, line width=0.5pt, align=center,
+              font=\tiny, inner sep=2pt, rounded corners=1pt},
+  arB/.style={draw=spBlue, line width=0.4pt, -{Latex[length=1.4mm,width=1.0mm]}},
+  arV/.style={draw=spVerm, line width=0.4pt, densely dashed, -{Latex[length=1.4mm,width=1.0mm]}},
+  arG/.style={draw=spGreen, line width=0.4pt, -{Latex[length=1.4mm,width=1.0mm]}},
+  lbl/.style={font=\tiny, align=center, inner sep=1pt, text=spInk},
+  hx/.style={font=\tiny\ttfamily, inner sep=1pt},
+]
+% ---------------- identical input, drawn once ------------------------------
+\node[inb, minimum height=1.55cm, text width=1.15cm] (IN) at (0.72,1.05)
+  {identical\\input\\\emph{bytes}\\[1pt]$L_i=f(i)$};
+
+% ---------------- row 1: G = 2 --------------------------------------------
+\node[hotB, text width=1.25cm] (P2) at (2.95,1.72) {partition\\into 2 shards};
+\node[bxB, text width=1.05cm] (S2) at (4.75,1.72) {local\\partial sums};
+\node[hotB, text width=1.35cm] (C2) at (6.55,1.72) {cross-rank\\combine ($1$ add)};
+\draw[arG] (IN.east) |- (P2.west);
+\draw[arB] (P2) -- (S2);
+\draw[arB] (S2) -- (C2);
+
+% ---------------- row 2: G = 4 --------------------------------------------
+\node[hotV, text width=1.25cm] (P4) at (2.95,0.38) {partition\\into 4 shards};
+\node[bxV, text width=1.05cm] (S4) at (4.75,0.38) {local\\partial sums};
+\node[hotV, text width=1.35cm] (C4) at (6.55,0.38) {cross-rank\\combine ($3$ adds)};
+\draw[arG] (IN.east) |- (P4.west);
+\draw[arV] (P4) -- (S4);
+\draw[arV] (S4) -- (C4);
+
+% ---------------- the cut --------------------------------------------------
+\draw[spMute, dashed, line width=0.4pt] (2.05,-0.42) -- (2.05,2.42);
+\node[lbl, anchor=south east, text=spGreen] at (2.00,2.44)
+  {bit-identical\\up to here};
+\node[lbl, anchor=south west, text=spMute] at (2.10,2.44)
+  {the two boxed stages are the only difference};
+
+% ---------------- outputs --------------------------------------------------
+\node[hx, anchor=west, text=spBlue] (R2) at (7.42,1.72) {\textbf{7}D8FB3A631AEFF2C};
+\node[hx, anchor=west, text=spVerm] (R4) at (7.42,0.38) {\textbf{4}9E7AC0CD48A1D2F};
+\draw[arB] (C2.east) -- (7.38,1.72);
+\draw[arV] (C4.east) -- (7.38,0.38);
+\node[lbl, anchor=west, text=spMute] at (7.42,2.36) {64-bit result};
+\node[lbl, anchor=south west, text=spBlue] at (2.33,2.02) {$G{=}2$ \ (NCCL and gloo agree)};
+\node[lbl, anchor=south west, text=spVerm] at (2.33,0.68) {$G{=}4$ \ (gloo/CPU backend)};
+
+% ---------------- the reading ---------------------------------------------
+\node[lbl, anchor=north, text width=8.4cm, text=spInk] at (4.30,-0.52)
+  {The data are never consulted: the reducer's partition and its internal
+   reassociation are functions of $(G,\text{topology},\text{message size})$
+   alone. Across \GpuWorldSizes{} rank counts this yields
+   \GpuRootsDistinct{} distinct results.};
+\end{tikzpicture}

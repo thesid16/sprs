@@ -1,0 +1,90 @@
+% f12_fp64_defect variant d -- what the verification actually covers: the
+% vectors swept, the control that fires, which comparison carries the
+% evidence, and what stays outside the tested scope.
+% Data: data/wround/W3_fp64.json.  Record "accept_post" (repaired pair):
+%   effective subtraction 0/121,500, effective addition 0/24,300, uniform
+%   random 0/15,000, total 0/\FpAcceptVectors{}, RTL-vs-mirror mismatches 0.
+%   Record "accept_pre" (as-submitted pair, the negative control): 15,665 of
+%   48,600, 0 of 9,720, 52 of 4,000, total \FpCtrlErrors{} of
+%   \FpCtrlVectors{}, RTL-vs-mirror mismatches 0.  Record "scope": 53 worker
+%   counts, 0 roots moved, 0 mixed-sign FADDs, 2/2 mutants detected.  Scope
+%   exclusions are the FTZ+RNE subset stated in the FADD Policy section of
+%   main.tex.  Scalars via data/wround_macros.tex.
+% Strategy: the only variant that shows the evidence STRUCTURE rather than the
+%   arithmetic.  A clean sweep is not evidence on its own, so the control is
+%   drawn to the same scale beside it; and the RTL-to-mirror comparison is
+%   drawn as the edge that found nothing on either pair, because the mirror is
+%   a transcription and not an independent model.  Bars are to a common
+%   scale, so the control bar is genuinely shorter.
+\begin{tikzpicture}[
+  sg/.style={draw=spMute, thin},
+  sgG/.style={draw=spGreen, thin},
+  sgV/.style={draw=spVerm, thin},
+  bxx/.style={draw=spBlue, rounded corners=1.5pt, font=\tiny, align=center,
+              inner sep=2.5pt, text=spInk},
+]
+% ------------------------------------------------- (1) the two sweeps, to scale
+% 3.73e-5 cm per vector: 160,800 -> 6.00 cm, 62,320 -> 2.33 cm.
+\node[font=\tiny\bfseries, anchor=base west, text=spInk] at (0,0)
+  {(1) the same test, run on the repaired pair and on the as-submitted pair};
+\node[font=\tiny, anchor=base east, text=spGreen] at (2.30,-0.42) {repaired};
+\draw[sgG, fill=spGreen!10] (2.38,-0.55) rectangle ++(4.534,0.30);
+\draw[sgG, fill=spGreen!22] (6.914,-0.55) rectangle ++(0.907,0.30);
+\draw[sgG, fill=spGreen!36] (7.821,-0.55) rectangle ++(0.560,0.30);
+\node[font=\tiny, anchor=base west, text=spInk] at (0,-0.90)
+  {\ \ \ \ \ \ eff.\ subtraction $121{,}500$\ \ $\cdot$\ \ eff.\ addition
+   $24{,}300$\ \ $\cdot$\ \ uniform $15{,}000$};
+\node[font=\tiny, anchor=base east, text=spVerm] at (2.30,-1.32) {as submitted};
+\draw[sgV, fill=spVerm!10] (2.38,-1.45) rectangle ++(1.813,0.30);
+\draw[sgV, pattern=north east lines, pattern color=spVerm]
+  (2.38,-1.45) rectangle ++(0.584,0.30);
+\draw[sgV, fill=spVerm!22] (4.193,-1.45) rectangle ++(0.363,0.30);
+\draw[sgV, fill=spVerm!36] (4.556,-1.45) rectangle ++(0.149,0.30);
+\node[font=\tiny, anchor=base west, text=spVerm] at (4.82,-1.38)
+  {hatched: $15{,}665/48{,}600$ fail};
+\node[font=\tiny, anchor=base west, text=spInk] at (0,-1.80)
+  {\ \ \ \ \ \ total \textcolor{spGreen}{\FpAcceptErrors{} of
+   \FpAcceptVectors} against correctly-rounded IEEE-754, against
+   \textcolor{spVerm}{\FpCtrlErrors{} of \FpCtrlVectors};};
+\node[font=\tiny, anchor=base west, text=spInk] at (0,-2.08)
+  {\ \ \ \ \ \ on the wider host sweep, \FpSweepErrors{} of
+   \FpSweepVectors{}. Every control failure is \FpCtrlUlp~ulp.};
+% ------------------------------------------- (2) which comparison discriminates
+\node[font=\tiny\bfseries, anchor=base west, text=spInk] at (0,-2.62)
+  {(2) three parties, and only one of the comparisons can fail};
+\node[bxx] (rtl) at (1.45,-3.15) {\texttt{rtl/fp64\_add.sv}};
+\node[bxx] (mir) at (1.45,-4.05) {Python $\fadd$ mirror};
+\node[bxx, draw=spInk, fill=spGrid] (hst) at (6.55,-3.60)
+  {host FPU,\\ correctly rounded};
+\draw[{Stealth[length=3.4pt]}-{Stealth[length=3.4pt]}, spMute, thin,
+      densely dotted] (rtl) -- (mir);
+\node[font=\tiny, anchor=west, align=left, text=spMute]
+  at (2.55,-3.60) {\FpAcceptMismatch{} mismatches\\ on \emph{both} pairs};
+\draw[{Stealth[length=3.4pt]}-{Stealth[length=3.4pt]}, spInk, line width=0.7pt]
+  (rtl.east) -- (hst.north west);
+\draw[{Stealth[length=3.4pt]}-{Stealth[length=3.4pt]}, spInk, line width=0.7pt]
+  (mir.east) -- (hst.south west);
+\node[font=\tiny, anchor=south, align=center, text=spInk] at (4.55,-2.98)
+  {\textcolor{spGreen}{$0$ after the repair},
+   \textcolor{spVerm}{$\FpCtrlErrors$ before}};
+\node[font=\tiny, anchor=north, align=center, text=spMute]
+  at (4.40,-4.42)
+  {the vertical edge is a transcription checking itself and never fires;
+   the evidence is the horizontal one};
+% -------------------------------------------------- (3) outside the scope
+\node[draw=spAmber, line width=0.6pt, rounded corners=1.5pt, fill=spAmberF,
+      align=left, text=spInk,
+      text width=8.34cm, inner sep=3.5pt, font=\tiny,
+      anchor=north west] at (0,-4.95)
+  {\textbf{(3) outside this scope, by construction.} The subset verified is
+   FTZ$+$RNE: subnormal inputs and post-round subnormals are flushed, there is
+   no rounding mode but round-to-nearest-even, $x+(-x)$ returns $+0$ (a
+   documented deviation), and signalling NaNs are not distinguished --- none
+   of these is checked against the standard because none is claimed. And the
+   campaign itself could not have reached this path: over \FpScopeGvals{}
+   worker counts from \FpScopeGLo{} to \FpScopeGHi{} the emitted reduction
+   order contains \FpScopeMixed{} mixed-sign additions, so \FpScopeMoved{}
+   published roots move, while the injected-adder control detects
+   \FpScopeMutant. The defect was found by reading the arithmetic, not by
+   running the campaign harder.};
+\end{tikzpicture}

@@ -1,0 +1,66 @@
+{
+ "meta": {
+  "utc": "2026-08-27T04:48:03Z",
+  "desc": "W2 part A2: load imbalance of the cut-aligned frontier under two assignments. The assignment has NO effect on the 64-bit root (the tree fixes the order), so it is a free load-balancing choice. T16 repair_sweep.py used greedy largest-first (LPT) and reported worst 1.969; the natural contiguous deal is worse."
+ },
+ "S1_T16_set_Gle64": {
+  "n_pairs": 426,
+  "worst_contiguous": 2.48,
+  "worst_contiguous_at": [
+   100,
+   62
+  ],
+  "n_contiguous_over_2": 45,
+  "worst_LPT": 1.96875,
+  "worst_LPT_at": [
+   128,
+   63
+  ],
+  "n_LPT_over_2": 0
+ },
+ "S1_T16_set_full": {
+  "n_pairs": 1546,
+  "worst_contiguous": 2.52,
+  "worst_contiguous_at": [
+   200,
+   126
+  ],
+  "n_contiguous_over_2": 76,
+  "worst_LPT": 1.99609375,
+  "worst_LPT_at": [
+   512,
+   511
+  ],
+  "n_LPT_over_2": 0
+ },
+ "S2_all_N_le_300": {
+  "n_pairs": 44850,
+  "worst_contiguous": 3.5294117647058822,
+  "worst_contiguous_at": [
+   272,
+   240
+  ],
+  "n_contiguous_over_2": 13446,
+  "worst_LPT": 1.9933333333333334,
+  "worst_LPT_at": [
+   300,
+   299
+  ],
+  "n_LPT_over_2": 0
+ },
+ "S3_paper_leafcounts": {
+  "n_pairs": 223,
+  "worst_contiguous": 2.048,
+  "worst_contiguous_at": [
+   1500,
+   12
+  ],
+  "n_contiguous_over_2": 8,
+  "worst_LPT": 1.92,
+  "worst_LPT_at": [
+   50,
+   48
+  ],
+  "n_LPT_over_2": 0
+ }
+}

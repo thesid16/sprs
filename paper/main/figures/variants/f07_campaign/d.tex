@@ -1,0 +1,48 @@
+% f07_campaign variant d -- nested sets: containment of each population.
+% Data: data/campaign_macros.tex (\FunnelCompiles 7,200; \FunnelImages 6,777;
+%       \FunnelUnique 2,920; \CampAttempted 2,844; \CampPassing 2,822;
+%       \CampNonSettling 22) and tables/dedup.tex (622 unique asgn_hash).
+%       Box WIDTH is proportional to count (6.60cm per 7,200); box HEIGHT is
+%       chosen only to keep the five labels apart and carries no quantity --
+%       stated here so the drawing cannot be misread as area-proportional.
+% Strategy: set inclusion, not flow. Each population is literally a subset of
+% the one outside it, so the excluded elements have somewhere to live and can
+% be named in place. This is the only variant that can show that the 622
+% unique assignments are NOT a subset in this chain -- they are a different
+% quotient of the same feasible box -- which the funnel and the flow can only
+% assert in a caption.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[
+  bx/.style={draw=spBlue, line width=0.4pt},
+  ttl/.style={font=\tiny, inner sep=0pt, align=left, text=spInk},
+  exc/.style={font=\tiny, inner sep=0pt, align=center, text=spVerm},
+]
+% ---- nested boxes, common bottom-left corner; width = count/7200 * 6.60cm
+\fill[bx, fill=spBlue!4]  (0,0) rectangle (6.600,4.60);   % 7,200
+\fill[bx, fill=spBlue!9]  (0,0) rectangle (6.212,4.00);   % 6,777
+\fill[bx, fill=spBlue!16] (0,0) rectangle (2.677,3.40);   % 2,920
+\fill[bx, fill=spBlue!24] (0,0) rectangle (2.607,2.60);   % 2,844
+\fill[draw=spGreen, line width=0.8pt, fill=spGreen!22] (0,0) rectangle (2.587,1.80);   % 2,822
+% ---- the population each box holds, on its own top-left ----------------
+\node[ttl, anchor=north west] at (0.09,4.52) {\FunnelCompiles{} compilations attempted};
+\node[ttl, anchor=north west] at (0.09,3.92) {\FunnelImages{} feasible: image emitted};
+\node[ttl, anchor=north west] at (0.09,3.32) {\FunnelUnique{} unique testbenches};
+\node[ttl, anchor=north west] at (0.09,2.52) {\CampAttempted{} queued to \sv{xsim}};
+\node[font=\scriptsize, anchor=center, text=spGreen] at (1.29,1.08) {\textbf{\CampPassing}};
+\node[font=\tiny, anchor=center, text=spGreen] at (1.29,0.72) {passing hardware runs};
+% ---- what each annulus excludes, written in the annulus itself ---------
+\node[exc, anchor=north east] at (6.50,4.52)
+  {$-$423 infeasible: size-gated,\\\sv{IMEM} overflow, timeout};
+\node[exc, anchor=center] at (4.45,1.90)
+  {\textbf{$-$3{,}857 duplicate images}\\
+   identical up to PE relabelling,\\
+   collapsed by a SHA-256 hash\\
+   over the emitted testbench};
+\node[exc, anchor=south east] at (2.55,2.66) {$-$76 not run (L0)};
+\node[exc, anchor=south east] at (2.50,1.88) {$-$\CampNonSettling{} non-settling};
+% ---- the second quotient: a partition of the feasible box, not a subset -
+\node[font=\tiny, anchor=north west, align=left, text=spPurple] at (0,-0.28)
+  {The feasible box also carries only \textbf{622} distinct \emph{assignments}\\
+   (\sv{asgn\_hash}, tables/dedup.tex): a second partition of the same\\
+   box. $622<\CampPassing$, so it is not a smaller box in this chain.};
+\end{tikzpicture}

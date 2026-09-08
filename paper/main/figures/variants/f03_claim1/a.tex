@@ -1,0 +1,126 @@
+% f03_claim1 variant a -- one DAG, three fabrics, one root.
+% Data: tables/invariance.tex, row N=128 (371 passing HW configs, six compiled
+%       and six HW-validated (G,topology) points, 64-bit root
+%       0x415F7E8FF9581062, divergent 0); the "G=4 on a linear chain to G=128 on
+%       a torus" span is the same row as reported in sec:results-invariance.
+%       Campaign totals \WallTBs{} and \InvNonSettling{} from
+%       data/coverage_macros.tex and data/results_macros.tex.
+%       Claim 1 and Proposition (mapping/topology orthogonality) from main.tex.
+% Strategy: the DAG is drawn ONCE and the three fabrics are drawn as things it is
+% mapped onto, so the reader sees that the object carrying the value is upstream
+% of the network. Routes are drawn deliberately different in each panel and the
+% root box is drawn deliberately identical. b converges three panels onto a root,
+% c argues the square commutes, d argues by negative control.
+% Colour: the reduction DAG is the canonical structure (spBlue) over leaf slots
+% (spSky); the fabric is incidental machinery (spGrid links, spSky PEs) and the
+% route -- the thing that varies from panel to panel -- is spPurple; the root
+% word, identical in all three panels, is spGreen. Route weight and hop pattern
+% still distinguish the three panels in greyscale.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn inside 17.6cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  nd/.style={draw=spBlue, fill=spBlueF, circle, line width=0.4pt,
+             minimum size=0.26cm, inner sep=0pt},
+  lf/.style={draw=spSky!80!spInk, fill=spSkyF, line width=0.3pt,
+             minimum width=0.26cm, minimum height=0.24cm, inner sep=0pt},
+  pe/.style={draw=spSky!80!spInk, fill=spSkyF, circle, line width=0.3pt,
+             minimum size=0.30cm, inner sep=0pt, font=\tiny},
+  sw/.style={draw=spSky!80!spInk, fill=spSky!35, rectangle, line width=0.3pt,
+             minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt},
+  ed/.style={draw=spBlue!75, line width=0.35pt},
+  lk/.style={draw=spGrid, line width=0.35pt},
+  rte/.style={draw=spPurple!85!spInk, line width=1.0pt},
+  ar/.style={draw=spMute, line width=0.4pt, -{Latex[length=1.6mm,width=1.1mm]}},
+  lbl/.style={font=\tiny, align=center, inner sep=1pt, text=spInk},
+  hx/.style={font=\tiny\ttfamily, inner sep=2pt, draw=spGreen, fill=spGreenF,
+             line width=0.55pt, text=spInk},
+]
+% ================= the reduction DAG, drawn once ===========================
+\node[nd] (r)  at (2.30,3.15) {};
+\node[nd] (c1) at (1.30,2.62) {};
+\node[nd] (c2) at (3.30,2.62) {};
+\node[nd] (g1) at (0.80,2.12) {};
+\node[nd] (g2) at (1.80,2.12) {};
+\node[nd] (g3) at (2.80,2.12) {};
+\node[nd] (g4) at (3.80,2.12) {};
+\draw[ed] (c1) -- (r) -- (c2);
+\draw[ed] (g1) -- (c1) -- (g2);
+\draw[ed] (g3) -- (c2) -- (g4);
+\foreach \x in {0.80,1.80,2.80,3.80}{
+  \node[font=\tiny, text=spBlue!70] at (\x,1.82) {$\vdots$};
+}
+\foreach \i in {0,...,9}{
+  \pgfmathsetmacro{\x}{0.55+\i*0.38}
+  \node[lf] at (\x,1.42) {};
+}
+\node[lbl, anchor=north, text=spSky!60!spInk] at (2.30,1.24)
+  {leaf values $L$, ascending};
+\node[lbl, anchor=south, text width=4.5cm, text=spBlue] at (2.30,3.34)
+  {$\FBT(N)$ at $N{=}128$: operand binding is a function\\
+   of tree-node identity alone --- it names no $G$, no topology,\\
+   no assignment, mapping or schedule};
+\draw[spGrid, dashed, line width=0.4pt] (4.62,0.30) -- (4.62,3.90);
+
+
+\begin{scope}[on background layer]
+  \fill[spBlueF, rounded corners=2.5pt] (0.20,1.10) rectangle (4.42,3.86);
+  \fill[spGrid!60, rounded corners=2.5pt] (4.98,1.16) rectangle (8.22,3.32);
+  \fill[spGrid!60, rounded corners=2.5pt] (8.88,1.10) rectangle (12.12,3.32);
+  \fill[spGrid!60, rounded corners=2.5pt] (12.55,1.16) rectangle (15.85,3.32);
+\end{scope}
+% ================= panel 1: ring ===========================================
+\node[lbl, anchor=south] at (6.60,3.34) {ring, $G{=}8$};
+\foreach \i in {0,...,7}{
+  \pgfmathsetmacro{\a}{90-\i*45}
+  \node[pe] (R\i) at ({6.60+0.95*cos(\a)},{2.30+0.76*sin(\a)}) {};
+}
+\foreach \i/\j in {0/1,1/2,2/3,3/4,4/5,5/6,6/7,7/0}{ \draw[lk] (R\i) -- (R\j); }
+\draw[rte] (R5) -- (R6) -- (R7) -- (R0);
+\node[lbl, anchor=north, text=spPurple!85!spInk] at (6.60,1.36) {route: 3 hops, one direction};
+
+% ================= panel 2: 2D torus =======================================
+\node[lbl, anchor=south] at (10.50,3.34) {2D torus, $G{=}9$};
+\foreach \i in {0,1,2}{ \foreach \j in {0,1,2}{
+  \node[pe] (T\i\j) at ({9.75+\i*0.75},{1.60+\j*0.70}) {};
+}}
+\foreach \j in {0,1,2}{ \draw[lk] (T0\j) -- (T1\j) -- (T2\j); }
+\foreach \i in {0,1,2}{ \draw[lk] (T\i0) -- (T\i1) -- (T\i2); }
+\foreach \j in {0,1,2}{ \draw[lk] (T0\j) to[out=165,in=15,looseness=1.3] (T2\j); }
+\foreach \i in {0,1,2}{ \draw[lk] (T\i0) to[out=255,in=105,looseness=1.3] (T\i2); }
+\draw[rte] (T02) -- (T12) -- (T11) -- (T21);
+\node[lbl, anchor=north, text=spPurple!85!spInk] at (10.50,1.30) {route: dimension-ordered, wraps};
+
+% ================= panel 3: fat-tree =======================================
+\node[lbl, anchor=south] at (14.20,3.34) {fat-tree, $G{=}8$};
+\node[sw] (FR) at (14.20,3.05) {};
+\node[sw] (FA) at (13.34,2.50) {};
+\node[sw] (FB) at (15.06,2.50) {};
+\draw[lk] (FA) -- (FR) -- (FB);
+\foreach \i in {0,...,3}{
+  \pgfmathsetmacro{\x}{12.70+\i*0.43}
+  \node[pe] (FL\i) at (\x,1.80) {};
+  \draw[lk] (FL\i) -- (FA);
+}
+\foreach \i in {0,...,3}{
+  \pgfmathsetmacro{\x}{14.42+\i*0.43}
+  \node[pe] (FM\i) at (\x,1.80) {};
+  \draw[lk] (FM\i) -- (FB);
+}
+\draw[rte] (FL0) -- (FA) -- (FR) -- (FB) -- (FM3);
+\node[lbl, anchor=north, text=spPurple!85!spInk] at (14.20,1.36) {route: up--over--down, 4 hops};
+
+% ================= the identical root ======================================
+\foreach \x in {6.60,10.50,14.20}{
+  \draw[ar, draw=spGreen] (\x,1.10) -- (\x,0.80);
+  \node[hx, anchor=north] at (\x,0.78) {0x415F7E8FF9581062};
+}
+\draw[ar] (4.68,2.30) -- (5.42,2.30);
+\node[lbl, anchor=south, text=spMute] at (5.05,2.36) {mapped onto};
+\node[lbl, anchor=north, text width=13.4cm] at (8.20,0.22)
+  {The routes differ; the root does not. Over the whole campaign
+   (\WallTBs{} settled simulations, \InvNonSettling{} non-settling) no
+   configuration produced a finite root differing from $\Rcan(N,L)$.
+   At $N{=}128$ alone the same root survives six $(G,\text{topology})$
+   points, $G{=}4$ on a linear chain to $G{=}128$ on a torus, over 371
+   passing hardware configurations with 0 divergent.};
+\end{tikzpicture}

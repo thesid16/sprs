@@ -1,0 +1,26 @@
+{
+ "source": "W4/v001/full_bypass_clocked{,_b}.jsonl",
+ "coverage": {
+  "g_min": 2,
+  "g_max": 64,
+  "n_min": 8,
+  "n_max": 1500,
+  "topologies": [
+   "fat_tree",
+   "hypercube",
+   "linear",
+   "mesh",
+   "ring",
+   "torus"
+  ],
+  "instances_in_suite_table": 40,
+  "suite_instances_at_or_below_g_max": 25,
+  "passing_release_rows_on_those_instances": 1326
+ },
+ "rule": "index by (instance, testbench), last record wins",
+ "n_keys": 1326,
+ "n_both_arms_ok": 1306,
+ "n_agree_with_each_other_and_oracle": 1306,
+ "n_instances": 25,
+ "n_instances_one_distinct_root": 25
+}

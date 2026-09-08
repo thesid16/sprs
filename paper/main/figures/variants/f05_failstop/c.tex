@@ -1,0 +1,104 @@
+% f05_failstop variant c -- the same COMPUTE in two runs, drawn in time.
+% Data: rtl/btree_fsm_fast.sv -- the PIU write and scoreboard set on delivery
+%       (l.336-337, l.712-713), the misroute drop and credit return
+%       (l.315-320), the DE presence gate (l.514-521), the watchdog counter
+%       reset on any_retired (l.775-785) and its trap at WATCHDOG_MAX
+%       (l.823-827, = \WatchdogMax); pstate values from l.88-94.
+%       No cycle counts are invented: the only number on the axis is the RTL
+%       constant, and every other instant is named by the event that causes it.
+% Strategy: time, not structure. Variants a and b describe the mechanism;
+% this one shows the observable difference between a healthy run and a run
+% with one dropped operand -- the two runs are identical until the delivery
+% that does not happen, and diverge into P_DONE and P_ERROR from there.
+% Colour: the healthy trace is spBlue and the delivery that sets the presence
+% bit, the retirement that clears the watchdog and P_DONE are spGreen; the
+% dropped-operand trace is spVerm throughout, ending in a heavy spVerm P_ERROR,
+% so the two panels are separable at a glance. P_RUN is spBlue in both, because
+% the runs really are the same machine in the same state until the delivery.
+% Greyscale keeps the whole argument: the second panel's stall band is hatched
+% where the first is plain, its watchdog trace is heavier and runs to a marked
+% level instead of resetting, and the terminal labels differ.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  sig/.style={draw=spBlue, line width=0.55pt},
+  sigV/.style={draw=spVerm, line width=0.55pt},
+  ax/.style={draw=spMute, line width=0.3pt},
+  nm/.style={font=\tiny, anchor=east, inner sep=1pt, text=spInk},
+  ev/.style={font=\tiny, anchor=south west, inner sep=1pt, align=left, text=spInk},
+  st/.style={font=\tiny, anchor=center, inner sep=1pt, text=spInk},
+  run/.style={st, draw=spBlue, fill=white, rounded corners=1.5pt,
+              line width=0.35pt, inner sep=1.5pt},
+  cut/.style={draw=spMute, line width=0.3pt},
+]
+% =============== panel 1: healthy ======================================
+\node[font=\scriptsize\bfseries, anchor=west, text=spBlue] at (-0.05,0.45) {healthy run};
+\node[nm] at (1.68,0.00) {\sv{scoreboard[a]}};
+\node[nm] at (1.68,-0.55) {\textsf{DE} stall};
+\node[nm] at (1.68,-1.10) {\sv{watchdog}};
+\node[nm] at (1.68,-1.62) {\sv{pstate}};
+% scoreboard: 0 until delivery, then 1
+\draw[sig] (1.78,-0.14) -- (3.90,-0.14) -- (3.90,0.14) -- (8.20,0.14);
+\node[font=\tiny, anchor=north west, inner sep=0.5pt, text=spInk] at (1.85,-0.14) {0};
+\node[font=\tiny, anchor=south west, inner sep=0.5pt, text=spGreen] at (3.98,0.14) {1};
+% DE stall band, then release
+\fill[spBlue!18, draw=spBlue, line width=0.3pt] (2.70,-0.68) rectangle (3.98,-0.42);
+\node[font=\tiny, text=spInk] at (3.34,-0.55) {stall};
+\draw[sig] (1.78,-0.68) -- (2.70,-0.68);
+\draw[sig] (3.98,-0.68) -- (8.20,-0.68);
+% watchdog ramp then reset
+\draw[sig] (1.78,-1.24) -- (2.70,-1.24) -- (3.98,-1.00) -- (3.98,-1.24) -- (8.20,-1.24);
+\node[font=\tiny, anchor=west, inner sep=1pt, text=spGreen] at (4.05,-1.06) {reset by the retirement};
+% pstate
+\draw[ax] (1.78,-1.62) -- (8.20,-1.62);
+\draw[ax] (7.05,-1.75) -- (7.05,-1.49);
+\node[run] at (4.40,-1.62) {\sv{P\_RUN}};
+\node[st] at (7.62,-1.62) [draw=spGreen, fill=spGreen!22, rounded corners=1.5pt,
+      line width=0.7pt, inner sep=1.5pt] {\sv{P\_DONE}};
+% events
+\draw[spGreen, dashed, line width=0.3pt] (3.90,0.30) -- (3.90,-1.72);
+\node[ev] at (2.55,0.24) {\sv{SEND} on the child PE};
+\draw[ax, dashed] (2.62,0.22) -- (2.62,-1.72);
+\node[ev, anchor=south east, text=spGreen] at (8.20,0.24) {PIU writes \sv{DMEM}, sets the bit};
+
+% =============== panel 2: one dropped operand ==========================
+\begin{scope}[yshift=-2.75cm]
+\node[font=\scriptsize\bfseries, anchor=west, text=spVerm] at (-0.05,0.72)
+  {same run, one operand dropped};
+\node[nm] at (1.68,0.00) {\sv{scoreboard[a]}};
+\node[nm] at (1.68,-0.55) {\textsf{DE} stall};
+\node[nm] at (1.68,-1.10) {\sv{watchdog}};
+\node[nm] at (1.68,-1.62) {\sv{pstate}};
+% scoreboard stays 0
+\draw[sigV] (1.78,-0.14) -- (8.20,-0.14);
+\node[font=\tiny, anchor=north west, inner sep=0.5pt, text=spVerm] at (1.85,-0.14) {0 --- never set};
+% DE stalls to the end -- hatched, so the difference survives greyscale
+\fill[spVerm!16] (2.70,-0.68) rectangle (7.55,-0.42);
+\draw[pattern=north east lines, pattern color=spVerm!55, draw=spVerm,
+      line width=0.3pt] (2.70,-0.68) rectangle (7.55,-0.42);
+\node[font=\tiny, text=spInk, fill=white, fill opacity=0.85, text opacity=1,
+      inner sep=1pt] at (4.60,-0.55) {stall, no instruction retires};
+\draw[sigV] (1.78,-0.68) -- (2.70,-0.68);
+% watchdog ramps to the trap
+\draw[sigV, line width=0.8pt] (1.78,-1.24) -- (2.70,-1.24) -- (7.55,-0.96);
+\node[font=\tiny, anchor=south east, inner sep=1pt, text=spVerm] at (7.55,-0.94) {$=\WatchdogMax$};
+% pstate
+\draw[ax] (1.78,-1.62) -- (8.20,-1.62);
+\draw[ax] (7.55,-1.75) -- (7.55,-1.49);
+\node[run] at (4.40,-1.62) {\sv{P\_RUN}};
+\node[st] at (7.90,-1.62) [draw=spVerm, fill=spVerm!22, rounded corners=1.5pt,
+      line width=0.9pt, inner sep=1.5pt] {\sv{P\_ERROR}};
+% events
+\draw[ax, dashed] (2.62,0.18) -- (2.62,-1.72);
+\draw[spVerm, dashed, line width=0.3pt] (7.55,0.18) -- (7.55,-1.72);
+\node[ev, anchor=south east, text=spVerm] at (8.20,0.20)
+  {packet dropped: \sv{dest\_gpu\_id} $\neq$ \sv{gpu\_id}, credit returned};
+% time break
+\draw[cut] (5.05,-1.72) -- (5.15,-1.52);
+\draw[cut] (5.20,-1.72) -- (5.30,-1.52);
+\end{scope}
+
+\node[font=\tiny, anchor=north west, align=left, text=spInk] at (-0.05,-5.05)
+  {The two runs are identical until a delivery that does not happen. No\\
+   root is produced in the second: \sv{all\_done} is never asserted, and the\\
+   halt carries \sv{error\_pc} and \sv{error\_state} for post-mortem.};
+\end{tikzpicture}

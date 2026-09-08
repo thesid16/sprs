@@ -1,25 +1,49 @@
 % GENERATED — do not edit by hand.
 % script : scripts/gen_cost_tables.py
-% source : /home/rohit/tournament_p1/results/live_hw_results_p1_maxpe.csv
+% source : /home/rohit/sprs-fix/data/results/live_hw_results_p1_maxpe.csv
 % metric : max over PEs (corrected)
-% date   : 2026-08-02
+% date   : 2026-09-08
 \begin{table}[!t]
-\caption{Distance to the composite lower bound $\Omega$ by topology. $\Omega$ bounds any schedule on this fabric, so these ratios upper-bound what an unconstrained reducer could have recovered.}
+\caption{Distance to the composite lower bound $\Omega$ by topology, over the \TournNInst{} HW-validated instances. $\Omega$ bounds any schedule on this fabric, so these ratios upper-bound what an unconstrained reducer could have recovered. Bars share one axis. The one thing to take from it: the ordering tracks bisection width --- linear and hypercube land closest to the bound, ring furthest --- and no topology reaches it.}
 \label{tab:omegaratio}
 \centering
 \footnotesize
-\begin{tabular}{@{}lrrr@{}}
+\renewcommand{\arraystretch}{1.18}
+% ---- shared table style (figures/_palette.tex); see scripts/gen_tablestyle.py.
+% main.tex does not load colortbl, so a row tint is a zero-size rule emitted at
+% the start of the row and painted under the cells that follow it.
+% Defined once per document: these files are \input INSIDE float environments,
+% so the definitions must be global or the second table finds them gone.
+\makeatletter
+\@ifundefined{spwd}{\begingroup\globaldefs\@ne
+  \newlength{\spwd}%
+  \newsavebox{\spbox}%
+  \newcommand{\spmeasure}[1]{\sbox{\spbox}{#1}\spwd=\wd\spbox}%
+  \newcommand{\spband}[1]{\rlap{\raisebox{0pt}[0pt][0pt]{\textcolor{#1}{%
+    \rule[-\dimexpr\arraystretch\dp\strutbox+0.35pt\relax]{\spwd}%
+    {\dimexpr\arraystretch\ht\strutbox+\arraystretch\dp\strutbox+0.7pt\relax}}}}}%
+  \newcommand{\spbar}[2]{\textcolor{#1}{\rule[0.04em]{#2}{0.40em}}}%
+  \newcommand{\spspan}[4]{\makebox[#1][l]{\rlap{\textcolor{spSkyF}%
+    {\rule[0.04em]{#1}{0.40em}}}\hspace*{#2}\textcolor{#3}%
+    {\rule[0.04em]{#4}{0.40em}}}}%
+  \newcommand{\sphd}[1]{\textbf{#1}}%
+\endgroup}{}
+\makeatother
+\def\spTBL{%
+\begin{tabular}{@{}l r r@{\,}l r@{}}
 \toprule
-Topology & instances & median cyc/$\Omega$ & best \\
+\spband{spBlueF}\sphd{Topology} & \sphd{Inst.} & \multicolumn{2}{c}{\sphd{Median cyc/$\Omega$}} & \sphd{Best} \\\\
 \midrule
-linear & 4 & 1.39 & 1.35 \\
-hypercube & 7 & 1.85 & 1.55 \\
-torus & 10 & 2.26 & 1.49 \\
-mesh & 4 & 2.58 & 1.62 \\
-fat-tree & 8 & 3.40 & 1.83 \\
-ring & 6 & 4.48 & 2.33 \\
+linear & 4 & 1.39 & \spbar{spBlue}{1.115em} & 1.35 \\
+\spband{spGrid}hypercube & 7 & 1.85 & \spbar{spBlue}{1.489em} & 1.55 \\
+torus & 10 & 2.26 & \spbar{spBlue}{1.818em} & 1.49 \\
+\spband{spGrid}mesh & 4 & 2.58 & \spbar{spBlue}{2.074em} & 1.62 \\
+fat-tree & 8 & 3.40 & \spbar{spBlue}{2.726em} & 1.83 \\
+\spband{spGrid}ring & 6 & 4.48 & \spbar{spBlue}{3.600em} & 2.33 \\
 \midrule
-\textbf{all} & 39 & 2.34 & 1.35 \\
+\spband{spGreenF}\textbf{all} & 39 & 2.34 & \spbar{spBlue}{1.879em} & 1.35 \\
 \bottomrule
 \end{tabular}
+}%
+\spmeasure{\spTBL}\spTBL
 \end{table}

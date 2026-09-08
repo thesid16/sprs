@@ -1,0 +1,85 @@
+% f11_export_cost variant a -- measured overhead of pinned-FBT against stock
+% ncclAllReduce, resolved by message size, both chunking arms.
+% Data: experiments/w_final/W2/v004/COST.json, field cost_table, rows with
+%   backend=nccl, G=2, dtype=fp64, N=8 (the eight message sizes); the 128 KiB
+%   whisker is the min/max of the thirteen N=3..4096 rows at M=16384.
+%   Scalars come from data/wround_macros.tex (\Pin* macros).
+% Scope: the PRE-REGISTERED statistic is NCCL, G=2, FP64, one-chunk, n=20
+%   cells, geomean \PinCostGeo x. The pooled 2.40x figure over 28 cells folds
+%   in FP32 and is a recorded pre-registration deviation, not the headline;
+%   it is deliberately not shown. The gloo rows in the same file are excluded
+%   outright: at G=24 stock gloo takes 92,877 us on \PinGlooBadLo{} and
+%   24,863 us on \PinGlooBadHi{}, a \PinGlooBadRatio{}x inversion in size that
+%   no correct baseline shows, so no gloo number is reportable in either
+%   direction.
+% Strategy: the level, honestly. It shows every plotted point above parity,
+%   the provisional band (median-based \PinCostGeo x against \PinCostRobust x
+%   best-of-repeats) rather than a single point estimate, and the fact that
+%   thirteen of the twenty headline cells sit at one message size. Variants
+%   b/c/d argue mechanism, absolute cost and the chunking sign flip instead.
+\begin{tikzpicture}
+\begin{axis}[
+  % IEEE single column is 3.5in = 8.9cm; fixed size, not a relative width.
+  width=8.6cm, height=6.3cm,
+  xlabel={message size (K $=$ KiB, M $=$ MiB)},
+  ylabel={overhead vs stock \texttt{ncclAllReduce} ($\times$)},
+  xmode=log, log basis x=2,
+  ymode=log,
+  xmin=4600, xmax=2.6e8, ymin=0.82, ymax=11.5,
+  xtick={8192,32768,131072,524288,2097152,8388608,33554432,134217728},
+  xticklabels={8\,K,32\,K,128\,K,512\,K,2\,M,8\,M,32\,M,128\,M},
+  ytick={1,1.5,2,3,4,6,9},
+  yticklabels={1.0,1.5,2.0,3.0,4.0,6.0,9.0},
+  minor tick num=0,
+  tick label style={font=\scriptsize, text=spInk},
+  label style={font=\scriptsize, text=spInk},
+  grid=major, grid style={spGrid, very thin},
+  legend style={font=\tiny, at={(0.5,1.02)}, anchor=south, legend columns=2,
+                draw=spMute, /tikz/every even column/.append style={column sep=6pt}},
+  every axis plot/.append style={thick},
+  clip=false,
+]
+% Provisional band: median-based geomean 2.5685 down to best-of-repeats 2.0759
+% (COST.json, geomean over the same 20 cells of overhead and overhead_min).
+% Provisional under GPU contention -- amber, and drawn as a band with dashed
+% edges so it never reads as a measured level.
+\addplot[draw=spAmber, densely dashed, line width=0.5pt, fill=spAmberF,
+         forget plot] coordinates {
+  (4600,2.076) (2.6e8,2.076) (2.6e8,2.569) (4600,2.569)} \closedcycle;
+% Spread of the thirteen leaf-count cells that share the 128 KiB message size.
+\draw[spMute, thin] (axis cs:131072,2.189) -- (axis cs:131072,3.907);
+\draw[spMute, thin] (axis cs:1.14e5,2.189) -- (axis cs:1.51e5,2.189);
+\draw[spMute, thin] (axis cs:1.14e5,3.907) -- (axis cs:1.51e5,3.907);
+% One-chunk arm, the pre-registered configuration.
+\addplot[spVerm, mark=*, mark size=1.7pt, line width=1.1pt] coordinates {
+  (8192,3.2881) (32768,2.9177) (131072,3.1203) (524288,1.5932)
+  (2097152,2.6867) (8388608,1.4851) (33554432,1.6679) (134217728,2.2067)};
+\addlegendentry{one chunk}
+% Two-chunk arm: same tree, vector split so each rank roots one half.
+\addplot[spPurple, mark=square, mark size=1.8pt, densely dashed, line width=0.9pt] coordinates {
+  (8192,5.9672) (32768,8.1053) (131072,5.4287) (524288,2.6641)
+  (2097152,2.8020) (8388608,1.5659) (33554432,1.5691) (134217728,1.8461)};
+\addlegendentry{two chunks}
+% Parity is a reference line, not a goal line: neutral ink, no accent hue.
+\addplot[spMute, dotted, line width=0.9pt, forget plot] coordinates {(4600,1) (2.6e8,1)};
+\node[font=\tiny, anchor=west, text=spMute] at (axis cs:5600,0.90)
+  {$1.0=$ parity with stock; no measured cell reaches it};
+% The provisional point estimate. Parked in the empty upper-right so it does not
+% cross either arm; leader line drops to the shaded band it describes.
+\node[font=\tiny, anchor=north east, align=right, inner sep=2.5pt, fill=white,
+      fill opacity=0.92, text opacity=1, draw=spAmber, text=spAmber]
+  at (axis cs:2.4e8,9.6)
+  {pre-registered geomean $\PinCostGeo\times$ ($n=\PinCostCells$)\\[-1pt]
+   $\PinCostRobust\times$ best-of-repeats (contended)};
+\draw[spAmber, thin] (axis cs:1.1e8,8.4) -- (axis cs:1.1e8,2.72);
+% The 128 KiB column, labelled below the curves rather than across them.
+\node[font=\tiny, anchor=north west, align=left, inner sep=1.5pt, fill=white,
+      fill opacity=0.88, text opacity=1, text=spMute] at (axis cs:5.2e5,1.30)
+  {13 of $\PinCostCells$ cells at 128\,K\\[-1pt]($N{=}3$--$4{,}096$); worst $\PinCostWorst\times$};
+\draw[spMute, thin] (axis cs:5.0e5,1.22) -- (axis cs:1.38e5,3.85);
+% Where the arms exchange places.
+\draw[spMute, densely dotted] (axis cs:1.68e7,0.95) -- (axis cs:1.68e7,1.45);
+\node[font=\tiny, anchor=north, align=center, text=spMute] at (axis cs:1.68e7,1.44)
+  {arms cross};
+\end{axis}
+\end{tikzpicture}

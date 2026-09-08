@@ -1,0 +1,311 @@
+{
+ "theme": "T05",
+ "status": "SETTLED",
+ "verifier_note": "Every factual check executed against the frozen read-only snapshot at /home/rohit/sprs-review/snapshot. Re-runnable scratch scripts: /home/rohit/t05scratch/{funnel.py,funnel2.py,asgn.py,perinst.py,pairs.py,selbias.py,newsec.tex}. T01_verify.json (2,844 attempted / 2,822 passing / 22 non-settling; every dedup leader simulated), T02_verify.json (180 of 21,960 per instance; s4 empty in all 7,200 rows; Phase 2 never ran), T11_verify.json (winner tables decided by CSV arrival order) and T15_verify.json (38/39 champions tied; dedup collapses the configuration space) are taken as settled input and are cited, not re-derived. Everything else below I recomputed independently; where my numbers touch theirs they agree to the digit (6,785 valid, 2,920 unique, 2,844 simulated, 2,822 passing, 152 pairs).",
+ "verdicts": [
+  {
+   "issue": "D034",
+   "finding": "r03: The tournament protocol as written cannot produce the reported campaign; 'Phase 3' is used four times but never defined; 7,200 = 40x180 leaves no room for Phase 2; top-15 per phase implies ~30 TBs/instance but Table X reports 12-141 summing to 2,822; no S4 result appears anywhere.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "(i) 'Phase 3' occurs at main.tex:2065, 2073, 2079 and 2783 (four occurrences of the token; five references if L6's 'Phase 1/2' is counted), against exactly two \\item[Phase n.] labels at main.tex:2063 and 2066. (ii) 40 instances x 180 (S2,S3) = 7,200 and the campaign log's own banner reads '  Phase 1:     180 S2xS3 x 40 inst = 7200 items' (logs/phase1_sw.log:5, logs/phase1_rerun.log:5). All 40 results/results/*/sw_results.csv are 181 lines. So 7,200 is Phase 1 alone. (iii) tables/walltime.tex TBs column: min 12, max 141, sum 2,822 over 39 rows (awk -F'&' over the file), median 74; recomputed distinct simulated TB_Names per instance is 12..142, sum 2,844, median 74. No instance has 15. (iv) s4 column is empty in all 7,200 rows (T02, re-confirmed); tables/catalogue.tex has no S4 block; tables/perinstance_full.tex has no r column.",
+   "what_is_true": "All four sub-claims reproduce. The correct reconciliation, which the paper never states: 7,200 compilations -> 6,777 emitted images (390 E_BYPASSED + 33 E_EVAL_TIMEOUT produce none) -> 2,920 SHA-256-distinct images -> 2,849 simulated (2,844 on 39 instances plus 5 timed-out attempts on maxp_mod_fat) -> 2,822 passing. There is no Phase 2 and no Phase 3 in the campaign.",
+   "consequence": "REWRITE Sec. VI-E to the funnel above. r03's remedy 'add the winning refinement r to Table XI' is NOT needed and must be rejected: no S4 configuration has a clean RTL result (T02), so the column would be empty. The 'adjust the ~22,000 framing' half is right and is T02's to execute."
+  },
+  {
+   "issue": "D042",
+   "finding": "r04: The described top-15-by-makespan promotion was not the protocol run; every unique feasible testbench was simulated; App. E's selection-bias analysis addresses a selection that did not occur.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Per-instance comparison (/home/rohit/t05scratch/perinst.py): for 39 of 40 instances the set of TB_Names in live_hw_results_p1_maxpe.csv is EXACTLY the set of sw_results.csv rows with unique_hw_sim==True. Totals: 2,920 leaders, 2,844 simulated, one mismatch (maxp_mod_fat, 76 leaders, 0 rows in the main CSV). Code: src/sprs_tournament.py:2017-2032 -- 'if key not in leader_map: r[\"unique_hw_sim\"]=True ... vivado_queue.append(...)' -- the queueing predicate is 'first arrival with this tb_hash', with no makespan term anywhere in the loop. The --hw-only path used for the RTL campaign is the same: src/sprs_tournament.py:1846-1857 queues every row flagged unique_hw_sim==True. r04's own funnel numbers are slightly off (6,785 feasible is right; 2,920 unique is right; 2,854 is a row count, 2,844 is the distinct-image count -- T01 settled this).",
+   "what_is_true": "Exactly as stated, and the decisive discriminator is stronger than the one r04 gives: the never-used shortlist that select_winners() would have produced contains only 65 distinct (S2,S3) pairs (reproduced exactly: logs/phase1_rerun.log:80-81 'SW winners: 392 across 40 instances / Unique (S2,S3) pairs: 65'), whereas 152 distinct pairs appear among the simulated rows. Under the described protocol at most 65 could. ",
+   "consequence": "REWRITE Sec. VI-E (draft supplied). App. E is computable and correct; it is the FRAMING that is counterfactual, so the cheapest adequate fix is to move the appendix to the companion and keep one subjunctive sentence in the main text. Do not delete the number: it is the paper's best argument for why exhaustive simulation was worth the 1,003 core-hours."
+  },
+  {
+   "issue": "D052",
+   "finding": "r06: No top-15 promotion, and Phase 2 never ran.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Same evidence as D042 plus: logs/phase1_sw.log contains 40 '[dedup <inst>] k/m unique' lines whose k matches the per-instance simulated count. Phase 2: run_phase2 (src/sprs_tournament.py:615) is reachable only under --mode phase2 (src/sprs_tournament.py:2397); both released logs are '--mode phase1 --skip-hw'; no s4_results.csv exists anywhere in the snapshot; the s4 column is '' in all 7,200 rows. r06's '6,366 of 6,499 feasible' arithmetic is the only part I could not reproduce: the feasible count is 6,785 (valid==True) or 6,777 (emitted an image), not 6,499; 6,499 is the count of E_OK rows, which excludes the 278 IMEM-flagged rows that WERE simulated.",
+   "what_is_true": "Both halves confirmed. r06's coverage arithmetic uses the wrong denominator. Recomputed: of the 6,777 emitted images, 6,777 - (76 maxp_mod_fat leaders' classes) are covered by a simulated image of the same tb_hash; the uncovered set is exactly maxp_mod_fat's 133 emitted images.",
+   "consequence": "REWRITE as above. Delete the Phase 2 bullet outright rather than marking it not-run: a bullet that describes an experiment with no data costs lines and invites the question 'where is it?'."
+  },
+  {
+   "issue": "D060",
+   "finding": "r08: run_phase1_unified queues every non-empty tb_hash with no makespan cutoff; select_winners_by_hw runs only afterwards and its rule is a 3-tier threshold capped at 15, not 'top-15'; gen_tournament.py says so explicitly.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "src/sprs_tournament.py:2017-2032 (queueing, no cutoff) and 2045-2049 (the per-instance CSV is sorted by makespan only AFTER the leader has been chosen by arrival order). select_winners at src/sprs_tournament.py:627-660: 'unique_ms = sorted(set(...)); threshold = unique_ms[min(n_tiers-1, len(unique_ms)-1)]; selected = [... if ms <= threshold]; selected = selected[:max_per]'. Reconstructing it from the released CSVs gives 392 rows over 40 instances, sizes 3..15 (median 12), 65 distinct pairs -- reproducing logs/phase1_rerun.log:80-81 exactly (/home/rohit/t05scratch/pairs.py). select_winners_by_hw (line 695) has the identical rule on measured cycles. paper/scripts/gen_tournament.py:238-241 carries the comment 'If HW simulation had been restricted to the top-K by SW makespan, would the true HW champion have been missed?' -- the authors' own code already documents App. E as a counterfactual.",
+   "what_is_true": "Confirmed to the line. Two refinements r08 does not state. First, in the released campaign select_winners ran under --skip-hw, so its output (p1_sw_winners.csv) fed nothing at all; it is not 'applied afterwards to feed the next stage', it is dead output. Second, 'top-15' is wrong even as a description of that dead shortlist: it is 'every configuration whose makespan ties one of the three best distinct makespan values, capped at 15', which yields 3-15 per instance.",
+   "consequence": "EDIT, and the correction is free: the paper should not describe select_winners at all, since nothing in the reported results depends on it."
+  },
+  {
+   "issue": "D078",
+   "finding": "r11: For 39 of 40 instances the simulated TB set is exactly the unique_hw_sim==True set; per-instance counts 12-141; all 2,822 passing rows have S4=='none'; sprs_tournament.py:1199-1240 has no makespan cutoff; L6 and App. F describe a shortlist that was never applied.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED_NARROWER",
+   "observed": "The data claims all reproduce (see D042). Two corrections. (a) The line range is wrong: src/sprs_tournament.py:1199-1240 is inside run_phase3, which is UNREACHABLE from --mode phase1 (src/sprs_tournament.py:2373-2395 calls run_phase1_unified only; run_phase3 is called at 2440+ under --mode phase2). The loop that actually ran is at 2017-2032 in run_phase1_unified, and the HW-campaign loop is at 1846-1857 in _load_hw_only_state. The claim is right; the citation points at dead code. (b) 'maxp_mod_fat's 76, never attempted' is not quite right: 5 of its 76 leaders WERE attempted and are recorded in results/results/live_hw_results_maxp_mod_fat.csv, all five terminating in SIM_WALLCLOCK_TIMEOUT_BYPASS after >8 h and consuming 58.85 core-hours (verified: sum of SimTime_s / 3600 = 58.85, matching the paper's '58.9 core-hours' at main.tex:3005). 71 were never attempted.",
+   "what_is_true": "The finding stands; the artefact is slightly better than r11 describes (the abandoned instance has a recorded failure mode, not silence) and the code citation must be corrected before it is quoted in a response letter.",
+   "consequence": "REWRITE Sec. VI-E; state the 71/5 split, which costs six words and pre-empts 'why does one instance vanish?'."
+  },
+  {
+   "issue": "D090",
+   "finding": "r13: The tournament is defined as two-phase but 'Phase 3' is referenced five times and never introduced.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "grep -n 'Phase' paper/main.tex: 2060 ('two-phase tournament'), 2063 (Phase 1), 2065 ('Phase~3 xsim validation'), 2066 (Phase 2), 2073 ('Phase~3 runs xsim'), 2078-2079 ('Phase 1 selects ... Phase~3 measures'), 2782-2783 ('Phase 1/2 ... (Phase 3)'). Four occurrences of the literal token 'Phase 3'/'Phase~3' plus L6's parenthetical, against two defined phases.",
+   "what_is_true": "'Phase 3' is a leaked internal code name, not a typo. src/sprs_tournament.py:789-790 has the section banner 'PHASE 3: HW SIMULATION WITH TESTBENCH HASHING' and defines run_phase3 (1152) and _load_phase3_done (1129); phase_tag='p1_unified' at 2106. So in the codebase 'Phase 3' names the xsim stage of the legacy three-call organisation (run_phase1 SW -> select_winners -> run_phase3 HW). The campaign used run_phase1_unified, which folds that stage in as 'Step 3' (printed at src/sprs_tournament.py:2148, 2213) of a single pass. There is therefore no third phase to define; there is one phase with three steps.",
+   "consequence": "EDIT. Answering the theme's question 3 directly: 'Phase 3' does correspond to something real in the code, but not to anything in the campaign's structure. The fix is to drop phase numbering entirely, as the draft below does -- cheaper and safer than defining a third phase that then has to be reconciled with a two-phase heading."
+  },
+  {
+   "issue": "D111",
+   "finding": "r05: The selection-bias appendix is computed over ALL simulated configurations, which proves top-15 promotion did not happen; AND the K=15 instance count is off by one under every inclusion rule tried (r05 gets 38, paper says 37).",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED_NARROWER",
+   "observed": "First half CONFIRMED: the appendix arithmetic requires hw_cycles for configurations outside any top-15, and per-instance simulated counts are 12..142 with median 74, so it can only have been computed over the full deduped set. Second half REFUTED. I reproduced tables/selbias.tex exactly using the authors' own inclusion rule from paper/scripts/gen_tournament.py:247 ('if len(pairs) < K + 2: continue'): K=10 -> 39 instances, K=15 -> 37, K=30 -> 32, identical from BOTH released HW CSVs (/home/rohit/t05scratch/selbias.py). The per-instance passing counts are 12, 16, 17, 18, 21, ... so requiring >= K+2 = 17 excludes exactly the 12- and 16-configuration instances, giving 37. r05 presumably used >= K+1 or >= K.",
+   "what_is_true": "The appendix table is arithmetically correct and needs no repair. What is wrong is one sentence of framing at main.tex:3020-3021 ('The tournament selects candidates for hardware simulation using the compiler's software makespan') and the consumer sentence at main.tex:3041-3043. The numbers themselves are already stated subjunctively at main.tex:3033-3035 ('would have been missed').",
+   "consequence": "Do NOT recompute or 'reconcile' tab:selbias -- there is nothing to reconcile, and a response letter that concedes an error here would be conceding an error that does not exist. This is the tenth REFUTED reviewer claim on this panel. Reframe two sentences and move the appendix to the companion."
+  },
+  {
+   "issue": "T05-X1 (NOT IN THE DOCKET)",
+   "finding": "The 'Feasibility bound' paragraph is counterfactual in three separate ways: the S5 memory pass never ran, the 278 configurations were not rejected, and IMEM was not fixed at 512.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "(a) S5: enforce_memory is defined at src/sprs_core.py:4942 and called from exactly ONE site, src/sprs_core.py:5676, inside the demo full-pipeline function; `grep -rn enforce_memory src/ experiments/ analysis/` returns no other call. src/sprs_tournament.py contains no reference to enforce_memory, refine_phased or compile_full. The tournament worker (src/sprs_tournament.py:1601-1650) runs S2 -> validate -> S3 -> build_schedule -> generate_instructions and stops. So the S5 stage the paper credits with the 278 rejections did not execute in the campaign. (b) 'Rejected': src/sprs_tournament.py:1637-1647 sets valid=True and only THEN sets error_code=E_IMEM_OF; the testbench is emitted regardless at 1650-1660. Recomputed: of the 278 E_IMEM_OF rows, 117 became dedup leaders and 116 were simulated in RTL, of which 113 PASSED (/home/rohit/t05scratch/, cross-checks T01-X3). (c) IMEM depth: src/sprs_core.py:5380-5384 -- 'max_imem = max(len(progs[g]) ...); imem_sz = 1; while imem_sz < max_imem: imem_sz *= 2; imem_sz = max(imem_sz, 64); dmem_sz = hw.dmem_depth' -- emitted as '.CN_DMEM({dmem_sz}),.CN_IMEM({imem_sz})' at src/sprs_core.py:5432. So every testbench elaborates its OWN IMEM depth, a power of two from 64 upward; the 116 simulated over-budget images have max_imem from 518 to 1792 (median 791), i.e. elaborated IMEM up to 2048. Only DMEM is fixed at 512. The RTL default of 512 (rtl/btree_pkg.sv:19, rtl/btree_fsm_fast.sv:39) is overridden on every instantiation.",
+   "what_is_true": "The number 278 is correct as a count of E_IMEM_OF rows out of 7,200. Everything the sentence says ABOUT those 278 is wrong: they were not rejected, nothing rejected them, and the 512-entry IMEM they exceed was not the IMEM the fabric was built with. A referee reading src/sprs_core.py:5380 finds this in under a minute, and it currently sits in the methods section three paragraphs above the protocol description that T05 is already rewriting.",
+   "consequence": "REMOVE OR NARROW CLAIM, ~25 words, no new data. This is the highest-risk unlisted item in T05's scope and the cheapest to fix. It also removes an apparent contradiction with T01's finding that IMEM-overflow configurations appear among the RTL-validated set."
+  },
+  {
+   "issue": "T05-X2 (NOT IN THE DOCKET)",
+   "finding": "The dedup leader -- and therefore the (S2,S3) label attached to every simulated configuration and every winner -- is chosen by multiprocessing arrival order, and the paper never says so.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "src/sprs_tournament.py:2117 iterates 'pool.imap_unordered(_unified_p1_worker, work_items, chunksize=4)'; rows are appended to inst_results[ilabel] in completion order (2124); the dedup loop at 2006-2036 walks that list and the FIRST row carrying a given tb_hash becomes the leader and lends its s2/s3 to the testbench filename ('tb_{s2}_{s3}_none', 2021-2023). The makespan sort at 2045-2048 happens after. This is the mechanism behind T11-D033-ties and T15; I re-derived it here because it is part of 'what actually ran'.",
+   "what_is_true": "The protocol is deterministic in WHICH images are simulated (all of them) and non-deterministic in WHICH ALGORITHM NAME each image is filed under. That asymmetry is exactly why the invariance result is robust and the winner tables are not, and stating it once in Sec. VI-E is the cheapest support T15's rewrite can get.",
+   "consequence": "One clause, shared with T15. Do not duplicate it in both sections."
+  },
+  {
+   "issue": "T05-X3 (NOT IN THE DOCKET)",
+   "finding": "tables/dedup.tex -- the funnel exhibit the paper needs and never \\input{}s -- is internally inconsistent and its 622 is a cross-instance count.",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "tables/dedup.tex is not among the 17 \\input targets in main.tex (grep -n '\\\\input' paper/main.tex). Its 'Infeasibility causes' block lists 390 + 278 + 33 = 701, but the table's own 7200 - 6785 = 415 gap is 390 + 25; the 278 IMEM rows are counted as feasible in the top block and as infeasible in the bottom block, and 8 of the 33 evaluation timeouts are counted as feasible (they are maxp_mod_fat 2*|3h rows that set valid=True before timing out). 'Unique assignments (asgn_hash) 622 / 8.6%' is the GLOBAL count: _hash_assignment (src/sprs_tournament.py:223) hashes only the assignment vector, not (N,G,topology), so instances sharing N collide. The per-instance sum -- the figure consistent with the 7,200 denominator -- is 641 (/home/rohit/t05scratch/asgn.py).",
+   "what_is_true": "The funnel exhibit exists and is 80% right, but importing it as-is would hand a referee a table that does not add up.",
+   "consequence": "Do NOT \\input tables/dedup.tex. The corrected funnel fits in the two clauses already in the draft below, at zero page cost; a 10-row table costs ~0.15 page and buys nothing. If a funnel table is wanted, put the CORRECTED version in the companion."
+  },
+  {
+   "issue": "T05-X4 (theme factual question 3)",
+   "finding": "Does 'Phase 3' correspond to anything that ran?",
+   "classification": "FACTUAL",
+   "verdict": "REFUTED (as a campaign stage) / CONFIRMED (as a code identifier)",
+   "observed": "The released HW data carries phase_tag 'p1_unified' (src/sprs_tournament.py:2106) and the released file is results/results/live_hw_results_p1_unified.csv. run_phase3 is invoked only from the --mode phase2 branch (src/sprs_tournament.py:2440ff). Both released logs are '--mode phase1 --skip-hw'. The RTL campaign was a later '--mode phase1 --hw-only' invocation, which re-enters run_phase1_unified and runs its 'Step 3' (src/sprs_tournament.py:2148).",
+   "what_is_true": "Nothing labelled Phase 3 ran. What ran was one invocation of a single-pass function with three internal steps: Step 1 (SW eval + testbench emission + per-instance dedup), a skipped Step 3 in the software run, and Step 3 (xsim) in a later hardware-only run over the state rebuilt from disk.",
+   "consequence": "Drop phase numbering. Describing the campaign as 'one exhaustive pass' is both true and a stronger claim than 'a two-phase tournament'."
+  },
+  {
+   "issue": "T05-X5 (theme factual question, understatement)",
+   "finding": "What did the real protocol do that the paper omits and should state?",
+   "classification": "FACTUAL",
+   "verdict": "CONFIRMED",
+   "observed": "Five omissions, each verified above: (1) coverage of the (S2,S3) grid -- 152 of 180 pairs reached RTL, stated nowhere; (2) the collapse factor -- 6,777 images to 2,920, 56.9%, stated nowhere (logs/phase1_rerun.log:75 'Unique TBs: 2920 / 6777 (56.9% dedup)'); (3) the per-instance simulated range 12-142, median 75 -- only the passing counts 12-141 appear, inside a wall-clock appendix table; (4) the exhaustiveness itself -- no sentence in main.tex says every distinct image was simulated; (5) the maxp_mod_fat disposition -- 5 of 76 attempted, all wall-clock-killed, 71 abandoned, 58.9 core-hours (main.tex:3005 gives the core-hours but not the 5/76).",
+   "what_is_true": "The paper describes a cheaper and weaker campaign than it ran. Items (1), (2) and (4) cost about 25 words together and each strengthens Claim 1's denominator.",
+   "consequence": "This is why T05 is a net-positive rewrite rather than a concession, and it should be framed that way in the response letter."
+  },
+  {
+   "issue": "T05-X6",
+   "finding": "Is App. E worth keeping in the main text at all? (theme framing)",
+   "classification": "INTERPRETIVE",
+   "verdict": "INTERPRETIVE",
+   "observed": "Facts for the debate: the appendix renders as ~26 column-lines plus a 3-row table plus a heading, about 0.33 billed page. Its numbers are correct (verified). Its stated consumer -- 'the winner distributions of Sec. VII-E and Appendix B' -- is the material T15 recommends withdrawing, so under T15's decision the appendix would have no consumer left in the main text.",
+   "what_is_true": "Not decidable by execution.",
+   "consequence": "Recommendation, not a finding: MOVE-TO-COMPANION and retain one subjunctive sentence in Sec. VI-E. Deleting it outright loses the single best justification for the campaign's cost; keeping it in the main text keeps a counterfactual appendix alive after its subject has been withdrawn. Depends on T15."
+  }
+ ],
+ "headline": "T05 is confirmed on every checkable point, and what actually ran is better than what the paper claims. The campaign was ONE exhaustive pass, not a two- or three-phase tournament: 40 instances x the complete 18x10 (S2,S3) grid = 7,200 compilations; 6,777 emitted a program image; SHA-256 over the emitted testbench text collapsed those to 2,920 distinct images (56.9%); and every one of them was queued for xsim with no selection of any kind -- 12 to 142 per instance, median 75, covering 152 of the 180 pipeline pairs. The decisive discriminator is not the per-instance counts the reviewers cite but the pair coverage: the shortlist the code CAN build contains 65 distinct (S2,S3) pairs (reproduced exactly from logs/phase1_rerun.log:80-81), and 152 appear in the hardware results, so the described protocol is arithmetically incapable of producing the reported data. 'Phase 3' is a leaked code identifier (src/sprs_tournament.py:789 banner, run_phase3 at 1152) for a function that --mode phase1 never calls; the campaign's own name for that stage is 'Step 3'. Nine of the protocol statements in Sec. VI are false as written and three numbers are wrong or mis-scoped, but only ONE of the fourteen numbers I audited is factually incorrect in value (622, which is a cross-instance count where 641 is the per-instance one, in a table the paper never \\input{}s). The rest are right numbers wrapped in wrong descriptions -- which is the cheapest possible failure mode to fix. Two findings are NOT in the docket and matter more than three that are. First, the 'Feasibility bound' paragraph is wrong three ways: the S5 memory pass it credits never executed (enforce_memory has exactly one call site, src/sprs_core.py:5676, in a demo function the tournament never reaches), the 278 configurations were not rejected (117 became dedup leaders, 116 were RTL-simulated, 113 PASSED), and IMEM was not fixed at 512 -- src/sprs_core.py:5380-5383 sizes each testbench's CN_IMEM to the next power of two above its own program length, so the simulated fabrics carry 64 to 2048 entries and only DMEM is fixed. Second, r05's claim that the K=15 row of tab:selbias is off by one is REFUTED: using the authors' own inclusion rule (paper/scripts/gen_tournament.py:247, 'len(pairs) < K+2') I reproduce 39/37/32 exactly from both released CSVs. The appendix's arithmetic needs no repair; only two sentences of framing around it do.",
+ "actual_protocol": "ONE invocation of run_phase1_unified (src/sprs_tournament.py:1879), split across two runs. SOFTWARE RUN ('--mode phase1 --skip-hw', logs/phase1_sw.log then logs/phase1_rerun.log with --resume): work_items is the full cross product of 40 instances x 18 STAGE2_METHODS x 10 STAGE3_METHODS = 7,200 items (src/sprs_tournament.py:1893, 1959-1975), dispatched over a multiprocessing pool by imap_unordered with chunksize=4 (2117; 72 workers in the first run, 12 in the resumed run). Each item (_unified_p1_worker, 1579-1673) builds the tree and topology, runs S2 assignment, validates it, runs S3 mapping, builds the schedule, emits instructions, records max_imem and imem_ok against a 512-entry model budget WITHOUT acting on it, then emits the full SystemVerilog testbench to a scratch file and records tb_hash = SHA-256 of the entire testbench text (1655). Stages S4 (refinement) and S5 (memory enforcement) are never invoked on this path. When all 180 rows for an instance have arrived, a per-instance dedup fires (2006-2036): rows are walked in ARRIVAL order, the first row bearing each tb_hash becomes the leader, is flagged unique_hw_sim=True, has its scratch file renamed to tb_<s2>_<s3>_none.sv, and is appended to vivado_queue; every later row with the same hash is a follower, its scratch file is deleted, and it inherits the leader's cycle count. The instance CSV is then sorted by makespan and written (2045-2054). Totals reproduced from the released data and matching logs/phase1_rerun.log:74-75 exactly: 6,785 valid, 6,777 with an image, 2,920 unique, 56.9% collapse. select_winners (627-660, a 3-tier makespan threshold capped at 15) then produced 392 rows / 65 pairs into p1_sw_winners.csv, which nothing downstream consumed. HARDWARE RUN ('--mode phase1 --hw-only', no log released): _load_hw_only_state (1795-1877) rebuilds the queue from disk by re-reading every sw_results.csv and enqueueing every row with unique_hw_sim==True whose .sv file exists -- again with no selection. _adaptive_hw_dispatch (1031-1128) runs them through xsim with maxtasksperchild=1, a RAM-based worker cap, an 8 h per-item wall clock, and up to N retries on transient XVLOG/XELAB/timeout codes, which is the origin of the 10 duplicate rows in live_hw_results_p1_maxpe.csv. Outcome: 2,844 distinct images simulated across 39 instances (2,822 passing, 22 non-settling -- see T01); maxp_mod_fat's 76 images were attempted 5 times, all five hitting the wall clock at ~11.8 h each (58.85 core-hours, results/results/live_hw_results_maxp_mod_fat.csv), and the remaining 71 were abandoned. No S4 configuration and no second phase ever entered the pipeline.",
+ "number_audit": [
+  {
+   "number": "7,200 compilations",
+   "paper_at": "main.tex:150-152 (abstract), 2023, 2837 area",
+   "status": "CORRECT",
+   "true_value": "7,200 = 40 x 18 x 10",
+   "note": "Reproduced: all 40 sw_results.csv are 181 lines. Log banner logs/phase1_sw.log:5. The error is not the number but the abstract's denominator (T02 owns: 21,960 is per-instance)."
+  },
+  {
+   "number": "2,920 unique testbenches",
+   "paper_at": "NOT IN main.tex (only tables/dedup.tex, never \\input)",
+   "status": "CORRECT BUT ABSENT",
+   "true_value": "2,920",
+   "note": "Sum of per-instance distinct tb_hash = sum of unique_hw_sim==True = 2,920. logs/phase1_rerun.log:75. Should be stated."
+  },
+  {
+   "number": "2,844 simulated / 2,854 rows",
+   "paper_at": "NOT IN main.tex",
+   "status": "ABSENT",
+   "true_value": "2,844 distinct images on 39 instances + 5 on maxp_mod_fat = 2,849 xsim invocations with a terminal record; 2,854 is the maxpe row count including 10 retries",
+   "note": "T01 settled the 2,844 vs 2,854 distinction; T05 adds the 5 maxp_mod_fat attempts, which no denominator in the paper includes."
+  },
+  {
+   "number": "2,822 RTL-validated",
+   "paper_at": "main.tex:151, 162, \\WallTBs",
+   "status": "CORRECT",
+   "true_value": "2,822",
+   "note": "Reproduced three ways: Pass==True rows, tab:invariance column-4 sum, tab:walltime TBs sum."
+  },
+  {
+   "number": "278 IMEM rejections",
+   "paper_at": "main.tex:2023-2024",
+   "status": "NUMBER CORRECT, DESCRIPTION FALSE",
+   "true_value": "278 rows carry error_code E_IMEM_OF; 0 were rejected; 117 became dedup leaders; 116 were RTL-simulated; 113 PASSED",
+   "note": "See T05-X1. Also the per-instance split the paper gives (120/120/10/8) is right but incomplete: large_extreme_1d 120, vlarge_extreme_1d 120, max_bal_2d 10, max_mod_fat 10, maxp_bal_2d 10, maxp_mod_fat 8 = 278."
+  },
+  {
+   "number": "512-entry IMEM budget",
+   "paper_at": "main.tex:344, 2019-2022",
+   "status": "FALSE FOR THE CAMPAIGN",
+   "true_value": "DMEM fixed at 512; IMEM elaborated per configuration as the next power of two >= program length, min 64, observed up to 2048",
+   "note": "src/sprs_core.py:5380-5384, emitted at 5432."
+  },
+  {
+   "number": "622 unique assignments",
+   "paper_at": "tables/dedup.tex (never \\input)",
+   "status": "WRONG SCOPE",
+   "true_value": "641 per-instance-summed; 622 is the global count after cross-instance hash collisions",
+   "note": "_hash_assignment (src/sprs_tournament.py:223) hashes the assignment vector only. 622/7200 = 8.6% mixes denominators."
+  },
+  {
+   "number": "top-15 per instance",
+   "paper_at": "main.tex:2064, 2066, 2081, 2786, 3034",
+   "status": "FALSE as protocol; TRUE only as the counterfactual K in App. E",
+   "true_value": "no selection; 12-142 images per instance, median 75; the never-used select_winners shortlist is 3-15 per instance (median 12), not top-15",
+   "note": "select_winners is a 3-tier makespan threshold capped at 15."
+  },
+  {
+   "number": "Phase 1 / Phase 2 / Phase 3",
+   "paper_at": "main.tex:2060, 2063, 2065, 2066, 2073, 2078-2079, 2782-2783",
+   "status": "FALSE",
+   "true_value": "one pass with three internal steps; Phase 2 never ran; 'Phase 3' is a code identifier for a function --mode phase1 never calls",
+   "note": "src/sprs_tournament.py:789, 1152, 2106, 2148."
+  },
+  {
+   "number": "122 S4 refinements",
+   "paper_at": "main.tex:2066, and 18x10x122 in the abstract",
+   "status": "CORRECT",
+   "true_value": "122 = 12 STAGE4_METHODS ids + 11 x 10 ordered pairs of the non-identity refiners",
+   "note": "Verified against enumerate_s4_configs (src/sprs_tournament.py:604-612) and the STAGE4_METHODS literal (src/sprs_core.py:5051-5057; note '4c2' uses double quotes, which is why a naive regex counts 11 and gets 101)."
+  },
+  {
+   "number": "~880,000 xsim runs",
+   "paper_at": "main.tex:2058-2059",
+   "status": "CORRECT",
+   "true_value": "21,960 x 40 = 878,400",
+   "note": "Consistent, and it is the sentence that makes the abstract's per-instance/campaign conflation visible."
+  },
+  {
+   "number": "12-141 TBs per instance (tab:walltime)",
+   "paper_at": "tables/walltime.tex",
+   "status": "CORRECT for passing runs",
+   "true_value": "passing 12-141 (sum 2,822); attempted 12-142 (sum 2,844)",
+   "note": "Both ranges verified; the caption already says 'over passing runs only'."
+  },
+  {
+   "number": "39 / 37 / 32 instances in tab:selbias",
+   "paper_at": "tables/selbias.tex",
+   "status": "CORRECT",
+   "true_value": "39 / 37 / 32",
+   "note": "REFUTES D111's second half. Reproduced from both released HW CSVs with the authors' own 'len(pairs) < K+2' rule (paper/scripts/gen_tournament.py:247)."
+  },
+  {
+   "number": "58.9 core-hours for maxp_mod_fat",
+   "paper_at": "main.tex:3005",
+   "status": "CORRECT",
+   "true_value": "58.85 h over 5 runs",
+   "note": "The paper says the instance 'has no passing runs'; it does not say only 5 of its 76 images were ever attempted."
+  },
+  {
+   "number": "152 of 180 (S2,S3) pairs reached RTL",
+   "paper_at": "NOT IN main.tex",
+   "status": "ABSENT",
+   "true_value": "152",
+   "note": "The single strongest coverage number the campaign produced, and the decisive refutation of the described protocol."
+  },
+  {
+   "number": "56.9% dedup collapse",
+   "paper_at": "NOT IN main.tex (tables/dedup.tex says 57.0% against a 6,785 denominator)",
+   "status": "ABSENT / minor scope error",
+   "true_value": "56.9% against the 6,777 images actually emitted; 57.0% against 6,785 valid rows",
+   "note": "logs/phase1_rerun.log:75."
+  }
+ ],
+ "counterfactual_descriptions": [
+  {
+   "file_line": "paper/main.tex:2060",
+   "text": "\"We use a two-phase tournament:\"",
+   "true_replacement": "One exhaustive pass. Delete the phrase and the description environment that follows it."
+  },
+  {
+   "file_line": "paper/main.tex:2063-2065",
+   "text": "\"Phase 1. 180 baseline (S2,S3) configurations evaluated by the software cost model. Top-15 per instance by makespan promoted to Phase~3 xsim validation, with testbench-hash deduplication.\"",
+   "true_replacement": "\"All 180 (S2,S3) configurations were compiled on every instance; every distinct testbench image was simulated.\" False in three independent ways: no promotion occurred (src/sprs_tournament.py:2017-2032, 1846-1857), there is no Phase 3, and the shortlist that was computed is a 3-tier threshold capped at 15, not a top-15."
+  },
+  {
+   "file_line": "paper/main.tex:2066-2067",
+   "text": "\"Phase 2. Top-15 unique Phase-1 winners crossed with 122 S4 refinements; same selection and validation.\"",
+   "true_replacement": "DELETE. Never executed; zero released data; s4 is empty in all 7,200 rows (T02)."
+  },
+  {
+   "file_line": "paper/main.tex:2073-2074",
+   "text": "\"Phase~3 runs xsim on unique testbenches only and followers inherit the cycle count.\"",
+   "true_replacement": "\"xsim runs on unique testbenches only and followers inherit the cycle count.\" The substance is TRUE and is in fact the entire protocol; only the phase label is wrong."
+  },
+  {
+   "file_line": "paper/main.tex:2078-2079",
+   "text": "\"Phase 1 selects by software makespan; Phase~3 measures hw_cycles.\"",
+   "true_replacement": "\"Nothing selects: every distinct image was measured. Appendix/companion reports what a makespan-chosen shortlist would have cost.\""
+  },
+  {
+   "file_line": "paper/main.tex:2080-2082",
+   "text": "\"reports ... the leakage rate p (fraction of top-15-by-hw_cycles outside top-15-by-makespan)\"",
+   "true_replacement": "Definition is correct; add the word 'hypothetical' or move the whole block to the companion with the counterfactual framing."
+  },
+  {
+   "file_line": "paper/main.tex:2782-2783 (L6)",
+   "text": "\"The tournament selects on software makespan (Phase 1/2) but evaluates on hw_cycles (Phase 3).\"",
+   "true_replacement": "DELETE L6 entirely. There is no metric gap: the reported results are measured on every configuration that was compiled and deduplicated."
+  },
+  {
+   "file_line": "paper/main.tex:2786-2788 (L6 cont.)",
+   "text": "\"Winner distributions should therefore be read as 'best among what was simulated'.\"",
+   "true_replacement": "TRUE conclusion, FALSE premise. The right caveat is the tie structure and the dedup equivalence classes (T15), not makespan selection. Move the sentence into T15's rewrite of sec:results-tour and delete it here."
+  },
+  {
+   "file_line": "paper/main.tex:3020-3021 (app:bias opening)",
+   "text": "\"The tournament selects candidates for hardware simulation using the compiler's software makespan, then measures hw_cycles.\"",
+   "true_replacement": "\"The campaign simulated every distinct image. This appendix asks what a cost-constrained campaign that had instead promoted a top-K-by-makespan shortlist would have missed.\" (The authors' own generator already frames it this way: paper/scripts/gen_tournament.py:238-241.)"
+  },
+  {
+   "file_line": "paper/main.tex:3041-3043 (app:bias closing)",
+   "text": "\"This matters for the winner distributions of Sec. VII-E and Appendix B, which should be read as 'best among what was simulated', and we report them on that basis.\"",
+   "true_replacement": "DELETE; its subject is withdrawn by T15."
+  },
+  {
+   "file_line": "paper/main.tex:2019-2024 ('Feasibility bound')",
+   "text": "\"IMEM and DMEM are fixed at 512 entries per PE ... which the S5 memory pass checks and rejects rather than truncating. This is not a hypothetical: 278 of the 7,200 compilations were rejected this way\"",
+   "true_replacement": "\"DMEM is fixed at 512 entries per PE; each testbench elaborates IMEM to the next power of two above its own program length (64--2048 here). 278 of the 7,200 compilations exceed the 512-entry reference budget and are flagged; 116 of them were simulated anyway and 113 passed, so the budget bounds a deployment, not the ABI.\" See T05-X1."
+  },
+  {
+   "file_line": "paper/main.tex:3005-3006",
+   "text": "\"maxp_mod_fat does not appear --- it has no passing runs\"",
+   "true_replacement": "\"...--- five of its 76 images were attempted and all five exhausted the 8 h simulator budget; the remaining 71 were not run.\" (+9 words, pre-empts an obvious question.)"
+  }
+ ],
+ "corrected_text": "\\subsection{Tournament Protocol}\\label{sec:method-tour}\n\nExhaustive cycle simulation of the $22{,}000$-point per-instance space is\ninfeasible (${\\approx}880{,}000$ xsim runs). We fix refinement at the\nidentity and enumerate the remaining $18\\times10$ $(\\asgn,\\map)$ face\n\\emph{exhaustively} on every instance: $7{,}200$ compilations, $6{,}777$ of\nwhich emit a program image ($390$ size-gated, $33$ evaluation timeouts).\n\n\\emph{Testbench-hash dedup.} Distinct $(\\asgn,\\map)$ pairs frequently\nproduce identical program images up to PE relabelling. A SHA-256 hash of the\nemitted testbench collapses the $6{,}777$ images to $2{,}920$ distinct ones\n($56.9\\%$); followers inherit the leader's cycle count. This is not merely a\ncompute saving: identical images \\emph{tautologically} produce identical bit\nresults, so dedup is what makes each remaining xsim run informative.\n\n\\emph{No shortlist.} Every distinct image was simulated --- $12$ to $142$ per\ninstance, median $75$, covering $152$ of the $180$ pairs --- so no selection\nstands between the compiler and the invariance evidence. The $71$ exceptions\nbelong to \\sv{maxp\\_mod\\_fat}, whose first five runs each exceeded the\n$8$\\,h simulator budget; it is dropped from the HW-validated suite. A\ntop-15-by-\\sv{makespan} shortlist would have missed a median\n\\TournLeakPctFifteen{} of the true top-15 by measured cycles\n(companion~\\S\\ref{comp:bias}) --- which is why we did not use one.\n",
+ "corrected_text_notes": "188 words against the current subsection's 189 (wc -w on paper/main.tex:2056-2086), and roughly 8 fewer rendered column-lines because the description environment with style=nextline is replaced by continuous prose. \\ref{comp:bias} is a forward reference to the companion section that receives Appendix E. Companion insert (zero billed pages): move main.tex:3016-3046 verbatim, replacing its opening sentence with the counterfactual framing given above and deleting its closing paragraph. Also required, outside the subsection: delete L6 (main.tex:2782-2791, 92 words); replace main.tex:2019-2024 per T05-X1; add nine words at main.tex:3005. Optional, shared with T15: one clause in the dedup paragraph noting that the (S2,S3) label on a simulated image is that of the first member of its equivalence class to finish compiling.",
+ "page_delta": "-0.45 billed pages net within T05's scope, measured on the rendered PDF via pdftotext -layout (/home/rohit/t05scratch/paper.txt). Breakdown: Appendix E moved to the companion -- 26 column-lines + a 3-row table + heading, ~0.66 column = -0.33 page, minus ~0.02 page for the one retained sentence (already inside the 188-word draft), net -0.31. L6 deleted -- 11 column-lines = -0.14 page. Sec. VI-E rewritten -- same word count, ~8 fewer lines from dropping the description environment, -0.04 page. Feasibility-bound sentence rewritten -- roughly word-neutral, 0.00. maxp_mod_fat disclosure +9 words, +0.01. DOUBLE-COUNT WARNING: T15 books +0.02 for tab:selbias dispersion lines and T02 books a funnel sentence in Sec. VI-D; if T15's dispersion rows go into the companion with the rest of App. E they cost nothing, and T02's funnel sentence is already subsumed by the first paragraph of the draft above -- the ledger must credit it once, not twice. REJECTED as too expensive: importing tables/dedup.tex as a funnel exhibit (+0.15 page for a 10-row table whose content fits in two clauses, and which currently does not add up -- see T05-X3).",
+ "dependencies": [
+  "T15 (withdrawal of the winner framing removes App. E's only main-text consumer; settle T15 first)",
+  "T02 (abstract coverage arithmetic; the 7,200 / 21,960 denominators must move together with this rewrite)",
+  "T01 (2,844 / 2,822 / 22 denominators and the IMEM-overflow-in-RTL finding T05-X1 corroborates)"
+ ],
+ "cheapest_adequate_fix_ladder": "Step 2 of the rule (narrow or remove an over-claim) resolves T05 almost entirely: every false statement is removed rather than repaired, and the two replacements are shorter than what they replace. Step 3 (restate/disclose) covers the five understatements, ~25 words. Step 4 (analysis of data in hand) is needed for nothing -- the 152/180, 56.9%, 12-142 and 5-of-76 figures were computed here in minutes from released CSVs and can be dropped straight into the text. Step 5 (new experiment) is required for nothing and must be refused if proposed: r03's 'add the winning refinement r to Table XI' would require running Phase 2 (~296-331 core-hours by the project's own estimate, docs/S4_PHASE2_ANALYSIS.md) to populate a column whose absence is fully handled by narrowing the claim, and r04's 'reframe App. E as guidance for a future Phase-2 campaign' would keep a counterfactual appendix alive in the main text for an experiment that is being cut. No Q1 referee rejects a paper for simulating MORE than it said it did once the text says so."
+}

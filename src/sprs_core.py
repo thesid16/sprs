@@ -107,6 +107,20 @@ _compile_c()
 ALGO_TIMEOUT = 600
 class AlgoTimeout(Exception): pass
 class AlgoBypassed(Exception): pass  # size gate fired: algo cannot run in budget -> mark BYPASSED (no fake fallback)
+class EmitRefused(Exception):
+    """emit_sv_testbench refuses to emit an image the fabric cannot execute.
+
+    The DMEM repair pass in assign_topology_aware_repair gives up with a bare
+    `break` when it cannot relieve an overloaded PE, and returns an assignment
+    whose peak DMEM still exceeds hw.dmem_depth.  The emitter then wrote
+    addresses >= dmem_depth into the instruction words, and the fabric truncates
+    every DMEM address to DMEM_ADDR_W bits (rtl/btree_fsm_fast.sv:517-521, :619),
+    so e.g. address 522 aliases onto address 10 and the testbench returns a wrong
+    root while reporting nothing.  Refusing is the only honest option: the
+    emitted SystemVerilog would not be a testbench for the program the compiler
+    believes it produced.
+    """
+    pass
 _DEADLINE = [float('inf')]
 def _set_eval_deadline(t=ALGO_TIMEOUT):
     """Set by run_single_eval ONLY. Algorithms must not call this."""
@@ -779,26 +793,41 @@ def _fp64_add_bits(a_bits, b_bits):
         shift_amt = e_b - e_a
 
     # Align mantissas — track sticky bit
+    # The alignment tail is split into its MSB (align_round, weight 1/2 of a
+    # guard unit) and everything below it (align_low).  sticky = their OR and is
+    # bit-identical to the previous single-expression form; the split is what
+    # makes the effective-subtraction borrow roundable.  Mirrors fp64_add.sv.
     if shift_amt > 54:
         m_aligned = 0
-        sticky = 1 if m_small != 0 else 0
+        align_round = 0                 # m_small[shift_amt-1] is 0 for shift_amt>=55
+        align_low = 1 if m_small != 0 else 0
     elif shift_amt == 0:
         m_aligned = m_small
-        sticky = 0
+        align_round = 0
+        align_low = 0
     else:
-        # Sticky = OR of all bits shifted out
-        mask = (1 << shift_amt) - 1
-        sticky = 1 if (m_small & mask) != 0 else 0
         m_aligned = m_small >> shift_amt
+        align_round = (m_small >> (shift_amt - 1)) & 1
+        align_low = 1 if (m_small & ((1 << (shift_amt - 1)) - 1)) != 0 else 0
+    sticky = align_round | align_low
 
     # Effective operation
     effective_sub = (s_a != s_b)
 
+    sub_borrow = 0
     if not effective_sub:
         m_sum = m_big + m_aligned
         s_r = s_a
     else:
-        m_sum = m_big - m_aligned
+        # The bits truncated during alignment form a tail 0 < t < 1 guard unit
+        # whenever sticky=1.  The exact difference is m_big - m_aligned - t, so
+        # the raw m_big - m_aligned is too large by t and the ADDITION rounding
+        # rule below (guard && (sticky || lsb)) then rounds a value lying just
+        # BELOW the midpoint up, giving +1 ulp.  Borrow the tail here: the
+        # remainder becomes r = 1 - t, still strictly inside (0,1), so sticky
+        # stays 1 and the same rounding rule is now the correct one.
+        sub_borrow = sticky
+        m_sum = m_big - m_aligned - sticky
         s_r = s_a
         if m_sum < 0:
             m_sum = -m_sum
@@ -842,6 +871,17 @@ def _fp64_add_bits(a_bits, b_bits):
                     m_norm = (m_sum << shift_left) & ((1 << 55) - 1)
                 else:
                     m_norm = 0
+                # When a borrow was taken the remainder is r = 1 - t.  A left
+                # shift by one scales it to 2r, which leaves (0,1) whenever
+                # t <= 1/2, i.e. whenever the tail is not strictly greater than
+                # half a guard unit.  Carry that whole unit into m_norm and
+                # recompute whether anything is left below.  (For effective
+                # subtraction a borrow implies m_sum >= 2**52, so lzc is 1 or 2
+                # and this is the only shift amount that can occur.)
+                if sub_borrow and lzc == 2:
+                    if not (align_round and align_low):
+                        m_norm = (m_norm + 1) & ((1 << 55) - 1)   # 2r >= 1
+                    sticky = 0 if (align_round and not align_low) else 1
                 if e_norm > shift_left:
                     e_norm = e_norm - shift_left
                 else:
@@ -5389,6 +5429,45 @@ def emit_sv_testbench(tree, topo, progs, fn="tb_sprs.sv", hw=HW,
             g = assignment.get(n, 0) if assignment else 0
             leaves_per_gpu[g] = leaves_per_gpu.get(g, 0) + 1
     max_leaves = max(leaves_per_gpu.values()) if leaves_per_gpu else 1
+
+    # ── Emission post-condition: no DMEM address may alias ────────────────────
+    # Every DMEM address the fabric sees is truncated to DMEM_ADDR_W bits, so an
+    # address at or beyond dmem_sz silently becomes a different, live address.
+    # Rather than emit a testbench that computes something other than the
+    # program, refuse.  Callers record the pipeline as a compile failure.
+    _bad = []
+    for _g in sorted(progs):
+        for _pc, _w in enumerate(progs[_g]):
+            _op = (_w >> 60) & 0xF
+            if _op == OP_NOP:
+                continue
+            _dest = (_w >> 40) & 0xFFFF
+            _a = (_w >> 24) & 0xFFFF
+            _b = (_w >> 8) & 0xFFFF
+            _refs = [('dest', _dest)]
+            if _op == OP_COMPUTE:
+                _refs += [('addr_a', _a), ('addr_b', _b)]
+            elif _op == OP_SEND:
+                _refs += [('src_addr', _a)]
+            for _what, _addr in _refs:
+                if _addr >= dmem_sz:
+                    _bad.append((_g, _pc, _op, _what, _addr, _addr % dmem_sz))
+                    if len(_bad) >= 8:
+                        break
+            if len(_bad) >= 8:
+                break
+        if len(_bad) >= 8:
+            break
+    if _bad:
+        _peak = max(x[4] for x in _bad) + 1
+        _ex = "; ".join(f"PE {g} pc {pc} op {op} {what}={addr} aliases to {al}"
+                        for (g, pc, op, what, addr, al) in _bad[:4])
+        raise EmitRefused(
+            f"DMEM address out of range: peak addressed slot {_peak} exceeds "
+            f"CN_DMEM={dmem_sz} on {tree.n_leaves}L {nn}G {topo.name}. "
+            f"Emitting would alias {len(_bad)}+ references onto live slots "
+            f"({_ex}). Refusing to emit.")
+
     lines=[]
     lines.append(f"// SPRS v2.2 — Auto-generated testbench")
     lines.append(f"// {tree.n_leaves}L {nn}G {topo.name}")
@@ -5416,7 +5495,23 @@ def emit_sv_testbench(tree, topo, progs, fn="tb_sprs.sv", hw=HW,
     lines.append("  logic[N_ROUTERS-1:0][15:0]rtr_rt_wr_addr;")
     lines.append(f"  logic[N_ROUTERS-1:0][{pw-1}:0]rtr_rt_wr_data;")
     lines.append("  logic adj_wr_en;")
-    lines.append("  logic[11:0]adj_rtr_id,adj_port_id,adj_target_rtr,adj_target_port;")
+    # ── Adjacency-configuration field width ──────────────────────────────────
+    # noc_system's adjacency interface carries router ids, port ids and their
+    # targets in ADJ_ID_W-bit fields, with the all-ones code reserved as the
+    # "disconnected" sentinel.  The historical fixed width of 12 addresses
+    # routers 0..4094 only; fat_tree G=4096 instantiates 4,192 routers, so every
+    # id >= 4095 aliased and the emitted configuration described a fabric with
+    # no relation to the intended fat-tree (0 of 8,223 installed links matched,
+    # 0 of 900 sampled routes delivered).  Size the field to the instance.  Any
+    # instance that fitted in 12 bits still emits byte-identical SystemVerilog,
+    # so every previously-recorded tb_hash is preserved exactly.
+    _adj_max = max([nr - 1, ppr - 1] +
+                   [max(r, p, tr, tp) for (r, p), (tr, tp) in topo.adjacency.items()]
+                   if topo.adjacency else [nr - 1, ppr - 1])
+    adj_w = 12
+    while (1 << adj_w) - 2 < _adj_max:
+        adj_w += 4
+    lines.append(f"  logic[{adj_w-1}:0]adj_rtr_id,adj_port_id,adj_target_rtr,adj_target_port;")
     lines.append(f"  logic[N_NODES-1:0]gci_buf_wr_en;")
     lines.append(f"  logic[N_NODES-1:0][15:0]gci_buf_wr_addr;")
     lines.append(f"  logic[N_NODES-1:0][63:0]gci_buf_wr_data;")
@@ -5430,7 +5525,8 @@ def emit_sv_testbench(tree, topo, progs, fn="tb_sprs.sv", hw=HW,
     lines.append(f"    .RTR_BUF_DEPTH(16),.NI_BUF_DEPTH(8),.LINK_LATENCY(0),")
     lines.append(f"    .CN_NUM_LINKS(2),.CN_TX_BUF(8),.CN_RX_BUF(8),")
     lines.append(f"    .CN_DMEM({dmem_sz}),.CN_IMEM({imem_sz}),")
-    lines.append(f"    .CN_TIMEOUT({hw.timeout_max}),.CN_WATCHDOG({hw.watchdog_max}),.GCI_LATENCY({hw.gci_latency})")
+    _adj_param = "" if adj_w == 12 else f",.ADJ_ID_W({adj_w})"
+    lines.append(f"    .CN_TIMEOUT({hw.timeout_max}),.CN_WATCHDOG({hw.watchdog_max}),.GCI_LATENCY({hw.gci_latency}){_adj_param}")
     lines.append("  ) u_sys (")
     lines.append("    .clk,.rst,.program_start,.all_done,.result,")
     lines.append("    .status,.error,.error_pc,.error_state,")
@@ -5444,8 +5540,8 @@ def emit_sv_testbench(tree, topo, progs, fn="tb_sprs.sv", hw=HW,
 
     # Helper tasks
     lines.append("  task automatic write_adj(int r,int p,int tr,int tp);")
-    lines.append("    adj_wr_en=1;adj_rtr_id=r[11:0];adj_port_id=p[11:0];")
-    lines.append("    adj_target_rtr=tr[11:0];adj_target_port=tp[11:0];@(posedge clk);#1;adj_wr_en=0;")
+    lines.append(f"    adj_wr_en=1;adj_rtr_id=r[{adj_w-1}:0];adj_port_id=p[{adj_w-1}:0];")
+    lines.append(f"    adj_target_rtr=tr[{adj_w-1}:0];adj_target_port=tp[{adj_w-1}:0];@(posedge clk);#1;adj_wr_en=0;")
     lines.append("  endtask")
     lines.append(f"  task automatic write_route(int r,int d,int p);")
     lines.append(f"    rtr_rt_wr_en[r]=1;rtr_rt_wr_addr[r]=d[15:0];rtr_rt_wr_data[r]=p[{pw-1}:0];@(posedge clk);#1;rtr_rt_wr_en[r]=0;")

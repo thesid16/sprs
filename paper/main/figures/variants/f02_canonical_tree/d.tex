@@ -1,0 +1,118 @@
+% f02_canonical_tree variant d -- the canonical tree beside a legal-but-different
+% association of the same eight operands, and why the roots are not the same word.
+% Data: Definitions 1-3 of main.tex (sec:abi-tree); the non-associativity of
+% IEEE-754 addition is stated at main.tex l.153; the canonical N=8 root word is
+% the N=8 row of tables/invariance.tex.  The right-hand tree is the left-linear
+% association -- a valid binary summation tree, not an SPRS object; no root word
+% is claimed for it, only that it is a different one in general.
+% Strategy: argue by COUNTEREXAMPLE.  a states the definition, b argues the
+% addressing and c shows the construction is forced once the leaf placement is
+% fixed.  All three answer "what is FBT(N)"; none answers "why does the ABI have
+% to name one at all".  This variant does, by exhibiting a second tree that is
+% perfectly legal arithmetic, computes the same real number, and returns a
+% different 64-bit word -- so bit-exactness is a property of the chosen
+% association, not of the summation.
+% Colour: the canonical FBT is the compliant path (spBlue) closing on the pinned,
+% confirmed root word (spGreen); the legal-but-different left-linear association
+% is the violating alternative (spVerm) and its root is spVerm too. The two
+% trees also differ in drawn shape and depth, so the contrast survives greyscale.
+% Target: IEEE single column (3.5in = 8.9cm); drawn width approx 8.4cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  inode/.style={draw=spBlue, circle, thick, inner sep=0pt, minimum size=4.2mm,
+                font=\tiny, fill=spBlueF, text=spInk},
+  altnode/.style={draw=spVerm, circle, thick, inner sep=0pt, minimum size=4.2mm,
+                  font=\tiny, fill=spVermF, text=spInk},
+  lnode/.style={draw=spSky!80!spInk, rounded corners=0.8pt, thick, inner sep=0pt,
+                minimum size=4.0mm, font=\tiny, fill=spSkyF, text=spInk},
+  rootn/.style={draw=spGreen, circle, line width=1.1pt, inner sep=0pt,
+                minimum size=4.6mm, font=\tiny, fill=spGreenF, text=spInk},
+  altroot/.style={draw=spVerm, circle, line width=1.1pt, inner sep=0pt,
+                  minimum size=4.6mm, font=\tiny, fill=spVerm!22, text=spInk},
+  edg/.style={draw=spBlue!70, thin},
+  aedg/.style={draw=spVerm!75, thin, densely dashed},
+  ttl/.style={font=\scriptsize\bfseries, anchor=north, align=center, text=spInk},
+  sub/.style={font=\tiny, anchor=north, align=center, text=spInk},
+  mid/.style={font=\tiny, anchor=north west, align=left, text width=2.30cm,
+              inner sep=0pt, text=spInk},
+]
+\def\q{0.50}
+\def\cx{6.45}
+
+% =====================================================================
+% LEFT -- FBT(8), the canonical association
+% =====================================================================
+\foreach \i in {0,...,7} {
+  \pgfmathsetmacro{\xx}{0.05+\i*\q}
+  \node[lnode] (C\i) at (\xx,0) {\i};
+}
+\foreach \n/\a/\b/\m in {3/0/1/0.5, 4/2/3/2.5, 5/4/5/4.5, 6/6/7/6.5} {
+  \pgfmathsetmacro{\xx}{0.05+\m*\q}
+  \node[inode] (CN\n) at (\xx,0.62) {\n};
+  \draw[edg] (CN\n) -- (C\a); \draw[edg] (CN\n) -- (C\b);
+}
+\foreach \n/\a/\b/\m in {1/3/4/1.5, 2/5/6/5.5} {
+  \pgfmathsetmacro{\xx}{0.05+\m*\q}
+  \node[inode] (CN\n) at (\xx,1.24) {\n};
+  \draw[edg] (CN\n) -- (CN\a); \draw[edg] (CN\n) -- (CN\b);
+}
+\node[rootn] (CN0) at ({0.05+3.5*\q},1.86) {0};
+\draw[edg] (CN0) -- (CN1); \draw[edg] (CN0) -- (CN2);
+
+\node[ttl, text=spBlue] at ({0.05+3.5*\q},5.05) {$\FBT(8)$\\ pinned by the ABI};
+\node[sub] at ({0.05+3.5*\q},4.42)
+  {depth $\lceil\log_2 8\rceil = 3$\\
+   root $\Rcan(8,L)=$\\ \texttt{0x40E1948E978D4FDF}\\ (Table~I)};
+\draw[spGreen, thin, -{Stealth[length=1.4mm]}]
+  ({0.05+3.5*\q},3.30) -- ({0.05+3.5*\q},2.16);
+
+% =====================================================================
+% RIGHT -- the left-linear association over the same eight operands
+% =====================================================================
+\node[lnode] (A0) at (\cx,0) {0};
+\node[lnode] (A1) at ({\cx+0.95},0) {1};
+\node[altnode] (S1) at ({\cx+0.42},0.45) {};
+\draw[aedg] (S1) -- (A0); \draw[aedg] (S1) -- (A1);
+\foreach \k in {2,...,7} {
+  \pgfmathsetmacro{\yy}{0.45*\k}
+  \pgfmathsetmacro{\yl}{0.45*\k-0.23}
+  \node[lnode] (A\k) at ({\cx+1.42},\yl) {\k};
+  \ifnum\k=7 \node[altroot] (S\k) at ({\cx+0.42},\yy) {};
+  \else      \node[altnode] (S\k) at ({\cx+0.42},\yy) {};\fi
+  \pgfmathsetmacro{\kk}{\k-1}
+  \draw[aedg] (S\k) -- (S\kk); \draw[aedg] (S\k) -- (A\k);
+}
+\node[ttl, text=spVerm] at ({\cx+0.86},5.05) {a legal\\ alternative};
+\node[sub, text width=2.05cm] at ({\cx+0.86},4.42)
+  {left-linear\\ depth $N{-}1=7$\\ root: a \emph{different}\\ FP64 word};
+\draw[spVerm, thin, -{Stealth[length=1.4mm]}]
+  ({\cx+0.42},3.86) -- ({\cx+0.42},3.40);
+\node[font=\tiny, text=spVerm, anchor=south west, fill=white, inner sep=0.5pt] at ({\cx+0.62},3.24) {root};
+
+% =====================================================================
+% MIDDLE -- what the two trees share and where they part
+% =====================================================================
+\node[mid] at (3.95,4.72)
+  {Same eight leaves, same order, same $+$ operator.\\[2pt]
+   In $\mathbb{R}$ both roots are $\sum_k L[k]$.\\[2pt]
+   In IEEE-754 they are not: addition is non-associative, so the
+   \emph{shape} is part of the answer.};
+\draw[spGrid, thin, dashed] (3.85,-0.10) -- (3.85,4.95);
+\draw[spGrid, thin, dashed] (6.28,-0.10) -- (6.28,3.95);
+
+% =====================================================================
+% The consequence
+% =====================================================================
+\node[anchor=north west, font=\tiny, align=left, inner sep=0pt, text width=8.30cm,
+      text=spInk] at (-0.10,-0.42)
+  {\textbf{Why the choice matters.} Nothing about the hardware prefers the left
+   tree: the right one is a correct summation, it is what a naive accumulator
+   loop emits, and on a linear topology it is the cheaper communication pattern.
+   The ABI pins the left one anyway, because a bit-exact root is only a
+   \emph{comparison} if every run reduces in the same association --- otherwise
+   two runs that disagree in the last ulp cannot be told apart from two runs one
+   of which is broken. Pinning the tree is what converts the root word into a
+   test. It costs nothing in freedom the ABI needs: topology, mapping,
+   refinement and schedule all move nodes between PEs without moving a single
+   node between parents.};
+\end{tikzpicture}

@@ -1,0 +1,20 @@
+% GENERATED — do not edit by hand.
+% script : scripts/gen_tables.py
+% source : /home/rohit/sprs-fix/data/results/*/sw_results.csv
+% date   : 2026-08-28
+% note   : dedup eliminates 57.0% of HW simulations
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Stage & Count & Retained \\
+\midrule
+Compilations attempted & 7200 & 100.0\% \\
+Feasible & 6785 & 94.2\% \\
+Unique testbenches (\sv{tb\_hash}) & 2920 & 40.6\% \\
+Unique assignments (\sv{asgn\_hash}) & 622 & 8.6\% \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Infeasibility causes}} \\
+\quad Size-gated (\sv{E\_BYPASSED}) & 390 & \\
+\quad IMEM overflow (\sv{E\_IMEM\_OF}) & 278 & \\
+\quad Evaluation timeout & 33 & \\
+\bottomrule
+\end{tabular}

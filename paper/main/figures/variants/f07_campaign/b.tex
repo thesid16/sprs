@@ -1,0 +1,64 @@
+% f07_campaign variant b -- Sankey / alluvial flow of the campaign.
+% Data: data/campaign_macros.tex (\FunnelCompiles 7,200; \FunnelImages 6,777;
+%       \FunnelUnique 2,920; \CampAttempted 2,844; \CampPassing 2,822;
+%       \CampNonSettling 22) and tables/dedup.tex (622 unique asgn_hash).
+%       EVERY thickness here is count/7200 x 2.40cm, with no minimum: the
+%       "not run" and "non-settling" out-takes are hairlines because they are
+%       hairlines in the data (2.6% and 0.8% of the stream they leave).
+%       Out-take magnitudes are differences of the macros above:
+%       7200-6777=423, 6777-2920=3857, 2920-2844=76, 2844-2822=22.
+% Strategy: conservation of mass. Nothing is lost or created between stages, so
+% the whole campaign can be audited by eye -- unlike the funnel (a), which
+% shows only the surviving population, this shows where the discarded mass
+% went, and it is the only variant in which the dedup out-take is drawn to the
+% same scale as the stream it leaves.
+% Target: IEEE single column, 3.5in = 8.9cm. Drawn inside 8.6cm.
+\begin{tikzpicture}[
+  stream/.style={draw=spBlue, line width=0.4pt, fill=spBlueF},
+  lossf/.style={draw=spVerm, line width=0.3pt, fill=spVerm!32},
+  lossb/.style={draw=spVerm, line width=0.4pt, fill=spVerm!52},
+  cnt/.style={font=\scriptsize, inner sep=0pt, align=center, text=spInk},
+  nm/.style={font=\tiny, inner sep=0pt, align=center, text=spMute},
+  lab/.style={font=\tiny, inner sep=1pt, align=center, text=spVerm},
+  lead/.style={draw=spVerm!60, line width=0.3pt, dash pattern=on 1pt off 1pt},
+]
+% ---- the surviving stream: top edge flat, bottom edge steps up at each stage
+\fill[stream]
+  (0,0) -- (8.10,0) -- (8.10,-0.9407) -- (6.95,-0.9407) -- (6.45,-0.9480)
+  -- (5.35,-0.9480) -- (4.85,-0.9733) -- (3.55,-0.9733) -- (2.95,-2.2590)
+  -- (1.70,-2.2590) -- (1.15,-2.4000) -- (0,-2.4000) -- cycle;
+% ---- out-take 1: infeasible, 423
+\fill[lossf] (1.15,-2.2590) -- (1.15,-2.4000) -- (2.20,-2.7000) -- (2.20,-2.5590) -- cycle;
+\draw[lead] (2.05,-2.66) -- (1.80,-2.86);
+\node[lab, anchor=north] at (1.60,-2.88)
+  {\textbf{423} infeasible: size-gated,\\\sv{IMEM} overflow, timeout};
+% ---- out-take 2: duplicate images, 3,857 -- where the campaign actually goes
+\fill[lossb] (2.95,-0.9733) -- (2.95,-2.2590) -- (4.30,-2.7860) -- (4.30,-1.5003) -- cycle;
+\draw[lead] (4.28,-2.72) -- (4.28,-2.95);
+\node[lab, anchor=north west] at (3.32,-2.97)
+  {\textbf{3{,}857} duplicate images: identical\\
+   up to PE relabelling, collapsed by a\\
+   SHA-256 hash over the emitted testbench};
+% ---- out-take 3: not run, 76 (hairline, drawn to scale)
+\fill[lossf] (4.85,-0.9480) -- (4.85,-0.9733) -- (5.25,-1.3200) -- (5.25,-1.2947) -- cycle;
+\draw[lead] (5.24,-1.307) -- (5.15,-1.57);
+\node[lab, anchor=north] at (5.05,-1.60) {\textbf{76} not run\\(\sv{maxp\_mod\_fat}, L0)};
+% ---- out-take 4: non-settling, 22 (hairline, drawn to scale)
+\fill[lossf] (6.45,-0.9407) -- (6.45,-0.9480) -- (6.85,-1.1500) -- (6.85,-1.1427) -- cycle;
+\draw[lead] (6.84,-1.146) -- (7.05,-1.57);
+\node[lab, anchor=north] at (7.30,-1.60)
+  {\CampNonSettling{} non-settling\\(watchdog fail-stops)};
+% ---- the second quotient, branching UP: a re-partition, not an out-take
+\fill[draw=spPurple, line width=0.4pt, dash pattern=on 1.2pt off 1pt, fill=spPurple!10]
+  (2.20,0) -- (2.4073,0) -- (3.05,0.72) -- (2.8427,0.72) -- cycle;
+\node[lab, anchor=west, align=left, text=spPurple] at (3.12,0.60)
+  {\textbf{622} distinct \emph{assignments} (\sv{asgn\_hash}):\\
+   a second quotient of the feasible set, drawn to\\
+   the same scale --- not a stage below \FunnelUnique{}};
+% ---- stage labels, inside the stream
+\node[cnt] at (0.55,-1.05) {\FunnelCompiles};  \node[nm] at (0.55,-1.42) {attempted};
+\node[cnt] at (2.32,-0.98) {\FunnelImages};    \node[nm] at (2.32,-1.35) {feasible};
+\node[cnt] at (4.20,-0.36) {\FunnelUnique};    \node[nm] at (4.20,-0.72) {unique TBs};
+\node[cnt] at (5.90,-0.36) {\CampAttempted};   \node[nm] at (5.90,-0.72) {queued};
+\node[cnt, text=spGreen] at (7.52,-0.36) {\textbf{\CampPassing}}; \node[nm, text=spGreen] at (7.52,-0.72) {\textbf{passed}};
+\end{tikzpicture}

@@ -1,0 +1,70 @@
+% GENERATED FROM COUNCIL VERIFICATION — do not edit by hand.
+% source : council/work/T03_verify.json, T04_verify.json,
+%          T07_verify.json + T07_positive_control.json, T14_verify.json
+% date   : 2026-08-23
+% Every value below was produced by an executed check recorded in the named
+% verdict file; the provenance comment on each block names it.
+
+% ---- T14: local-temporary address recycling (562 compiled configurations,
+%      all TEST_INSTANCES with N<=2048 x all STAGE2_METHODS) ----------------
+\newcommand{\RecycleConfigs}{562}
+\newcommand{\RecycleAddrs}{108{,}607}
+\newcommand{\RecycleEvents}{397{,}422}
+\newcommand{\RecycleUnsafe}{zero}
+\newcommand{\RecycleZeroReaderPct}{31.3\%}
+\newcommand{\RecycleSelfReaderPct}{68.7\%}
+
+% ---- T14: asynchronous GENERATE into a recycled slot -------------------
+\newcommand{\GenTotal}{82{,}084}
+\newcommand{\GenRecycled}{29{,}097}
+\newcommand{\GenRecycledPct}{35.4\%}
+\newcommand{\GciLatency}{4}
+\newcommand{\GciGapMin}{6}
+\newcommand{\GciGapMedian}{12}
+
+% ---- T04: memory feasibility and the DMEM counterexample ----------------
+\newcommand{\DmemDepth}{512}
+\newcommand{\DmemPeakMax}{491}
+\newcommand{\DmemMargin}{21}
+\newcommand{\DmemCexLeaves}{512}
+\newcommand{\DmemCexWorkers}{2}
+\newcommand{\DmemCexPeak}{522}
+\newcommand{\DmemCexOver}{11}
+\newcommand{\SendAddrBits}{ten}
+
+% ---- T04: static operand-binding check on the emitted images -------------
+\newcommand{\BindConfigs}{681}
+\newcommand{\BindComputes}{1{,}010{,}895}
+\newcommand{\BindSends}{731{,}982}
+\newcommand{\BindViolations}{zero}
+\newcommand{\DisconnCount}{2{,}061}
+\newcommand{\DisconnShare}{73.0\%}
+
+% ---- T04/T13: router-id addressability of the adjacency interface --------
+\newcommand{\RouterIdBits}{12}
+\newcommand{\RouterIdMax}{4{,}094}
+
+% ---- T03: presence boundary and the injected-fault campaign -------------
+\newcommand{\WatchdogMax}{20{,}000}
+\newcommand{\MutAddrSub}{54}
+\newcommand{\MutAddrStall}{43}
+\newcommand{\MutLeaf}{54}
+\newcommand{\MutTotal}{107}
+\newcommand{\MutLiveSlotMax}{eleven}
+
+% ---- T07: order sensitivity of the canonical association order ----------
+\newcommand{\OrderUlpMax}{55}
+\newcommand{\OrderUlpMaxN}{8192}
+% CORRECTED 2026-08-29: was "ten", transcribed from T07_verify.json ("10 of my
+% 16 N"). Independent reconstruction from src/sprs_core.py reproduces all 16 roots
+% of tables/invariance.tex exactly, and left-to-right sequential then differs at 12
+% of the 16 leaf counts (they agree only at N=8, 32, 50, 100).
+\newcommand{\OrderLRDiff}{twelve}
+\newcommand{\OrderPermsEight}{40{,}320}
+\newcommand{\OrderRootsEight}{three}
+\newcommand{\OrderCanonPctEight}{88.6\%}
+\newcommand{\OrderDetectEight}{0.114}
+\newcommand{\OrderShapesSixteen}{9{,}694{,}845}
+\newcommand{\OrderRootsSixteen}{four}
+\newcommand{\OrderProbMin}{0.08}
+\newcommand{\OrderProbMax}{0.90}

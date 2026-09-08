@@ -1,0 +1,21 @@
+% GENERATED — do not edit by hand.
+% script : scripts/gen_resource.py
+% source : sprs_core.build_topology (PPR/N_ROUTERS/N_NODES, the same
+%          call the emitter used to write those localparams)
+% date   : 2026-08-28
+
+\begin{tabular}{@{}l rrr@{}}
+\toprule
+\textbf{Component} & \multicolumn{3}{c}{\textbf{Per-router bits at radix $P$}} \\
+\cmidrule(l){2-4}
+ & $P=5$ & $P=11$ & $P=66$ \\
+ & \footnotesize mesh/torus & \footnotesize hypercube & \footnotesize fat-tree \\
+\midrule
+Routing table ($G\lceil\log_2 P\rceil$) & $12{,}288$ & $16{,}384$ & $28{,}672$ \\
+VC ingress FIFOs ($P\!\cdot\!2\!\cdot\!16\!\cdot\!96$) & $15{,}360$ & $33{,}792$ & $202{,}752$ \\
+Egress FIFO ($P\!\cdot\!16\!\cdot\!96$) & $7{,}680$ & $16{,}896$ & $101{,}376$ \\
+Crossbar ($P^2\!\cdot\!96$) & $2{,}400$ & $11{,}616$ & $418{,}176$ \\
+\midrule
+\textbf{Per-router subtotal} & $\mathbf{37{,}728}$ & $\mathbf{78{,}688}$ & $\mathbf{750{,}976}$ \\
+\bottomrule
+\end{tabular}

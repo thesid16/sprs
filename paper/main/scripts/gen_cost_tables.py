@@ -23,11 +23,25 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hwdata
+import gen_tablestyle as ts
 from collections import defaultdict
 
 csv.field_size_limit(sys.maxsize)
 
-P1 = "/home/rohit/tournament_p1/results"
+# Dataset root.  Resolution order:
+#   1. $SPRS_P1                        -- explicit override
+#   2. $SPRS_ROOT/data/results         -- the released artifact layout
+#   3. the author's original absolute path, kept only as a last resort so that
+#      re-running these scripts on the machine the campaign ran on still works.
+# The hardcoded path is what made this script unrunnable from a fresh clone.
+def _p1_default():
+    root = os.environ.get("SPRS_ROOT") or os.path.abspath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+    cand = os.path.join(root, "data", "results")
+    return cand if os.path.isdir(cand) else "/home/rohit/tournament_p1/results"
+
+
+P1 = os.environ.get("SPRS_P1") or _p1_default()
 MAXPE = f"{P1}/live_hw_results_p1_maxpe.csv"
 ORIG = f"{P1}/live_hw_results_p1_unified.csv"
 
@@ -136,20 +150,38 @@ def main():
                 agg[lab].append(c / om[inst])
                 break
 
+    live = [(lab, agg[lab]) for _, _, lab in bands if agg.get(lab)]
+    gmin = min(min(v) for _, v in live)
+    gmax = max(max(v) for _, v in live)
+    meds = ts.align_decimal([f"{st.median(v):.2f}" for _, v in live])
+    los = ts.align_decimal([f"{min(v):.2f}" for _, v in live])
+    his = ts.align_decimal([f"{max(v):.2f}" for _, v in live])
+
+    tab = [r"\begin{tabular}{@{}l r r@{\,}l r@{\,--\,}l l@{}}", r"\toprule",
+           ts.band(ts.HEAD) +
+           r"\sphd{$N/G$ band} & \sphd{Inst.} & "
+           r"\multicolumn{2}{c}{\sphd{Median cyc/$\Omega$}} & "
+           r"\multicolumn{3}{c}{\sphd{Range over the band}} \\",
+           r"\midrule"]
+    for i, (lab, v) in enumerate(live):
+        tab.append(f"{ts.zebra(i)}{lab} & {len(v)} & {meds[i]} & "
+                   f"{ts.bar(st.median(v), gmax, 'spBlue', 3.0)} & "
+                   f"{los[i]} & {his[i]} & "
+                   f"{ts.span(min(v), max(v), gmin, gmax, 'spVerm', 3.4)} \\\\")
+    tab += [r"\bottomrule", r"\end{tabular}"]
+
     b = [r"\begin{table}[!t]",
          r"\caption{Champion cycle count normalised by the lower bound $\Omega$, "
-         r"banded by $N/G$. The structural model predicts GCI serialisation binds "
-         r"only while $N/G \lesssim 6$--$8$.}",
+         r"banded by $N/G$. Bars are on a common $\mathrm{cyc}/\Omega$ axis "
+         rf"({gmin:.2f}--{gmax:.2f}); the orange segment is each band's observed range. "
+         r"The structural model predicts GCI serialisation binds only while "
+         r"$N/G \lesssim 6$--$8$, and the take-away is that the band medians fall "
+         r"monotonically with $N/G$ --- the opposite of what that reading predicts, "
+         r"which is why we withdraw the test (see text).}",
          r"\label{tab:nginflect}", r"\centering", r"\footnotesize",
-         r"\begin{tabular}{@{}lrrr@{}}", r"\toprule",
-         r"$N/G$ band & instances & median cyc/$\Omega$ & range \\", r"\midrule"]
-    for _, _, lab in bands:
-        v = agg.get(lab)
-        if not v:
-            continue
-        b.append(f"{lab} & {len(v)} & {st.median(v):.2f} & "
-                 f"{min(v):.2f}--{max(v):.2f} \\\\")
-    b += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+         r"\renewcommand{\arraystretch}{1.18}"]
+    b += ts.wrap(tab)
+    b += [r"\end{table}"]
     with open(f"{a.out}/nginflection.tex", "w") as f:
         f.write(hdr(source, trusted) + "\n".join(b) + "\n")
     print(f"  wrote {a.out}/nginflection.tex")
@@ -158,20 +190,41 @@ def main():
     bytopo = defaultdict(list)
     for inst, c in champ.items():
         bytopo[META[inst][2]].append(c / om[inst])
-    b = [r"\begin{table}[!t]",
-         r"\caption{Distance to the composite lower bound $\Omega$ by topology. "
-         r"$\Omega$ bounds any schedule on this fabric, so these ratios "
-         r"upper-bound what an unconstrained reducer could have recovered.}",
-         r"\label{tab:omegaratio}", r"\centering", r"\footnotesize",
-         r"\begin{tabular}{@{}lrrr@{}}", r"\toprule",
-         r"Topology & instances & median cyc/$\Omega$ & best \\", r"\midrule"]
-    for t in sorted(bytopo, key=lambda k: st.median(bytopo[k])):
-        v = bytopo[t]
-        b.append(f"{TOPO_TEX[t]} & {len(v)} & {st.median(v):.2f} & {min(v):.2f} \\\\")
+    order = sorted(bytopo, key=lambda k: st.median(bytopo[k]))
     allv = [x for v in bytopo.values() for x in v]
-    b += [r"\midrule",
-          f"\\textbf{{all}} & {len(allv)} & {st.median(allv):.2f} & {min(allv):.2f} \\\\",
-          r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    meds = ts.align_decimal([f"{st.median(bytopo[t]):.2f}" for t in order]
+                            + [f"{st.median(allv):.2f}"])
+    bests = ts.align_decimal([f"{min(bytopo[t]):.2f}" for t in order]
+                             + [f"{min(allv):.2f}"])
+    scale = max(st.median(bytopo[t]) for t in order)
+
+    tab = [r"\begin{tabular}{@{}l r r@{\,}l r@{}}", r"\toprule",
+           ts.band(ts.HEAD) +
+           r"\sphd{Topology} & \sphd{Inst.} & "
+           r"\multicolumn{2}{c}{\sphd{Median cyc/$\Omega$}} & \sphd{Best} \\",
+           r"\midrule"]
+    for i, t in enumerate(order):
+        v = bytopo[t]
+        tab.append(f"{ts.zebra(i)}{TOPO_TEX[t]} & {len(v)} & {meds[i]} & "
+                   f"{ts.bar(st.median(v), scale, 'spBlue', 3.6)} & {bests[i]} \\\\")
+    tab += [r"\midrule",
+            ts.band(ts.GOOD) +
+            f"\\textbf{{all}} & {len(allv)} & {meds[-1]} & "
+            f"{ts.bar(st.median(allv), scale, 'spBlue', 3.6)} & {bests[-1]} \\\\",
+            r"\bottomrule", r"\end{tabular}"]
+
+    b = [r"\begin{table}[!t]",
+         r"\caption{Distance to the composite lower bound $\Omega$ by topology, "
+         r"over the \TournNInst{} HW-validated instances. $\Omega$ bounds any "
+         r"schedule on this fabric, so these ratios upper-bound what an "
+         r"unconstrained reducer could have recovered. Bars share one axis. The "
+         r"one thing to take from it: the ordering tracks bisection width --- "
+         r"linear and hypercube land closest to the bound, ring furthest --- and "
+         r"no topology reaches it.}",
+         r"\label{tab:omegaratio}", r"\centering", r"\footnotesize",
+         r"\renewcommand{\arraystretch}{1.18}"]
+    b += ts.wrap(tab)
+    b += [r"\end{table}"]
     with open(f"{a.out}/omegaratio.tex", "w") as f:
         f.write(hdr(source, trusted) + "\n".join(b) + "\n")
     print(f"  wrote {a.out}/omegaratio.tex")

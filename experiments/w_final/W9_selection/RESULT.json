@@ -1,0 +1,234 @@
+{
+ "generated": "2026-08-28T13:39:40.596240",
+ "n_instances": 39,
+ "n_algorithms": 16,
+ "protocols": {
+  "LOO": [
+   {
+    "estimator": "oracle",
+    "n": 39,
+    "mean_regret": 1.0,
+    "median_regret": 1.0,
+    "max_regret": 1.0,
+    "frac_optimal": 1.0
+   },
+   {
+    "estimator": "portfolio_k4",
+    "n": 39,
+    "mean_regret": 1.0025,
+    "median_regret": 1.0,
+    "max_regret": 1.099,
+    "frac_optimal": 0.9744
+   },
+   {
+    "estimator": "portfolio_k3",
+    "n": 39,
+    "mean_regret": 1.0111,
+    "median_regret": 1.0,
+    "max_regret": 1.1178,
+    "frac_optimal": 0.8718
+   },
+   {
+    "estimator": "portfolio_k2",
+    "n": 39,
+    "mean_regret": 1.0305,
+    "median_regret": 1.0069,
+    "max_regret": 1.22,
+    "frac_optimal": 0.4872
+   },
+   {
+    "estimator": "cond_topology",
+    "n": 39,
+    "mean_regret": 1.0488,
+    "median_regret": 1.0,
+    "max_regret": 1.3895,
+    "frac_optimal": 0.5385
+   },
+   {
+    "estimator": "single_global",
+    "n": 39,
+    "mean_regret": 1.0797,
+    "median_regret": 1.0139,
+    "max_regret": 1.7595,
+    "frac_optimal": 0.4103
+   },
+   {
+    "estimator": "portfolio_k1",
+    "n": 39,
+    "mean_regret": 1.0797,
+    "median_regret": 1.0139,
+    "max_regret": 1.7595,
+    "frac_optimal": 0.4103
+   },
+   {
+    "estimator": "cond_nbucket",
+    "n": 39,
+    "mean_regret": 1.1047,
+    "median_regret": 1.0241,
+    "max_regret": 1.8786,
+    "frac_optimal": 0.3846
+   },
+   {
+    "estimator": "random_single",
+    "n": 39,
+    "mean_regret": 7648.056,
+    "median_regret": 3.5652,
+    "max_regret": 209736.4161,
+    "frac_optimal": 0.0
+   }
+  ],
+  "GROUP-topology": [
+   {
+    "estimator": "oracle",
+    "n": 39,
+    "mean_regret": 1.0,
+    "median_regret": 1.0,
+    "max_regret": 1.0,
+    "frac_optimal": 1.0
+   },
+   {
+    "estimator": "portfolio_k4",
+    "n": 39,
+    "mean_regret": 1.0391,
+    "median_regret": 1.0,
+    "max_regret": 1.6745,
+    "frac_optimal": 0.8974
+   },
+   {
+    "estimator": "portfolio_k3",
+    "n": 39,
+    "mean_regret": 1.0461,
+    "median_regret": 1.0,
+    "max_regret": 1.6745,
+    "frac_optimal": 0.8205
+   },
+   {
+    "estimator": "portfolio_k2",
+    "n": 39,
+    "mean_regret": 1.0708,
+    "median_regret": 1.0116,
+    "max_regret": 1.7595,
+    "frac_optimal": 0.4359
+   },
+   {
+    "estimator": "single_global",
+    "n": 39,
+    "mean_regret": 1.0797,
+    "median_regret": 1.0139,
+    "max_regret": 1.7595,
+    "frac_optimal": 0.4103
+   },
+   {
+    "estimator": "portfolio_k1",
+    "n": 39,
+    "mean_regret": 1.0797,
+    "median_regret": 1.0139,
+    "max_regret": 1.7595,
+    "frac_optimal": 0.4103
+   },
+   {
+    "estimator": "cond_topology",
+    "n": 39,
+    "mean_regret": 1.0797,
+    "median_regret": 1.0139,
+    "max_regret": 1.7595,
+    "frac_optimal": 0.4103
+   },
+   {
+    "estimator": "cond_nbucket",
+    "n": 39,
+    "mean_regret": 1.2216,
+    "median_regret": 1.0241,
+    "max_regret": 4.4164,
+    "frac_optimal": 0.3846
+   },
+   {
+    "estimator": "random_single",
+    "n": 39,
+    "mean_regret": 7648.056,
+    "median_regret": 3.5652,
+    "max_regret": 209736.4161,
+    "frac_optimal": 0.0
+   }
+  ],
+  "GROUP-Nbucket": [
+   {
+    "estimator": "oracle",
+    "n": 39,
+    "mean_regret": 1.0,
+    "median_regret": 1.0,
+    "max_regret": 1.0,
+    "frac_optimal": 1.0
+   },
+   {
+    "estimator": "portfolio_k4",
+    "n": 39,
+    "mean_regret": 1.0025,
+    "median_regret": 1.0,
+    "max_regret": 1.099,
+    "frac_optimal": 0.9744
+   },
+   {
+    "estimator": "portfolio_k3",
+    "n": 39,
+    "mean_regret": 1.0111,
+    "median_regret": 1.0,
+    "max_regret": 1.1178,
+    "frac_optimal": 0.8718
+   },
+   {
+    "estimator": "portfolio_k2",
+    "n": 39,
+    "mean_regret": 1.0305,
+    "median_regret": 1.0069,
+    "max_regret": 1.22,
+    "frac_optimal": 0.4872
+   },
+   {
+    "estimator": "cond_topology",
+    "n": 39,
+    "mean_regret": 1.0498,
+    "median_regret": 1.0,
+    "max_regret": 1.4105,
+    "frac_optimal": 0.5385
+   },
+   {
+    "estimator": "single_global",
+    "n": 39,
+    "mean_regret": 1.0797,
+    "median_regret": 1.0139,
+    "max_regret": 1.7595,
+    "frac_optimal": 0.4103
+   },
+   {
+    "estimator": "portfolio_k1",
+    "n": 39,
+    "mean_regret": 1.0797,
+    "median_regret": 1.0139,
+    "max_regret": 1.7595,
+    "frac_optimal": 0.4103
+   },
+   {
+    "estimator": "cond_nbucket",
+    "n": 39,
+    "mean_regret": 1.0797,
+    "median_regret": 1.0139,
+    "max_regret": 1.7595,
+    "frac_optimal": 0.4103
+   },
+   {
+    "estimator": "random_single",
+    "n": 39,
+    "mean_regret": 7648.056,
+    "median_regret": 3.5652,
+    "max_regret": 209736.4161,
+    "frac_optimal": 0.0
+   }
+  ]
+ },
+ "shipped_stability_claim": {
+  "claim": "k=1..4 portfolio selections identical in 39/39 LOO folds",
+  "reproduced_k4_identical_folds": "39/39",
+  "note": "Stability of membership, not out-of-sample accuracy."
+ }
+}

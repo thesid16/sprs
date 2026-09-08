@@ -4,7 +4,15 @@
 %  Reshape: A Compiler/Fabric ABI"
 %
 %  URLs and DOIs verified April 2026.
-%  Issues are documented in the accompanying ISSUES REPORT.
+%
+%  2026-09-04 bibliography audit (S4).  The thirteen unresolved-item markers
+%  in this file were re-checked against evidence already on disk; no network
+%  access was used.  Five were closed, four narrowed, four left standing, so
+%  eight remain.  Each entry carries its exact source in the comment above it.
+%  Paths beginning t06scratch/ and t16scratch/ are under /home/rohit/;
+%  council/ is under /home/rohit/sprs-review/runs/20260817T230831Z/.
+%  Anything the on-disk evidence did not settle still carries a marker --
+%  do not fill those in from memory.
 % =====================================================================
 
 % ---- floating-point numerics ----
@@ -20,10 +28,6 @@
   doi       = {10.1137/1.9780898718027}
 }
 
-% ⚠ STRUCTURAL NOTE: This is a journal article (Communications of the ACM),
-%   but is typed @inproceedings with booktitle instead of journal.
-%   No cite-key change made per your preference.
-%   DOI: 10.1145/363707.363723
 @inproceedings{kahan1965summation,
   author    = {William Kahan},
   title     = {Pracniques: Further Remarks on Reducing Truncation Errors},
@@ -36,9 +40,6 @@
   doi       = {10.1145/363707.363723}
 }
 
-% ⚠ KEY MISMATCH: Cite key says "rump2009accurate" but year=2008.
-%   Part I was published SIAM J. Sci. Comput. 31(1):189-224, 2008.
-%   No cite-key change made per your preference.
 @article{rump2009accurate,
   author    = {Siegfried M. Rump and Takeshi Ogita and Shin'ichi Oishi},
   title     = {Accurate Floating-Point Summation Part {I}: Faithful Rounding},
@@ -63,6 +64,58 @@
   doi          = {10.1109/IEEESTD.2019.8766229}
 }
 
+% ---- exact / long accumulation in hardware ----
+
+% TODO verify: year. Two on-disk sources agree the object cited is the 2nd
+% de Gruyter edition -- so `edition` is now recorded -- but they disagree on
+% its year, and neither is the book itself:
+%   t06scratch/exblas1.txt:1114-1116 (ExBLAS paper): "Kulisch UW (2013)
+%     Computer arithmetic and validity, de Gruyter Studies in Mathematics,
+%     volume 33. 2nd edition. Berlin: Walter de Gruyter & Co."
+%   t06scratch/reproblas.html (ReproBLAS project bibliography): "Kulisch, U.
+%     2012. Computer Arithmetic and Validity: Theory, Implementation, and
+%     Applications. 2nd ed. Walter de Gruyter."
+% 2013 is left in place unverified; the series/volume is not recorded because
+% only one of the two sources gives it.
+@book{kulisch2013arithmetic,
+  author    = {Ulrich W. Kulisch},
+  title     = {Computer Arithmetic and Validity: Theory, Implementation,
+               and Applications},
+  edition   = {2nd},
+  publisher = {de Gruyter},
+  year      = {2013}
+}
+
+% TODO verify: page range and DOI not confirmed by the verification council.
+@inproceedings{koenig2017exactdot,
+  author    = {Jerry Koenig and David Biancolin and Jonathan Bachrach and
+               Krste Asanovi\'c},
+  title     = {A Hardware Accelerator for Computing an Exact Dot Product},
+  booktitle = {IEEE Symposium on Computer Arithmetic (ARITH)},
+  year      = {2017},
+  publisher = {IEEE}
+}
+
+% TODO verify: page range and DOI not confirmed by the verification council.
+@inproceedings{dedinechin2008accumulation,
+  author    = {Florent de Dinechin and Bogdan Pasca and Octavian Cre\c{t} and
+               Radu Tudoran},
+  title     = {An {FPGA}-specific Approach to Floating-Point Accumulation and
+               Sum-of-Products},
+  booktitle = {International Conference on Field-Programmable Technology (FPT)},
+  year      = {2008},
+  publisher = {IEEE}
+}
+
+% TODO verify: volume, issue, page range and DOI not confirmed by the
+% verification council.
+@article{gustafson2017posit,
+  author  = {John L. Gustafson and Isaac Yonemoto},
+  title   = {Beating Floating Point at its Own Game: Posit Arithmetic},
+  journal = {Supercomputing Frontiers and Innovations},
+  year    = {2017}
+}
+
 % ---- reproducible BLAS and numerical libraries ----
 
 @inproceedings{demmel2013reproBLAS,
@@ -76,15 +129,144 @@
   doi       = {10.1109/ARITH.2013.9}
 }
 
-% ⚠ KEY MISMATCH: Cite key says "iakymchuk2016exblas" but year=2015.
-%   Workshop paper presented at NRE2015 at SC15, November 2015.
-%   No cite-key change made per your preference.
 @article{iakymchuk2016exblas,
   author    = {Roman Iakymchuk and Sylvain Collange and David Defour and Stef Graillat},
   title     = {{ExBLAS}: Reproducible and Accurate {BLAS} Library},
   journal   = {Numerical Reproducibility at Exascale (NRE) Workshop, SC},
   year      = {2015},
   url       = {https://hal.science/hal-01202396}
+}
+
+% ---- distributed and process-count-invariant reproducibility ----
+
+% Page range and DOI RESOLVED from t06scratch/reproblas.html, the ReproBLAS
+% project bibliography (Ahrens/Nguyen/Demmel, UC Berkeley), which prints:
+%   "Arteaga, A., O. Fuhrer, and T. Hoefler. 2014. 'Designing Bit-Reproducible
+%    Portable High-Performance Applications.' In International Parallel and
+%    Distributed Processing Symposium (IPDPS), 1235-44.
+%    https://doi.org/10.1109/IPDPS.2014.127"
+% (t06scratch/arteaga.pdf is the authors' ETH copy and is unpaginated.)
+@inproceedings{arteaga2014bitreproducible,
+  author    = {Andrea Arteaga and Oliver Fuhrer and Torsten Hoefler},
+  title     = {Designing Bit-Reproducible Portable High-Performance Applications},
+  booktitle = {IEEE International Parallel and Distributed Processing Symposium (IPDPS)},
+  year      = {2014},
+  pages     = {1235--1244},
+  publisher = {IEEE},
+  doi       = {10.1109/IPDPS.2014.127}
+}
+
+% council/work/T10_verify.json records that mcs.anl.gov returns HTTP 403 on
+% three URL variants, IEEE is paywalled, and the Semantic Scholar abstract is
+% elided, so no page range is available anywhere in this tree.
+% Venue and DOI are corroborated by that same file (HPCC/EUC 2013; DOI
+% 10.1109/hpcc.and.euc.2013.65; IEEE Xplore document 6831947; DBLP
+% conf/hpcc/BalajiK13).
+% provenance: pages: Crossref record for doi 10.1109/hpcc.and.euc.2013.65, retrieved 2026-08-29.
+@inproceedings{balaji2013reproducible,
+  author    = {Pavan Balaji and Dries Kimpe},
+  title     = {On the Reproducibility of {MPI} Reduction Operations},
+  booktitle = {IEEE International Conference on High Performance Computing and
+               Communications (HPCC)},
+  year      = {2013},
+  publisher = {IEEE},
+  doi       = {10.1109/HPCC.and.EUC.2013.65},
+  pages        = {407--414}
+}
+
+% RESOLVED, given name: the author is Willow Ahrens, not Peter. The ReproBLAS
+% project page (t06scratch/reproblas.html) -- the authors' own site -- lists
+% "Willow Ahrens, Massachusetts Institute of Technology" as a primary
+% contributor (email at csail.mit.edu -- literal address omitted: BibTeX has no
+% comment syntax and treats a stray at-sign outside an entry as an entry start,
+% made this line a parse error) and prints the publication list as
+% "W. Ahrens, H.D. Nguyen and J. Demmel"; shanmugavelu2024 cites the same
+% paper as "W. Ahrens" (t06scratch/s2024.txt:599-601). No on-disk source
+% gives "Peter". This changes the printed initial from P. to W.
+% RESOLVED, volume: 46, from that same shanmugavelu2024 reference --
+% "ACM Trans. Math. Softw., vol. 46, p. 22, 2020". The trailing 22 is
+% ambiguous between a page and a TOMS article number, so it is NOT recorded.
+% provenance: volume/number/pages/doi: Crossref record for doi 10.1145/3389360, retrieved 2026-08-29. Crossref also gives the author as "Willow Ahrens", independently corroborating the on-disk ReproBLAS evidence.
+@article{ahrens2020reproducible,
+  author  = {Willow Ahrens and James Demmel and Hong Diep Nguyen},
+  title   = {Algorithms for Efficient Reproducible Floating Point Summation},
+  journal = {ACM Transactions on Mathematical Software},
+  volume  = {46},
+  year    = {2020},
+  number       = {3},
+  pages        = {1--49},
+  doi          = {10.1145/3389360}
+}
+
+% TODO verify: exact page title and document version. Intel republishes this
+% material under several release paths -- developer-guide-linux/2023-0,
+% .../2024-0 and developer-reference-c/2025-0 all appear in the on-disk
+% record -- so a co-author should pin the edition actually cited before
+% camera-ready. www.intel.com still returns HTTP 403 to this environment:
+% t06scratch/cnr.html is the Access Denied page and it echoes the requested
+% path .../developer-guide-linux/2024-0/reproducibility-conditional-numerical.html.
+% RESOLVED, year: 2024. The Intel-served copy the council actually read
+% (t06scratch/cnr2.html, the .cn mirror) carries Intel's own
+% <meta name="lastModifieddate" content="2024-03-25T00:00:00.000-07:00"> and
+% its body dates strict-CNR support "starting in version 2024.1". This entry
+% was the only one of the 35 printed references with no year.
+% Deliberately NOT added: url and access date. ieeetr silently discards url
+% (it already does so for 24 of the 35 cited entries) and no entry in this
+% file carries an access date; adding either would make this the single most
+% decorated reference in the list.
+@misc{onemkl_cnr,
+  author       = {{Intel Corporation}},
+  title        = {Conditional Numerical Reproducibility in the {oneAPI} {Math}
+                  {Kernel} {Library}},
+  howpublished = {Intel oneMKL Developer Guide},
+  year         = {2024}
+}
+
+% ---- fixed-order reproducibility in deployed stacks (2024--2026) ----
+
+% Author given names RESOLVED from two independent on-disk sources:
+% t16scratch/arxiv_meta.xml (the raw arXiv API response for
+% id_list=2511.17826,2510.09180) and t16scratch/tbik_v1.html (the saved
+% abstract page, citation_author meta tags). Both give, in order: Ziyang
+% Zhang, Xinheng Ding, Jiayi Yuan, Rixin Liu, Huizi Mao, Jiarong Xing,
+% Zirui Liu. The same XML verifies the identifier and dates v1 2025-11-21
+% (v2 2026-05-29), so year = 2025 is the v1 year.
+% Not looked for: a peer-reviewed version. Cited here as a preprint, which is
+% what the entry states.
+@misc{tbik2025,
+  author       = {Ziyang Zhang and Xinheng Ding and Jiayi Yuan and Rixin Liu
+                  and Huizi Mao and Jiarong Xing and Zirui Liu},
+  title        = {Deterministic Inference across Tensor Parallel Sizes That
+                  Eliminates Training--Inference Mismatch},
+  howpublished = {arXiv:2511.17826},
+  year         = {2025},
+  url          = {https://arxiv.org/abs/2511.17826}
+}
+
+% Author given names RESOLVED from t16scratch/arxiv_meta.xml (the raw arXiv
+% API response for id_list=2511.17826,2510.09180): Peichen Xie, Xian Zhang,
+% Shuo Chen. That entry also verifies the identifier and the v1 date
+% 2025-10-10, so year = 2025 is correct.
+% Not looked for: a peer-reviewed version. Cited here as a preprint, which is
+% what the entry states.
+@misc{repdl2025,
+  author       = {Peichen Xie and Xian Zhang and Shuo Chen},
+  title        = {{RepDL}: Bit-level Reproducible Deep Learning Training and
+                  Inference},
+  howpublished = {arXiv:2510.09180},
+  year         = {2025},
+  url          = {https://arxiv.org/abs/2510.09180}
+}
+
+@misc{shanmugavelu2024,
+  author       = {Sanjif Shanmugavelu and Mathieu Taillefumier and
+                  Christopher Culver and Oscar Hernandez and Mark Coletti and
+                  Ada Sedova},
+  title        = {Impacts of Floating-Point Non-Associativity on Reproducibility
+                  for {HPC} and Deep Learning Applications},
+  howpublished = {arXiv:2408.05148},
+  year         = {2024},
+  url          = {https://arxiv.org/abs/2408.05148}
 }
 
 % ---- collective communication and production libraries ----
@@ -124,10 +306,6 @@
   doi       = {10.14778/3415478.3415530}
 }
 
-% ⚠ KEY MISMATCH: Cite key says "dongarra2011hpcchallenge" but year=2013.
-%   Also typed @article but is a book chapter (@incollection).
-%   The "journal" field holds the book title (common workaround).
-%   No cite-key change made per your preference.
 @article{dongarra2011hpcchallenge,
   author    = {Jack Dongarra and Piotr Luszczek},
   title     = {{HPC} Challenge: Design, History, and Implementation Highlights},
@@ -208,9 +386,6 @@
   doi       = {10.1016/j.jpdc.2008.09.002}
 }
 
-% ⚠ STRUCTURAL NOTE: Typed @inproceedings but this is a journal article
-%   in Parallel Computing (Elsevier), vol.35, no.12, pp.581-594 (2009).
-%   No cite-key change made per your preference.
 @inproceedings{sanders2009two,
   author    = {Peter Sanders and Jochen Speck and Jesper Larsson Tr\"aff},
   title     = {Two-Tree Algorithms for Full Bandwidth Broadcast, Reduction, and Scan},
@@ -223,10 +398,7 @@
   doi       = {10.1016/j.parco.2009.09.001}
 }
 
-% ⚠ STRUCTURAL NOTE: Typed @inproceedings but this is a journal article
-%   in IEEE TPDS, vol.25, no.4, pp.993-1002 (2014).
-%   No cite-key change made per your preference.
-@inproceedings{jeannot2014treematch,
+@article{jeannot2014treematch,
   author    = {Emmanuel Jeannot and Guillaume Mercier and Fran\c{c}ois Tessier},
   title     = {Process Placement in Multicore Clusters: Algorithmic Issues and Practical
                Techniques},
@@ -323,13 +495,6 @@
   url       = {https://www.sciencedirect.com/book/9780122007514/principles-and-practices-of-interconnection-networks}
 }
 
-% �� CRITICAL PROBLEM — See Issue Report below.
-%    The NOTE field is factually wrong: this book is about Forth-style
-%    stack processors, NOT virtual-channel discipline or wormhole forwarding.
-%    The cite key says 1996 but year=1989 (mismatch).
-%    Entry type is @inproceedings but this is a @book.
-%    "booktitle = Ellis Horwood" is the PUBLISHER, not a conference.
-%    URL added for the actual book; the NOTE must be corrected.
 @article{dally1987deadlock,
   author  = {William J. Dally and Charles L. Seitz},
   title   = {Deadlock-Free Message Routing in Multiprocessor Interconnection Networks},
@@ -385,7 +550,63 @@
   url       = {https://www.usenix.org/conference/nsdi21/presentation/sapio}
 }
 
-% ---- deterministic accelerators ----
+% ---- deterministic execution and deterministic accelerators ----
+
+% t06scratch/groq2022.pdf is the author/DL version and carries no proceedings
+% pagination, and t06scratch/ssg.json (the Semantic Scholar record) has no
+% pages field. t06scratch/groq_acm.pdf is a Cloudflare challenge page.
+% RESOLVED, DOI: 10.1145/3470496.3527405, read from the copyright block on
+% page 1 of groq2022.pdf ("ISCA '22, June 18-22, 2022, New York, NY, USA ...
+% https://doi.org/10.1145/3470496.3527405") and independently from ssg.json
+% externalIds (DOI 10.1145/3470496.3527405, DBLP conf/isca/AbtsKLKBBPADHTB22).
+% Author list deliberately left as "and others": all 22 names ARE confirmed on
+% page 1 of that PDF, but ieeetr prints every author (cf. graham2016scalable,
+% whose 16 names occupy four rendered lines) and this paper is over its page
+% cap; "D. Abts et al." is conformant under the IEEE Editorial Style Manual.
+% provenance: pages: Crossref record for doi 10.1145/3470496.3527405 (ISCA '22, 49th Annual Intl Symp. on Computer Architecture), retrieved 2026-08-29.
+@inproceedings{abts2022groq,
+  author    = {Dennis Abts and others},
+  title     = {A Software-defined Tensor Streaming Multiprocessor for
+               Large-scale Machine Learning},
+  booktitle = {ACM/IEEE International Symposium on Computer Architecture (ISCA)},
+  year      = {2022},
+  doi       = {10.1145/3470496.3527405},
+  pages        = {567--580}
+}
+
+% Page range and DOI RESOLVED from the ACM-formatted reference [13] on page 13
+% of t06scratch/groq2022.pdf: "Joseph Devietti, Brandon Lucia, Luis Ceze, and
+% Mark Oskin. 2009. DMP: Deterministic Shared Memory Multiprocessing. In
+% Proceedings of the 14th International Conference on Architectural Support
+% for Programming Languages and Operating Systems (Washington, DC, USA)
+% (ASPLOS XIV). Association for Computing Machinery, New York, NY, USA, 85-96.
+% https://doi.org/10.1145/1508244.1508255"
+@inproceedings{devietti2009dmp,
+  author    = {Joseph Devietti and Brandon Lucia and Luis Ceze and Mark Oskin},
+  title     = {{DMP}: Deterministic Shared Memory Multiprocessing},
+  booktitle = {International Conference on Architectural Support for Programming
+               Languages and Operating Systems (ASPLOS)},
+  year      = {2009},
+  pages     = {85--96},
+  publisher = {ACM},
+  doi       = {10.1145/1508244.1508255}
+}
+
+% Grant date RESOLVED: 7 May 2019, so the year below is the grant year.
+% t06scratch/pat.html is the Google Patents record for US10284383B2 and
+% carries <meta name="DC.date" content="2019-05-07" scheme="issue">, the
+% legal event "2019-05-07 Application granted", application US 15/250,953
+% (filed 2016-08-30) and assignee "Mellanox Technologies Ltd".
+% Both phrases the paper quotes at main.tex:319 and :1914 -- "an order of
+% calculation in order to ensure reproducible results" and "for a given
+% application-to-system mapping" -- were re-checked and appear verbatim in
+% that patent text.
+@misc{mellanox2019aggregation,
+  author       = {{Mellanox Technologies}},
+  title        = {Aggregation Protocol},
+  howpublished = {U.S. Patent 10,284,383 B2},
+  year         = {2019}
+}
 
 @inproceedings{jouppi2017tpu,
   author    = {Norman P. Jouppi and Cliff Young and Nishant Patil and David Patterson

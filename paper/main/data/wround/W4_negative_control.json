@@ -1,0 +1,188 @@
+{
+ "meta": {
+  "n_runs": 605,
+  "desc": "clocked write_route vs hierarchical-force route-table bypass, identical RTL (/home/rohit/sprs-fix/rtl, which carries the W3 fp64_add repair)",
+  "published_csv": "results/results/live_hw_results_p1_unified.csv"
+ },
+ "clocked_vs_bypass": {
+  "n_comparable": 605,
+  "same_PASS": 605,
+  "same_64bit_root": 605,
+  "same_cycles": 605,
+  "pct_bit_exact": 100.0,
+  "pct_same_cycles": 100.0,
+  "root_mismatches": [],
+  "pass_mismatches": [],
+  "cycle_mismatches": [],
+  "delta_finish_ns": {
+   "min": 40,
+   "max": 48640,
+   "median": 10240,
+   "mean": 18055.54
+  },
+  "delta_ns_per_route_entry": {
+   "min": 10.0,
+   "max": 10.0,
+   "median": 10.0
+  }
+ },
+ "errors": {},
+ "bypass_vs_published_csv": {
+  "n": 605,
+  "matches_max_over_PEs": 298,
+  "matches_GPU0_counter": 286,
+  "matches_neither": 21,
+  "examples": [
+   [
+    "large_dense_2d",
+    "tb_2i_3a_none",
+    3775,
+    3876,
+    3876
+   ],
+   [
+    "large_dense_2d",
+    "tb_2i_3c_none",
+    3775,
+    3876,
+    3876
+   ],
+   [
+    "large_dense_hc",
+    "tb_2i_3a_none",
+    2930,
+    3122,
+    3122
+   ],
+   [
+    "large_dense_hc",
+    "tb_2i_3c_none",
+    2925,
+    3122,
+    3122
+   ],
+   [
+    "med_bal_2d",
+    "tb_2i_3c_none",
+    929,
+    938,
+    938
+   ],
+   [
+    "med_bal_2d",
+    "tb_2i_3d_none",
+    929,
+    938,
+    938
+   ],
+   [
+    "med_bal_2d",
+    "tb_2i_3i_none",
+    929,
+    938,
+    938
+   ],
+   [
+    "med_mod_fat",
+    "tb_2i_3a_none",
+    876,
+    812,
+    812
+   ],
+   [
+    "med_mod_fat",
+    "tb_2i_3b_none",
+    876,
+    812,
+    812
+   ],
+   [
+    "med_mod_fat",
+    "tb_2i_3c_none",
+    876,
+    812,
+    812
+   ],
+   [
+    "med_mod_fat",
+    "tb_2i_3e_none",
+    877,
+    813,
+    813
+   ],
+   [
+    "med_mod_fat",
+    "tb_2i_3h_none",
+    876,
+    812,
+    812
+   ],
+   [
+    "npow2n_tiny_ring",
+    "tb_2i_3a_none",
+    86,
+    85,
+    85
+   ],
+   [
+    "npow2n_tiny_ring",
+    "tb_2n_3a_none",
+    67,
+    50,
+    50
+   ],
+   [
+    "small_dense_hc",
+    "tb_2n_3a_none",
+    207,
+    151,
+    151
+   ],
+   [
+    "small_mod_2d",
+    "tb_2i_3i_none",
+    231,
+    239,
+    239
+   ],
+   [
+    "small_mod_2d",
+    "tb_2n_3a_none",
+    109,
+    85,
+    85
+   ],
+   [
+    "small_mod_2d",
+    "tb_2n_3e_none",
+    109,
+    85,
+    85
+   ],
+   [
+    "small_mod_2d",
+    "tb_2n_3f_none",
+    109,
+    85,
+    85
+   ],
+   [
+    "small_mod_2d",
+    "tb_2n_3h_none",
+    109,
+    85,
+    85
+   ]
+  ],
+  "note": "The published Cycles column was produced by a parser that took GPU 0's perf_total (fixed to max-over-PEs on 2026-07-27). A row matching GPU0 is a reproduction of the published number, not a disagreement. Rule 4: no published number is edited here."
+ },
+ "negative_control": {
+  "n": 24,
+  "single_entry_corrupted_still_PASS": 12,
+  "single_entry_corrupted_FAILED": 12,
+  "all_entries_corrupted_still_PASS": 0,
+  "all_entries_corrupted_FAILED": 24,
+  "verdict": "CONTROL VALID: corrupting the whole clocked route table flips PASS->FAIL",
+  "note": "single-entry corruption may legitimately land on a (router,dest) pair the schedule never exercises, so it is reported but is not the control"
+ }
+}

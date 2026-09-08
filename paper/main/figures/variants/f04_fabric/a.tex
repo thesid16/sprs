@@ -1,0 +1,207 @@
+% f04_fabric variant a -- one PE expanded inside a small NoC, with a single
+% operand packet traced from the SEND that forms it to the COMPUTE it releases.
+% Target: IEEE double column (figure*).  Fixed 16.9cm canvas -- the standalone
+% wrapper is varwidth=17cm, so 17.6cm would be cropped in the guide preview.
+% Data : rtl/btree_fsm_fast.sv (pipeline, PIU, arbiter, scoreboard, detectors),
+%        rtl/noc_ni.sv (injection merge, GCI buffer), rtl/noc_router.sv,
+%        rtl/noc_system.sv (port 0 = local NI), rtl/link_tx.sv, sync_fifo.sv;
+%        emit_sv_testbench parameters in src/sprs_core.py; data/fabric_macros.tex,
+%        data/resource_macros.tex, data/claim_macros.tex.
+% Strategy: ONE CONCRETE PATH.  The reader learns the PE internals and the
+% network in the order a 64-bit operand actually traverses them, so the numbered
+% steps replace the paragraph-level walkthrough directly.  Variants b, c and d
+% argue the same hardware by layer, by cycle, and by router internals instead.
+% Colour: the traced operand path is the compliant datapath (spBlue, heavy);
+% storage is spSky; the active agents that write DMEM without an instruction are
+% spPurple; every block that carries a named F-invariant -- arbiter, scoreboard,
+% presence gate, fp64_add, forwarding -- is spGreen; the fail-stop detectors are
+% spVerm. Line weight (hot path heavy, plumbing light) and the numbered badges
+% carry the reading order without colour.
+\begin{tikzpicture}[
+  font=\scriptsize,
+  bx/.style   ={draw, semithick, rounded corners=1.2pt, align=center,
+                inner sep=1.6pt, font=\scriptsize},
+  bxb/.style  ={bx, draw=spBlue, fill=white},
+  mem/.style  ={bx, draw=spSky!80!spInk, fill=spSkyF},
+  ag/.style   ={bx, draw=spPurple!85!spInk, fill=spPurple!12},
+  inv/.style  ={bx, draw=spGreen, fill=spGreenF},
+  gate/.style ={bx, draw=spVerm, fill=spVermF, dashed},
+  zone/.style ={draw=spMute, dotted, thick, rounded corners=3pt},
+  thin arrow/.style={-{Stealth[length=1.6mm,width=1.2mm]}, semithick, spMute},
+  hot/.style  ={-{Stealth[length=2.2mm,width=1.8mm]}, line width=1.2pt, spBlue},
+  hotl/.style ={line width=1.2pt, spBlue},
+  num/.style  ={circle, draw=spBlue, fill=white, inner sep=0.5pt, minimum size=3.4mm,
+                font=\tiny\bfseries, text=spBlue},
+  note/.style ={font=\tiny, align=center, inner sep=1pt, text=spMute},
+]
+% Fixed canvas: pins the bounding box so the preview equals the typeset size.
+\path (0,-0.62) rectangle (16.9,8.4);
+
+% =====================================================================
+% ZONE 1 -- the sending worker
+% =====================================================================
+\draw[zone] (0.10,0.55) rectangle (3.05,7.55);
+\node[font=\scriptsize\bfseries, text=spInk] at (1.575,7.85) {PE 3 \textemdash{} sender};
+
+\node[bxb, minimum width=2.30cm, minimum height=0.78cm] (EXS) at (1.65,6.90)
+  {\textsf{EX}: \texttt{SEND}\\ reads \sv{DMEM[addr\_a]}};
+\node[mem, minimum width=2.30cm, minimum height=0.70cm] (TX3) at (1.65,5.70)
+  {TX FIFO $8{\times}96$\,b\\ \sv{link\_tx} credits};
+\node[ag,  minimum width=2.30cm, minimum height=0.86cm, font=\tiny,
+      text width=2.10cm] (NI3) at (1.65,4.45)
+  {\textbf{NI 3} injection: RR merge of both CN links into one \NiFifoDepth-deep FIFO};
+\node[bxb, minimum width=2.40cm, minimum height=1.95cm, font=\tiny] (PKT) at (1.65,2.30)
+  {\textbf{96-bit single flit}\\[1.5pt]
+   \sv{[95:80]} \sv{dest\_node\_id}\\
+   \sv{[79:70]} \sv{target\_addr}\\
+   \sv{[69:64]} rsvd; VC bit $\equiv$ \VcBitLiteral\\
+   \sv{[63:0]}\ \ FP64 payload\\[2pt]
+   the egress port is \emph{not}\\ an instruction field};
+
+\draw[hot] (EXS) -- (TX3);
+\draw[hot] (TX3) -- (NI3);
+\draw[spMute, dotted, semithick] (1.65,3.28) -- (1.65,4.02);
+
+% =====================================================================
+% ZONE 2 -- the network
+% =====================================================================
+\draw[zone] (3.35,0.55) rectangle (7.60,7.55);
+\node[font=\scriptsize\bfseries, text=spInk] at (5.475,7.85) {NoC (ring, $G{=}4$)};
+
+\node[bxb, minimum width=1.80cm, minimum height=0.62cm] (R0) at (5.85,6.60) {R0 \ (PE 0)};
+\node[bxb, minimum width=1.80cm, minimum height=0.62cm] (R1) at (5.85,5.50) {R1 \ (PE 1)};
+\node[bxb, minimum width=1.80cm, minimum height=0.62cm] (R2) at (5.85,4.40) {R2 \ (PE 2)};
+\node[bxb, minimum width=1.80cm, minimum height=0.62cm] (R3) at (5.85,3.30) {R3 \ (PE 3)};
+\draw[{Stealth[length=1.6mm,width=1.2mm]}-{Stealth[length=1.6mm,width=1.2mm]},
+      semithick, spMute] (R0) -- (R1);
+\draw[{Stealth[length=1.6mm,width=1.2mm]}-{Stealth[length=1.6mm,width=1.2mm]},
+      semithick, spMute] (R1) -- (R2);
+\draw[{Stealth[length=1.6mm,width=1.2mm]}-{Stealth[length=1.6mm,width=1.2mm]},
+      semithick, spMute] (R2) -- (R3);
+% the wrap link -- the one hop this packet takes
+\draw[hotl] (R3.west) -- (4.45,3.30) -- (4.45,6.60);
+\draw[hot]  (4.45,6.60) -- (R0.west);
+% injection into R3
+\draw[hotl] (NI3.east) -- (3.70,4.45) -- (3.70,2.55) -- (5.85,2.55);
+\draw[hot]  (5.85,2.55) -- (R3.south);
+% egress toward PE 0
+\draw[hotl] (R0.east) -- (7.90,6.60);
+
+\node[bx, draw=spGrid, minimum width=3.85cm, minimum height=1.42cm, font=\tiny,
+      fill=spGrid!50, text=spInk] at (5.475,1.50)
+  {port~0 $=$ local NI on every router;\\
+   every other port is wired only by the\\
+   compiler-loaded \emph{adjacency table}.\\
+   \sv{route\_table[dest]} $\to$ egress port,\\
+   \NumVcs{} VC FIFOs $\times$ \BufDepthSim{} flits per input,\\
+   one shared egress FIFO per port.\\
+   Suite radix $P = $ \RadixMin--\RadixMax.};
+
+% =====================================================================
+% ZONE 3 -- the receiving worker, expanded
+% =====================================================================
+\draw[zone] (7.90,0.55) rectangle (16.80,7.55);
+\node[font=\scriptsize\bfseries, text=spInk] at (12.35,7.85)
+  {PE 0 \textemdash{} receiver: \sv{noc\_ni} $+$ \sv{btree\_fsm\_fast}};
+
+% --- band 0: ingress, leaf source, detectors -------------------------
+\node[ag,  minimum width=1.80cm, minimum height=0.72cm, font=\tiny,
+      text width=1.65cm] (NI0)  at (9.00,6.60)
+  {\textbf{NI 0} ejection $\to$ CN link 0};
+\node[mem, minimum width=1.55cm, minimum height=0.72cm, font=\tiny] (RXF)  at (11.175,6.60)
+  {RX FIFO\\ $8{\times}96$\,b};
+\node[mem, minimum width=2.10cm, minimum height=0.72cm, font=\tiny] (GCIB) at (13.25,6.60)
+  {GCI leaf buffer\\ (in \sv{noc\_ni})};
+\node[gate, minimum width=2.10cm, minimum height=0.72cm, font=\tiny,
+      text width=1.95cm] (DET) at (15.60,6.60)
+  {three detectors $\Rightarrow$ \texttt{P\_ERROR}; watchdog \WatchdogMax\,cy};
+
+% --- band 1: the three DMEM writers ----------------------------------
+\node[ag, minimum width=3.55cm, minimum height=0.95cm, font=\tiny] (PIU) at (10.175,5.55)
+  {\textbf{PIU} (RDMA-push)\\
+   \sv{pkt[95:80]}$\,{=}\,$\sv{gpu\_id}? write\\
+   \sv{DMEM[pkt[79:70]]}$\gets$\sv{pkt[63:0]}\\
+   else drop $+$ credit (\textsf{F-misroute})};
+\node[ag, minimum width=2.10cm, minimum height=0.95cm, font=\tiny] (GCI) at (13.25,5.55)
+  {\textbf{GCI} agent\\ \texttt{GENERATE} commits\\ \GciLatency{}$+2$ cycles later\\ (\textsf{F-gci-haz})};
+
+% --- band 2: the write arbiter ---------------------------------------
+\node[inv, minimum width=8.55cm, minimum height=0.48cm, text width=8.35cm,
+      font=\tiny] (ARB) at (12.375,4.65)
+  {DMEM write arbiter \textemdash{} $\mathrm{PIU} > \mathrm{GCI} > \mathrm{FSM}$, with the GCI \emph{retry latch}:
+   no write is silently dropped (\textsf{F-arb})};
+
+% --- band 3: DMEM + scoreboard ---------------------------------------
+\node[mem, minimum width=3.85cm, minimum height=0.92cm] (DMEM) at (10.025,3.55)
+  {DMEM \DmemDepth $\times$ 64\,b\\ \sv{DMEM[0]} $=$ identity};
+\node[inv, minimum width=3.20cm, minimum height=0.92cm, font=\tiny,
+      text width=3.05cm] (SB) at (13.80,3.55)
+  {\textbf{scoreboard} \DmemDepth\,b: one presence bit per slot, set by whichever
+   port committed (\textsf{F-sb-mono})};
+
+% --- band 4: the pipeline --------------------------------------------
+\node[bxb, minimum width=1.85cm, minimum height=0.92cm, font=\tiny] (IF) at (9.025,2.25)
+  {\textsf{IF}\\ registered\\ IMEM read, PC};
+\node[inv, minimum width=2.90cm, minimum height=0.92cm, font=\tiny,
+      text width=2.75cm] (DE) at (11.650,2.25)
+  {\textsf{DE} \textemdash{} \textbf{presence gate}: stall while either operand bit
+   is $0$ (\textsf{F-sb-gate}); issue DMEM reads};
+\node[inv, minimum width=3.30cm, minimum height=0.92cm, font=\tiny,
+      text width=3.15cm] (EX) at (15.000,2.25)
+  {\textsf{EX} \textemdash{} \sv{fp64\_add}, combinational and stateless
+   (\textsf{F-fadd}); writeback or TX enqueue};
+
+% --- band 5: IMEM, forwarding, egress --------------------------------
+\node[mem, minimum width=1.85cm, minimum height=0.70cm, font=\tiny] (IMEM) at (9.025,1.15)
+  {IMEM\\ \ImemDepthLo--\ImemDepthHi $\times$ 64\,b};
+\node[inv, minimum width=3.40cm, minimum height=0.70cm, font=\tiny,
+      text width=3.25cm] (FW) at (11.900,1.15)
+  {2-level write$\to$read forwarding (\textsf{F-fw}) closes the BRAM read-first race};
+\node[mem, minimum width=2.80cm, minimum height=0.70cm, font=\tiny] (TXF) at (15.250,1.15)
+  {TX FIFO $\to$ NI 0 injection\\ $\to$ R0 port 0};
+
+% --- wiring -----------------------------------------------------------
+\draw[hot] (7.90,6.60) -- (NI0.west);
+\draw[hot] (NI0) -- (RXF);
+\draw[hot] (RXF.south) -- (11.175,6.025);
+\draw[thin arrow] (GCIB) -- (GCI);
+\draw[hot] (10.175,5.075) -- (10.175,4.89);
+\draw[thin arrow] (13.25,5.075) -- (13.25,4.89);
+\draw[hot] (10.025,4.41) -- (DMEM.north);
+\draw[hot] (13.80,4.41) -- (SB.north);
+\node[note, anchor=east, fill=white, inner sep=0.5pt] at (13.70,4.21) {sets presence};
+% FSM writeback climbs the free right-hand corridor
+\draw[thin arrow] (16.20,2.71) -- (16.20,4.41);
+\node[note, anchor=west, rotate=90] at (16.30,2.80) {\textsf{FSM} writeback};
+% operand read and presence gate
+\draw[thin arrow] (10.60,3.09) -- (10.60,2.71);
+\node[note, anchor=east, fill=white, inner sep=0.5pt] at (10.52,2.90) {operands};
+\draw[{Stealth[length=1.6mm,width=1.2mm]}-, semithick, spGreen, dashed]
+      (12.60,2.71) -- (12.60,3.09);
+% pipeline
+\draw[thin arrow] (IMEM) -- (IF);
+\draw[thin arrow] (IF) -- (DE);
+\draw[hot] (DE) -- (EX);
+\draw[thin arrow] (13.50,1.79) -- (13.50,1.50);
+\draw[thin arrow] (10.60,1.50) -- (10.60,1.79);
+\draw[thin arrow] (14.60,1.79) -- (14.60,1.50);
+
+% --- trace numbers ----------------------------------------------------
+\node[num] at (0.33,6.90) {1};
+\node[num] at (0.33,4.45) {2};
+\node[num] at (4.45,4.95) {3};
+\node[num] at (10.15,6.60) {4};
+\node[num] at (8.15,5.55) {5};
+\node[num] at (15.85,3.55) {6};
+\node[num] at (13.05,2.90) {7};
+
+\node[anchor=north west, align=left, font=\tiny, inner sep=1pt, text=spInk,
+      text width=16.7cm] at (0.10,0.34)
+  {\textbf{1} \texttt{SEND} forms the flit\quad
+   \textbf{2} the NI merges the two CN links into one injection FIFO\quad
+   \textbf{3} one hop: route-table lookup, RR arbitration, crossbar\\
+   \textbf{4} ejection to CN link 0\quad
+   \textbf{5} the PIU checks \sv{dest\_gpu\_id} and writes DMEM itself (no \texttt{RECV})\quad
+   \textbf{6} presence bit set\quad
+   \textbf{7} the stalled \texttt{COMPUTE} leaves \textsf{DE}};
+\end{tikzpicture}

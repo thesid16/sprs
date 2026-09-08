@@ -1,0 +1,111 @@
+{
+ "work_item": "W1 -- does reduction order actually diverge on real hardware?",
+ "preregistration": "/home/rohit/sprs-fix/experiments/experiments/PREREGISTRATION.md",
+ "hardware": "single node, 2x NVIDIA RTX PRO 6000 Blackwell Server Edition, PCIe (topo=NODE), NO NVLINK; 72 CPU cores. torch 2.11.0+cu128.",
+ "design": "Identical input BYTES at every configuration: leaf i's M-vector is a pure function of i, so nothing about the data changes when the job is reshaped -- only who holds which leaf and in what order the partial sums combine.",
+ "outcome": "PARTIAL, exactly as the pre-registration anticipated and named in advance",
+ "result": {
+  "reshape_axis": {
+   "configurations": 14,
+   "distinct_64bit_roots": 14,
+   "world_sizes": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    12,
+    16,
+    24,
+    32,
+    48,
+    64
+   ],
+   "statement": "EVERY world size produced a DIFFERENT 64-bit root, on identical inputs, for every one of the 12 (N, dtype, data-profile) cases. 14 of 14 distinct."
+  },
+  "library_axis": {
+   "configurations": 7,
+   "distinct_64bit_roots": 1,
+   "swept": "NCCL_ALGO in {Tree, Ring} x NCCL_PROTO in {LL, LL128, Simple}, plus default, at G=2",
+   "statement": "ONE root across all 7. This is structural, not an empirical null: at G=2 the cross-rank reduction is a single floating-point addition per element, which is commutative and exact whatever the schedule. No NCCL algorithm or protocol can move it on a 2-GPU node. Stated as such; not generalised to larger G."
+  },
+  "channel_axis": {
+   "configurations": 3,
+   "distinct_64bit_roots": 1,
+   "swept": "NCCL_MIN/MAX_NCHANNELS in {1,2,4}"
+  },
+  "repeatability": {
+   "nccl_repeats": 5,
+   "nccl_distinct": 1,
+   "gloo_repeats": 5,
+   "gloo_distinct": 1,
+   "statement": "run-to-run at a FIXED configuration is bitwise deterministic; the divergence is caused by reshape, not by noise. That decomposition is the point."
+  },
+  "device_axis": {
+   "statement": "at a FIXED partition (G=2) the CPU and GPU roots also differ, because the local partial sum uses a different reduction tree on each device -- measured for all 12 cases, 0 agreements."
+  },
+  "magnitude": {
+   "N1000_M1024_fp64_pos": {
+    "max_ulp_spread": 9,
+    "max_relative_spread": 1.3743943028853679e-15,
+    "elements_moved": "1024/1024",
+    "configs_equal_to_canonical_FBT": 0
+   },
+   "N1000_M1024_fp64_signed": {
+    "max_ulp_spread": 5120,
+    "max_relative_spread": 6.381246774236536e-13,
+    "elements_moved": "1024/1024",
+    "configs_equal_to_canonical_FBT": 0
+   },
+   "N1000_M1024_fp64_wide": {
+    "max_ulp_spread": 7,
+    "max_relative_spread": 1.0381973651732002e-15,
+    "elements_moved": "1023/1024",
+    "configs_equal_to_canonical_FBT": 0
+   },
+   "N4096_M1024_fp64_pos": {
+    "max_ulp_spread": 7,
+    "max_relative_spread": 1.0471828848019116e-15,
+    "elements_moved": "1023/1024",
+    "configs_equal_to_canonical_FBT": 0
+   },
+   "N4096_M1024_fp64_signed": {
+    "max_ulp_spread": 3840,
+    "max_relative_spread": 8.103568107476371e-13,
+    "elements_moved": "1024/1024",
+    "configs_equal_to_canonical_FBT": 0
+   },
+   "N4096_M1024_fp64_wide": {
+    "max_ulp_spread": 7,
+    "max_relative_spread": 8.936695257418788e-16,
+    "elements_moved": "1023/1024",
+    "configs_equal_to_canonical_FBT": 0
+   }
+  },
+  "pairwise": {
+   "fp64_cells": "34 configurations, 15 distinct roots, 441/561 = 78.6% of configuration pairs disagree",
+   "fp32_cells": "21 configurations, 15 distinct roots, 189/210 = 90.0% of configuration pairs disagree"
+  },
+  "ranks_within_a_run": "all ranks of every run agreed bitwise (0 intra-run disagreements)"
+ },
+ "controls": {
+  "crosscheck": {
+   "n_common_cells": 168,
+   "n_identical": 168,
+   "n_differ": []
+  },
+  "crosscheck_note": "v002 and v003 are independent full re-runs of the gloo arm under two different result-bookkeeping harnesses: 168/168 cells identical. The harness change did not move a single measured bit."
+ },
+ "not_reached": {
+  "nccl_beyond_G2": "NCCL with 3 ranks, and with 4 ranks sharing 2 GPUs, were attempted as declared-exploratory arms and BOTH FAILED (rc=1 / hang, 180 s timeout). NCCL requires one rank per device. Recorded as failures in W1/v003/index.json, not dropped. The library axis is therefore measured only at G=2 on this machine."
+ },
+ "raw": {
+  "v001_aborted": "/home/rohit/sprs-fix/experiments/w_final/W1/v001 (gloo rendezvous hang, kept)",
+  "v002_partial": "/home/rohit/sprs-fix/experiments/w_final/W1/v002 (gloo arm valid and retained; NCCL arm failed on all_gather_object under forced NCCL_ALGO=Tree)",
+  "v003": "/home/rohit/sprs-fix/experiments/w_final/W1/v003",
+  "summary": "/home/rohit/sprs-fix/experiments/w_final/W1/v003/SUMMARY.json"
+ }
+}

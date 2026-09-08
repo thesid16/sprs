@@ -1,0 +1,101 @@
+% f06_compiler variant c -- the obligations as a dependency graph: what each
+% one rests on, and which pass can establish it.
+% Data: src/sprs_core.py -- CBTree (S1, l.395-497), _validate_assignment
+%       (l.1424), DMEMAllocator.allocate (l.5143-5177), the operand lookup in
+%       build_schedule/generate_instructions (main.tex quotes the line),
+%       Topology.generate_routing_tables (l.681-700) and its use in
+%       emit_sv_testbench (l.5602-5610). Obligation statements and the
+%       hypothesis lists of Claim 1 and Property 2: main.tex, App. A.
+%       No counts appear in this variant; it is a structure, not a measurement.
+% Strategy: the ORDER of the argument rather than the order of the passes.
+% It is the only variant that shows what each obligation rests on -- and that
+% nothing rests on the mapping, which is Proposition (orthogonality) drawn
+% rather than asserted.
+% Colour: the argument runs left to right and changes colour as it changes
+% kind -- spBlue for the inputs and for the passes that ran, spGreen for the
+% obligations those passes discharge (the same green as the "establishes"
+% column of f04 variant b), spInk for the two conclusions. The one edge that
+% carries nothing is spMute and dashed: mu reaches the emitter only through NOP
+% padding, so the figure's claim of orthogonality is visible as the single grey
+% line in a blue graph. The dagger on C-route is spAmber, the paper's caution
+% mark. Dash pattern, rule weight and column position carry all of it with the
+% colour stripped.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn inside 17.0cm, which is
+%         also the standalone wrapper's varwidth, so nothing is clipped.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  inp/.style={draw=spBlue, line width=0.4pt, rounded corners=2pt, fill=white,
+             font=\tiny, align=center, inner sep=2.5pt, text width=20mm,
+             text=spInk},
+  pa/.style={draw=spBlue, line width=0.55pt, rounded corners=2pt, fill=spBlueF,
+             font=\tiny, align=center, inner sep=2.5pt, text width=30mm,
+             text=spInk},
+  ob/.style={draw=spGreen, line width=0.7pt, rounded corners=2pt, fill=spGreenF,
+             font=\tiny, align=center, inner sep=2.5pt, text width=32mm,
+             text=spInk},
+  cl/.style={draw=spInk, line width=0.7pt, rounded corners=2pt, fill=white,
+             font=\tiny, align=center, inner sep=2.5pt, text width=26mm,
+             text=spInk},
+  e/.style={-{Latex[length=1.5mm,width=1.1mm]}, draw=spBlue, line width=0.4pt},
+  ed/.style={e, dash pattern=on 1.4pt off 1.2pt, draw=spMute},
+  hd/.style={font=\scriptsize\bfseries, anchor=south, text=spInk},
+]
+\node[hd] at (1.30,0.85) {inputs};
+\node[hd, text=spBlue] at (5.60,0.85) {the pass that establishes it};
+\node[hd, text=spGreen] at (10.60,0.85) {obligation};
+\node[hd] at (15.20,0.85) {used by};
+
+% ---- inputs -----------------------------------------------------------
+\node[inp] (N)   at (1.30,-0.45) {$N$: $\FBT(N)$ is a tree --- every node has exactly one consumer};
+\node[inp] (A)   at (1.30,-2.20) {$\alpha$ from S2, a valid partition of the nodes};
+\node[inp] (M)   at (1.30,-3.85) {$\mu$ from S3};
+\node[inp] (T)   at (1.30,-5.30) {$(G,\tau)$: the adjacency table};
+
+% ---- passes -----------------------------------------------------------
+\node[pa] (S1)  at (5.60, 0.05) {S1 fixes the leaf and operand binding};
+\node[pa] (AL)  at (5.60,-1.85) {\sv{DMEMAllocator.allocate}: SU post-order, free list, then a never-freed receive-buffer pass};
+\node[pa] (EM)  at (5.60,-3.85) {the emitter's operand lookup, \sv{addr\_map[gpu][c]}};
+\node[pa] (RT)  at (5.60,-5.30) {\sv{generate\_routing\_tables}};
+
+% ---- obligations ------------------------------------------------------
+\node[ob] (Cleaf)  at (10.60, 0.05) {\textsf{C-leaf} the leaf a \sv{GENERATE} writes is the one $\Rcan$ names};
+\node[ob] (Csw)    at (10.60,-1.55) {\textsf{C-sw} one writer per receive buffer, and it is remote};
+\node[ob] (Cmem)   at (10.60,-2.85) {\textsf{C-mem} within \sv{DMEM\_DEPTH} $=\DmemDepth$ and the router-id sentinel};
+\node[ob] (Cbind)  at (10.60,-4.15) {\textsf{C-bind} a \sv{COMPUTE}'s operands are its node's two children};
+\node[ob] (Croute) at (10.60,-5.45) {\textcolor{spAmber!80!spInk}{$\dagger$}\,\textsf{C-route} destination-correct, loop-free paths};
+
+% ---- consumers --------------------------------------------------------
+\node[cl] (C1) at (15.20,-1.55) {\textbf{Claim 1} bitwise invariance --- partial correctness};
+\node[cl] (P2) at (15.20,-4.60) {\textbf{Property 2} presence-gated fail-stop --- liveness};
+
+% ---- edges ------------------------------------------------------------
+\draw[e] (N) -- (S1);
+\draw[e] (N.east) -- ++(0.35,0) |- (AL.west);
+\draw[e] (A) -- (AL);
+\draw[e] (A.east) -- ++(0.55,0) |- (EM.west);
+\draw[e] (T) -- (RT);
+\draw[ed] (M.east) -- ++(0.75,0) |- (EM.south);
+\draw[e] (S1) -- (Cleaf);
+\draw[e] (S1.east) -- ++(0.30,0) |- (Cbind.west);
+\draw[e] (AL) -- (Csw);
+\draw[e] (AL.east) -- ++(0.30,0) |- (Cmem.west);
+\draw[e] (EM) -- (Cbind);
+\draw[e] (RT) -- (Croute);
+\draw[e] (Cleaf.east) -- ++(0.35,0) |- ([yshift=2.6mm]C1.west);
+\draw[e] (Csw) -- (C1);
+\draw[e] (Cmem.east) -- ++(0.35,0) |- ([yshift=-2.6mm]C1.west);
+\draw[e] (Cbind.east) -- ++(0.60,0) |- (C1.south west);
+\draw[e] (Cbind.east) -- ++(0.60,0) |- (P2.north west);
+\draw[e] (Croute.east) -- ++(0.35,0) |- (P2.west);
+
+% ---- the two things this graph shows ---------------------------------
+\node[font=\tiny, anchor=north west, align=left, text width=78mm, text=spInk]
+  at (0.10,-6.05)
+  {\textcolor{spMute}{\emph{Nothing depends on $\mu$.}} Its only edge is dashed and reaches the emitter
+   through the cost model's NOP padding; no obligation, and neither Claim~1 nor
+   Property~2, has it as a hypothesis.};
+\node[font=\tiny, anchor=north west, align=left, text width=82mm, text=spInk]
+  at (8.60,-6.05)
+  {\textcolor{spGreen}{\emph{One walk carries two obligations.}} \textsf{C-sw} is \emph{constructed} by the
+   allocator's post-order rather than assumed, and \textsf{C-mem} falls out of the same
+   walk as an $O(N)$ read-off --- which is why S5 never had to run.};
+\end{tikzpicture}

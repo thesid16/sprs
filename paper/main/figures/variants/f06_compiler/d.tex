@@ -1,0 +1,93 @@
+% f06_compiler variant d -- what exists after each pass: the artefact chain,
+% ending at the emitted testbench and the hash that identifies it.
+% Data: src/sprs_core.py -- CBTree (total_nodes = 2N-1, l.401; su_postorder
+%       l.438), the assignment dict and _validate_assignment (l.1424), the
+%       mapping dict (l.3273 map_identity and the nine others), Schedule with
+%       addr_alloc from DMEMAllocator.allocate (l.5143-5177), programs from
+%       generate_instructions with NOP insertion and _peephole_nop_compress
+%       (l.5286-5332), and emit_sv_testbench writing write_adj(), route_table
+%       and the IMEM words (l.5602-5615). Instruction encoding is
+%       encode_instruction (l.946-954), matching the field map in
+%       rtl/btree_pkg.sv l.50-60; the 96-bit packet layout is btree_pkg.sv
+%       l.62-67. \sv{DMEM\_DEPTH} = \DmemDepth{} and the \SendAddrBits-bit
+%       target address are from main.tex, App. A (\textsf{C-mem}).
+% Strategy: types, not control flow. It is the only variant a reimplementer
+% can work from -- every stage named by the object it produces and every field
+% of the emitted word placed -- and it shows where C-mem's silent truncation
+% actually lives, which no other variant can point at.
+% Colour: the pipeline artefacts are spBlue (the canonical path the compiler walks);
+%       the hashed testbench is spGreen because it is verified, not merely produced;
+%       reserved bit-fields are quiet spSkyF; and the ten-bit target_addr field is
+%       spAmber because that is where C-mem bites -- an image naming more addresses
+%       than DMEM is deep aliases two onto one slot silently. Field widths are the
+%       data channel and are untouched, so the figure reads with colour stripped.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn inside 17.0cm, which is
+%         also the standalone wrapper's varwidth, so nothing is clipped.
+\begin{tikzpicture}[x=1cm, y=1cm,
+  card/.style={draw=spBlue, line width=0.45pt, rounded corners=2pt, fill=spBlueF,
+               font=\tiny, align=center, inner sep=2.5pt, text width=24mm,
+               minimum height=15mm},
+  last/.style={card, draw=spGreen!80!spInk, fill=spGreen!22, line width=0.8pt},
+  ar/.style={-{Latex[length=1.5mm,width=1.1mm]}, draw=spBlue, line width=0.45pt},
+  fld/.style={draw=spMute, line width=0.4pt, fill=white},
+  fl/.style={font=\tiny, align=center, inner sep=0.5pt},
+  ttl/.style={font=\scriptsize\bfseries, anchor=west},
+]
+% ---- the artefact chain -----------------------------------------------
+\node[card] (A1) at ( 1.33,0) {\textbf{S1} \sv{CBTree(N)}\\[1pt]
+  \sv{total\_nodes}\\$=2N-1$;\\\sv{su\_postorder()} ---\\the walk every later\\pass reuses};
+\node[card] (A2) at ( 4.21,0) {\textbf{S2} \sv{asgn}\\[1pt]
+  \sv{dict}: node $\to$ PE\\[1pt]18 algorithms;\\
+  \sv{\_validate\_}\\\sv{assignment} checks it};
+\node[card] (A3) at ( 7.09,0) {\textbf{S3} \sv{mapping}\\[1pt]
+  \sv{dict}: PE $\to$ router\\[1pt]10 algorithms;\\
+  reaches the image\\only via NOP counts};
+\node[card] (A4) at ( 9.97,0) {\textbf{S6a} \sv{Schedule}\\[1pt]
+  ops per PE, and\\\sv{addr\_alloc}:\\PE $\to$ (node $\to$ DMEM\\
+  address), from\\\sv{DMEMAllocator}};
+\node[card] (A5) at (12.85,0) {\textbf{S6b} \sv{programs}\\[1pt]
+  \sv{dict}: PE $\to$ list of\\64-bit words; NOPs to\\
+  the scheduled cycle,\\then \sv{\_peephole\_}\\\sv{nop\_compress}};
+\node[last] (A6) at (15.73,0) {\textbf{S6c} testbench\\[1pt]
+  \sv{write\_adj()},\\\sv{route\_table[dest]},\\IMEM words, leaf\\values --- one file};
+\foreach \a/\b in {A1/A2,A2/A3,A3/A4,A4/A5,A5/A6}{\draw[ar] (\a) -- (\b);}
+
+\node[font=\tiny, anchor=north east, align=right, text width=40mm] at (16.95,-1.02)
+  {a SHA-256 over this text is the campaign's\\identity for the configuration};
+
+% ---- the emitted 64-bit instruction word ------------------------------
+\node[ttl] at (0.05,-1.72) {the 64-bit instruction word \ \ (\sv{encode\_instruction}; \sv{btree\_pkg.sv})};
+% 0.264 cm per bit over 64 bits from x=0.05
+\draw[fld] (0.05,-3.02) rectangle (1.11,-2.12);
+\draw[fld] (1.11,-3.02) rectangle (2.17,-2.12);
+\draw[fld] (2.17,-3.02) rectangle (6.39,-2.12);
+\draw[fld] (6.39,-3.02) rectangle (10.61,-2.12);
+\draw[fld] (10.61,-3.02) rectangle (14.83,-2.12);
+\draw[fld, fill=spSkyF] (14.83,-3.02) rectangle (16.95,-2.12);
+\node[fl, text width=9mm]  at ( 0.58,-2.57) {\sv{[63:60]}\\opcode};
+\node[fl, text width=9mm]  at ( 1.64,-2.57) {\sv{[59:56]}\\aux};
+\node[fl, text width=38mm] at ( 4.28,-2.57) {\sv{[55:40]} \sv{dest}\\write-back address\\(\sv{SEND}: the receiver's \sv{target\_addr})};
+\node[fl, text width=38mm] at ( 8.50,-2.57) {\sv{[39:24]} \sv{addr\_a}\\operand A\\(\sv{SEND}: the local source)};
+\node[fl, text width=38mm] at (12.72,-2.57) {\sv{[23:8]} \sv{addr\_b}\\operand B\\(\sv{SEND}: \sv{dest\_gpu\_id})};
+\node[fl, text width=18mm] at (15.89,-2.57) {\sv{[7:0]}\\reserved};
+
+% ---- the packet the SEND becomes --------------------------------------
+\node[ttl] at (0.05,-3.45) {the 96-bit packet a \sv{SEND} becomes};
+% 0.176 cm per bit over 96 bits from x=0.05
+\draw[fld] (0.05,-4.60) rectangle (2.87,-3.85);
+\draw[fld, draw=spAmber!80!spInk, line width=0.7pt, fill=spAmber!30]
+  (2.87,-4.60) rectangle (4.63,-3.85);
+\draw[fld, fill=spSkyF] (4.63,-4.60) rectangle (5.69,-3.85);
+\draw[fld] (5.69,-4.60) rectangle (16.95,-3.85);
+\node[fl, text width=25mm] at ( 1.46,-4.22) {\sv{[95:80]}\\\sv{dest\_gpu\_id}};
+\node[fl, text width=16mm] at ( 3.75,-4.22) {\sv{[79:70]}\\\sv{target\_addr}};
+\node[fl, text width=9mm]  at ( 5.16,-4.22) {\sv{[69:64]}\\resv.};
+\node[fl, text width=60mm] at (11.32,-4.22) {\sv{[63:0]} payload --- the 64-bit value};
+
+\draw[ar, dash pattern=on 1.4pt off 1.2pt, draw=spAmber!80!spInk] (4.28,-3.02) -- (3.75,-3.85);
+\node[font=\tiny, anchor=north west, align=left, text width=115mm] at (0.05,-4.78)
+  {\emph{Where \textsf{C-mem} bites.} The \sv{SEND}'s 16-bit \sv{dest} field is carried on the
+   wire in \SendAddrBits{} bits, and DMEM is \sv{DMEM\_DEPTH} $=\DmemDepth$ deep: an image
+   that names more addresses than that on one PE aliases two of them onto one slot with no
+   flag. That is why \textsf{C-mem} is a compilability precondition and not a run-time check.};
+\end{tikzpicture}

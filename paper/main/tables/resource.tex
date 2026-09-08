@@ -1,7 +1,8 @@
 % GENERATED — do not edit by hand.
 % script : scripts/gen_resource.py
-% source : /home/rohit/tournament_p1/results/<instance>/tb_*.sv (PPR localparam)
-% date   : 2026-08-12
+% source : sprs_core.build_topology (PPR/N_ROUTERS/N_NODES, the same
+%          call the emitter used to write those localparams)
+% date   : 2026-09-08
 
 \begin{tabular}{@{}l rrr@{}}
 \toprule
@@ -11,10 +12,10 @@
  & \footnotesize mesh/torus & \footnotesize hypercube & \footnotesize fat-tree \\
 \midrule
 Routing table ($G\lceil\log_2 P\rceil$) & $12{,}288$ & $16{,}384$ & $28{,}672$ \\
-VC ingress FIFOs ($P\!\cdot\!2\!\cdot\!8\!\cdot\!96$) & $7{,}680$ & $16{,}896$ & $101{,}376$ \\
-Egress FIFOs ($P\!\cdot\!8\!\cdot\!96$) & $3{,}840$ & $8{,}448$ & $50{,}688$ \\
+VC ingress FIFOs ($P\!\cdot\!2\!\cdot\!16\!\cdot\!96$) & $15{,}360$ & $33{,}792$ & $202{,}752$ \\
+Egress FIFO ($P\!\cdot\!16\!\cdot\!96$) & $7{,}680$ & $16{,}896$ & $101{,}376$ \\
 Crossbar ($P^2\!\cdot\!96$) & $2{,}400$ & $11{,}616$ & $418{,}176$ \\
 \midrule
-\textbf{Per-router subtotal} & $\mathbf{26{,}208}$ & $\mathbf{53{,}344}$ & $\mathbf{598{,}912}$ \\
+\textbf{Per-router subtotal} & $\mathbf{37{,}728}$ & $\mathbf{78{,}688}$ & $\mathbf{750{,}976}$ \\
 \bottomrule
 \end{tabular}

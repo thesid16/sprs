@@ -1,0 +1,40 @@
+% GENERATED — do not edit by hand.
+% script : scripts/gen_assumptions.py
+% source : rtl/*.sv and src/sprs_core.py (line numbers located by
+%          literal anchor at generation time; a missing or duplicated
+%          anchor aborts the script rather than emitting a stale one)
+% date   : 2026-09-08
+% note   : 11 fabric invariants: 7 safety, 3 liveness, 1 identity slot
+\begin{table*}[!t]
+\caption{The eleven fabric invariants, with the line of released RTL that realises each and what a violation of it produces. Line ranges are located by literal anchor when this table is generated, so a change to \sv{rtl/} that moves them fails the build rather than silently mis-citing. The one thing to take from it is the split in the last column: the three liveness invariants convert a violation into a fail-stop the fabric reports, and the seven safety invariants do not --- for those the fabric checks presence, not identity, and the only detector is the oracle comparison outside it.}
+\label{tab:invariants}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.25}
+\input{tables/_style}
+\def\spTBL{%
+\begin{tabularx}{\textwidth}{@{}l X l X@{}}
+\toprule
+\spband{spBlueF}\sphd{Invariant} & \sphd{What the fabric must guarantee} & \sphd{Realised at} & \sphd{What a violation produces} \\
+\midrule
+\multicolumn{4}{@{}l}{\spband{spGreenF}\emph{Safety --- hypotheses of Claim~\ref{claim:1}; a violation can change the root}} \\
+\textsf{F-sb-mono} & Each receive buffer's scoreboard bit goes $0\to1$ once per program, at the unique remote write & \sv{btree\_fsm\_fast.sv:702--719} & no fabric-level detector; wrong root, caught only by comparison against the oracle \\
+\spband{spGrid}\textsf{F-sb-gate} & \texttt{COMPUTE} stalls \textsf{DE}$\to$\textsf{EX} until both operand bits are $1$; \texttt{SEND} until \texttt{addr\_a}'s is & \sv{btree\_fsm\_fast.sv:515--537} & no fabric-level detector; wrong root, caught only by comparison against the oracle \\
+\textsf{F-fw} & A DMEM read at cycle $t$ returns the value committed at cycle $\leq t$, across the adjacent-cycle race & \sv{btree\_fsm\_fast.sv:127--180} & no fabric-level detector; wrong root, caught only by comparison against the oracle \\
+\spband{spGrid}\textsf{F-inorder} & One instruction at a time through \textsf{IF}$\to$\textsf{DE}$\to$\textsf{EX}; operands sampled in \textsf{DE} before writeback in \textsf{EX} & \sv{btree\_fsm\_fast.sv:540--556} & no fabric-level detector; wrong root, caught only by comparison against the oracle \\
+\textsf{F-gci-haz} & From \sv{gci\_start} until the GCI agent commits, \textsf{DE} stalls any reader of the pending destination & \sv{btree\_fsm\_fast.sv:525--537} & no fabric-level detector; wrong root, caught only by comparison against the oracle \\
+\spband{spGrid}\textsf{F-arb} & DMEM write arbitration is strict $\mathrm{PIU}>\mathrm{GCI}>\mathrm{FSM}$, with a GCI retry latch; no write is dropped & \sv{btree\_fsm\_fast.sv:369, 419} & no fabric-level detector; wrong root, caught only by comparison against the oracle \\
+\textsf{F-fadd} & The adder is combinational and stateless: its output is a pure function of the two operands sampled at the EX edge & \sv{fp64\_add.sv:64} & no fabric-level detector; wrong root, caught only by comparison against the oracle \\
+\midrule
+\multicolumn{4}{@{}l}{\spband{spAmberF}\emph{Liveness --- hypotheses of Property~\ref{prop:2}; a violation stops the run instead}} \\
+\textsf{F-credit} & Per link and interval, credit returns never exceed buffer reads, with a bounded wait (counter-serialised pulses) & \sv{noc\_router.sv:191--218} & absent operand: the PE stalls, \textsf{F-watchdog} raises \texttt{P\_ERROR}, no root is produced \\
+\spband{spGrid}\textsf{F-misroute} & A packet whose \sv{dest\_gpu\_id} does not match the local PE is dropped, not consumed & \sv{btree\_fsm\_fast.sv:315} & absent operand: the PE stalls, \textsf{F-watchdog} raises \texttt{P\_ERROR}, no root is produced \\
+\textsf{F-watchdog} & \sv{WATCHDOG\_MAX} $=\WatchdogMax$ non-retiring cycles, or a \sv{TIMEOUT\_MAX} EX stall, raises \texttt{P\_ERROR} & \sv{btree\_fsm\_fast.sv:775--783} & this \emph{is} the detector: \sv{error\_pc} and \sv{error\_state} are recorded and \sv{all\_done} never asserts \\
+\midrule
+\multicolumn{4}{@{}l}{\spband{spGrid}\emph{Realised but not load-bearing in the reported workload}} \\
+\textsf{F-id} & \texttt{DMEM[0]} holds the ALU identity: DMEM resets to zero and \texttt{scoreboard[0]} is set at reset & \sv{btree\_fsm\_fast.sv:185, 709} & not applicable here: $\FBT(N)$ has no single-child node, so the slot is never read in this workload \\
+\bottomrule
+\end{tabularx}
+}%
+\spmeasure{\spTBL}\spTBL
+\end{table*}

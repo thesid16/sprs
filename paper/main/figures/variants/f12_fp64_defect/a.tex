@@ -1,0 +1,84 @@
+% f12_fp64_defect variant a -- the adder datapath, the borrow that was
+% missing, and the three sites the repair had to touch.
+% Data: rtl/fp64_add.sv (the shipped, repaired adder): the tail split at the
+%   alignment shift, the borrow on effective subtraction, and the rescale
+%   guarded by (sub_borrow && lzc==2) in the renormalising branch.  Counts
+%   from data/wround_macros.tex (\Fp* macros, distilled from
+%   data/wround/W3_fp64.json).
+% Strategy: structural.  It shows WHERE in the datapath the defect lived and
+%   why one edit could not fix it -- the sticky path is the shared thread
+%   through all three sites, so a change at one site changes what the other
+%   two mean.  Variant b works the same defect as bits on one recorded
+%   vector; c prices the partial repair; d shows what the verification covers.
+\begin{tikzpicture}[
+  bx/.style={draw=spBlue, rounded corners=1.5pt, align=left, text=spInk,
+             text width=5.30cm, inner sep=3pt, font=\tiny},
+  ed/.style={circle, draw=spAmber, fill=spAmber!35, inner sep=0.5pt, text=spInk,
+             font=\tiny\bfseries, minimum size=3.6mm},
+  ar/.style={-{Stealth[length=3.6pt]}, spBlue, thin},
+  st/.style={spVerm, densely dashed, line width=0.7pt},
+]
+% ---------------------------------------------------------------- datapath
+\node[bx, fill=spBlueF] (b0) at (0,0)
+  {\textbf{unpack, order by exponent.}
+   \texttt{m\_big}, \texttt{m\_small} $=\{0,1,\mathrm{frac},g\}$ (55\,b);
+   \texttt{shift} $=|\Delta e|$};
+\node[bx, fill=spBlueF, below=3.4mm of b0.south west, anchor=north west] (b1)
+  {\textbf{align.}\ \ \texttt{m\_aligned = m\_small >> shift}\\[1pt]
+   \emph{tail} $t\in(0,1)$ guard units falls off the end.
+   Split it:\\[1pt]
+   \texttt{align\_round} $=$ \texttt{m\_small[shift-1]} (weight $\tfrac12$)\\
+   \texttt{align\_low}\ \ $=$ OR of everything below it\\
+   \texttt{sticky} $=$ \texttt{align\_round | align\_low} \ (unchanged)};
+\node[bx, fill=spBlueF, below=3.4mm of b1.south west, anchor=north west] (b2)
+  {\textbf{effective subtraction} (operand signs differ)\\[1pt]
+   \texttt{m\_sum = m\_big - m\_aligned - sticky}\\[1pt]
+   the exact difference is
+   \texttt{m\_big}$-$\texttt{m\_aligned}$-\,t$; borrowing
+   leaves a remainder $r=1-t$, still inside $(0,1)$};
+\node[bx, fill=spBlueF, below=3.4mm of b2.south west, anchor=north west] (b3)
+  {\textbf{normalise.}\ \ \texttt{lzc}; left-shift by \texttt{lzc-1}\\[1pt]
+   a one-bit cancellation scales $r$ to $2r$:\\
+   \texttt{if (sub\_borrow \&\& lzc==2)} carry a whole unit into
+   \texttt{m\_norm} when $2r\ge1$, and recompute \texttt{sticky}};
+\node[bx, fill=spBlueF, below=3.4mm of b3.south west, anchor=north west] (b4)
+  {\textbf{round to nearest even, then pack.}\\[1pt]
+   \texttt{guard = m\_norm[0]}; round up iff
+   \texttt{guard \&\& (sticky || frac[0])}};
+\draw[ar] (b0) -- (b1);
+\draw[ar] (b1) -- (b2);
+\draw[ar] (b2) -- (b3);
+\draw[ar] (b3) -- (b4);
+% ------------------------------------------------------- the sticky thread
+\coordinate (lane) at (3.05,0);
+\draw[st] (b1.east) -- (3.05,0 |- b1.east)
+      coordinate (s1) -- (3.05,0 |- b4.east);
+\draw[st, -{Stealth[length=3.4pt]}] (3.05,0 |- b2.east) -- (b2.east);
+\draw[st, -{Stealth[length=3.4pt]}] (3.05,0 |- b3.east) -- (b3.east);
+\draw[st, -{Stealth[length=3.4pt]}] (3.05,0 |- b4.east) -- (b4.east);
+\node[font=\tiny, text=spVerm, anchor=west, align=left]
+  at (3.12, 0 |- b1.east) {\texttt{sticky},\\ \texttt{align\_round},\\
+                           \texttt{align\_low}};
+% ------------------------------------------------------------ edit badges
+\node[ed] at ($(b1.north east)+(-0.16,-0.16)$) {1};
+\node[ed] at ($(b2.north east)+(-0.16,-0.16)$) {2};
+\node[ed] at ($(b3.north east)+(-0.16,-0.16)$) {3};
+\node[font=\tiny, anchor=west, align=left, text=spAmber]
+  at ($(b0.north east)+(0.10,0.02)$)
+  {\textbf{three coordinated edits}\\ (numbered below)};
+% ------------------------------------------------------- the defect itself
+\node[draw=spVerm, line width=0.6pt, rounded corners=1.5pt, fill=spVermF,
+      align=left, text=spInk,
+      text width=8.30cm, inner sep=3.5pt, font=\tiny,
+      below=3.6mm of b4.south west, anchor=north west] (df)
+  {\textbf{As submitted:} \texttt{m\_sum = m\_big - m\_aligned}. The tail was
+   recorded in \texttt{sticky} and never borrowed, so the difference was too
+   large by exactly $t$ --- and then the \emph{addition} rounding rule at the
+   last stage was applied to it, rounding up a value lying below the midpoint.
+   The error is always \FpCtrlUlp~ulp. The negative control fires on
+   \FpCtrlErrors{} of \FpCtrlVectors{} vectors; the repaired adder shows
+   \textcolor{spGreen}{\FpAcceptErrors{} errors on \FpAcceptVectors}. Edit~2 alone --- the
+   obvious one-line fix --- still leaves \textcolor{spAmber}{\FpPartialPct{}
+   (\FpPartialErrors{} of \FpPartialVectors)}, which is why the repair is not
+   established by the patch but by the sweep beside its control.};
+\end{tikzpicture}

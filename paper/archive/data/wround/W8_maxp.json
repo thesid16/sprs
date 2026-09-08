@@ -1,0 +1,44 @@
+{
+ "source": "W8_maxp/v00*/{status.txt,run_maxp.sh,xelab.log}",
+ "attempts": [
+  {
+   "version": "v001",
+   "xelab_debug": "-O0 --debug off",
+   "xelab_rc": 1,
+   "elapsed": "36:43.36",
+   "peak_rss_kb": 48317340,
+   "snapshot_dir": "/home/rohit/expscratch/maxp_v001/xsim.dir/maxp_snap",
+   "snapshot_read_from": "filesystem",
+   "snapshot_bytes": 2059682379,
+   "snapshot_has_xsimk": false,
+   "built_snapshot_line": false,
+   "no_snapshot_line": true
+  },
+  {
+   "version": "v002",
+   "xelab_debug": "-O0 --debug off",
+   "xelab_rc": 0,
+   "elapsed": "58:28.24",
+   "peak_rss_kb": 54795304,
+   "snapshot_dir": "/home/rohit/expscratch/maxp_v001/xsim.dir/maxp_snap",
+   "snapshot_read_from": "filesystem",
+   "snapshot_bytes": 2059682379,
+   "snapshot_has_xsimk": false,
+   "built_snapshot_line": true,
+   "no_snapshot_line": false
+  },
+  {
+   "version": "v003",
+   "xelab_debug": "-debug typical",
+   "xelab_rc": 0,
+   "elapsed": "2:53:18",
+   "peak_rss_kb": 67275832,
+   "snapshot_dir": "/home/rohit/expscratch/maxp_v003/xsim.dir/maxp_snap",
+   "snapshot_read_from": "filesystem",
+   "snapshot_bytes": 7018945926,
+   "snapshot_has_xsimk": false,
+   "built_snapshot_line": true,
+   "no_snapshot_line": true
+  }
+ ]
+}

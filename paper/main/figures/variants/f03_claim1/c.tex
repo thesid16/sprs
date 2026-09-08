@@ -1,0 +1,80 @@
+% f03_claim1 variant c -- the square that closes.
+% Data: the structural argument for Proposition (mapping/topology
+%       orthogonality) in main.tex, sec:abi-orth -- the three edge annotations
+%       are its three sentences, naming build_schedule, generate_instructions
+%       and the F-sb-gate hypothesis of Claim 1. The root word is the N=128 row
+%       of tables/invariance.tex (0x415F7E8FF9581062); the empirical closure
+%       counts are \WallTBs{} (data/coverage_macros.tex) and \InvNonSettling{}
+%       (data/results_macros.tex).
+% Strategy: argue FORMALLY rather than by exhibit. a and b show three fabrics
+% and invite the reader to compare roots; this one shows that the comparison
+% never had to be made -- the right-hand edge of the square is an identity by
+% construction, and each of the other three edges carries the reason it is.
+% Colour: every box on the compliant construction path is spBlue; the two
+% observed roots and the closing identity are the confirmed invariant (spGreen);
+% the edge reasons are annotation, so they stay spMute and take no series
+% colour. Box weight and position carry the same hierarchy in greyscale.
+% Target: IEEE double column, 7.16in = 18.2cm. Drawn inside 16.4cm.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  bx/.style={draw=spBlue, fill=spBlueF, line width=0.45pt, align=center,
+             font=\tiny, inner sep=3pt, minimum height=0.70cm, rounded corners=1.5pt,
+             text=spInk},
+  rb/.style={draw=spGreen, fill=spGreenF, line width=0.8pt, align=center,
+             font=\tiny, inner sep=3pt, minimum height=0.70cm, rounded corners=1.5pt,
+             text=spInk},
+  ar/.style={draw=spBlue, line width=0.5pt, -{Latex[length=1.7mm,width=1.2mm]}},
+  lbl/.style={font=\tiny, align=center, inner sep=1.5pt, text=spInk},
+  note/.style={font=\tiny, align=left, inner sep=1.5pt, text=spMute},
+]
+% ---------------- the fixed data, above the square -------------------------
+\node[bx, text width=3.5cm] (SRC) at (2.10,3.95)
+  {fixed: $N$, leaf vector $L$,\\assignment, refinement, FADD unit};
+\node[bx, text width=3.5cm] (SCH) at (2.10,2.55)
+  {per-PE schedule $s$\\ \sv{build\_schedule}};
+\draw[ar] (SRC) -- (SCH);
+\node[note, anchor=west] at (3.95,3.25)
+  {a \texttt{COMPUTE}'s $(\texttt{addr\_a},\texttt{addr\_b},\texttt{dest})$\\
+   depends only on the assignment and the\\
+   DMEM allocator --- neither reads $\mu$ or $\rho$};
+
+% ---------------- the square ----------------------------------------------
+\node[bx, text width=3.7cm] (TL) at (2.10,1.05)
+  {image on $(\mu_1,\rho_1)$: ring\\ \sv{generate\_instructions}};
+\node[bx, text width=3.7cm] (BL) at (2.10,-0.55)
+  {image on $(\mu_2,\rho_2)$: fat-tree\\ \sv{generate\_instructions}};
+\node[rb, text width=3.5cm] (TR) at (9.90,1.05)
+  {$R_\mathrm{observed}(\mu_1,\rho_1)$\\ \texttt{0x415F7E8FF9581062}};
+\node[rb, text width=3.5cm] (BR) at (9.90,-0.55)
+  {$R_\mathrm{observed}(\mu_2,\rho_2)$\\ \texttt{0x415F7E8FF9581062}};
+\draw[ar] (SCH) -- (TL);
+\draw[ar, draw=spGreen] (TL) -- node[lbl, above, text=spGreen] {execute} (TR);
+\draw[ar, draw=spGreen] (BL) -- node[lbl, below, text=spGreen] {execute} (BR);
+\draw[ar] (TL) -- node[lbl, left, text=spBlue, align=right]
+  {re-map,\\re-route} (BL);
+% the closing edge
+\draw[spGreen, line width=0.8pt] (11.70,1.05) -- (12.15,1.05)
+  -- (12.15,-0.55) -- (11.70,-0.55);
+\node[font=\small, text=spGreen] at (12.60,0.25) {$=$};
+\node[note, anchor=west, text=spGreen] at (12.90,0.25)
+  {$\Rcan(N,L)$};
+
+% ---------------- edge reasons --------------------------------------------
+\node[note, anchor=north west] at (4.05,0.72)
+  {a \texttt{SEND}'s $(\texttt{dest\_gpu},\texttt{target\_addr},\text{link})$
+   \emph{does} depend on $\mu$ and $\rho$ ---\\
+   but it fixes only \emph{where} data flow, never the operand binding
+   at the receiver};
+\node[note, anchor=north west] at (4.05,-0.92)
+  {\textsf{F-sb-gate}: the receiving \texttt{COMPUTE} reads DMEM by
+   \emph{address},\\ not by arrival time, port or virtual channel};
+
+% ---------------- the reading ---------------------------------------------
+\node[lbl, anchor=north, text width=15.6cm, align=center, text=spInk] at (7.20,-1.95)
+  {The two axes that change most obviously under cluster reshape --- the
+   mapping $\mu$ and the routing tables $\rho$ --- are structurally orthogonal
+   to the bit result, so the square closes by inspection of the code path that
+   emits the instructions rather than by an empirical average. The campaign is
+   consistent with it: \WallTBs{} settled simulations, \InvNonSettling{}
+   non-settling, and no finite root differing from $\Rcan(N,L)$.};
+\end{tikzpicture}

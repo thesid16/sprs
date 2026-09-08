@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""
+gen_ndmodel.py — modelled cost of a non-deterministic ring reducer.
+
+Both reviewers asked for a non-deterministic baseline. We did not build one,
+and this script does not pretend to be one: it computes what a naive ND-Ring
+schedule would cost under the SAME hardware cost model that produces Omega,
+so the comparison is at least internally consistent. Every number it emits is
+MODELLED, and the table it writes says so in its caption.
+
+Why a ring is the right naive baseline: it is what a throughput-oriented
+collective does when it is free to ignore operand binding -- each PE sums its
+own leaves in any order, then partial sums are handed around the ring. The
+reduction order becomes a function of G and of the ring's orientation, which
+is exactly the cross-reshape non-determinism the ABI forbids.
+
+Cost model (identical constants to compute_lower_bound):
+  gci_gap        = gci_latency + 2 = 6 cycles between consecutive GENERATEs
+  compute        = 1 cycle per FADD
+  comm_cost(h)   = inject + h*hop + eject + piu
+
+SPRS (FBT): depth ceil(log2 N), and the tree crosses PEs wherever the
+partition cuts it.
+ND baselines: each PE reduces its N/G leaves locally as a BALANCED TREE
+            (depth ceil(log2(N/G)) -- the baseline may reassociate freely,
+            and modelling it as a serial chain would handicap it), then
+            either G-1 ring hand-offs or ceil(log2 G) recursive-doubling
+            rounds.
+"""
+import argparse
+import datetime
+import math
+import os
+import sys
+
+sys.path.insert(0, "/home/rohit/tournament_p1")
+import sprs_core as sc
+
+INSTANCES = [
+    (8,2,'linear'), (32,4,'hypercube'), (128,8,'mesh'), (128,16,'torus'),
+    (512,16,'torus'), (512,64,'fat_tree'), (1024,64,'torus'),
+    (2048,128,'torus'), (4096,512,'hypercube'), (8192,1024,'hypercube'),
+]
+
+
+def costs(N, G, tname):
+    hw = sc.HW
+    topo = sc.build_topology(tname, G)
+    gci_gap = hw.gci_latency + 2
+    m = math.ceil(N / G)                     # leaves per PE
+
+    # Leaf generation is common to both: a PE cannot produce its leaves faster
+    # than the GCI allows, whatever the reduction order downstream.
+    gen = gci_gap * m
+
+    # SPRS: FBT depth, plus one cross-PE traversal per level that the
+    # partition cuts. A connected partition cuts at most ceil(log2 G) levels.
+    depth_fbt = math.ceil(math.log2(N)) if N > 1 else 0
+    cuts = math.ceil(math.log2(G)) if G > 1 else 0
+    diam = getattr(topo, "diameter", None)
+    if not isinstance(diam, int) or diam <= 0:
+        diam = max(1, int(2 * math.sqrt(max(1, topo.n_nodes))))
+    hop = hw.comm_cost(max(1, diam // 2))
+    sprs = gen + depth_fbt * hw.compute_latency + cuts * hop
+
+    # ND-Ring: local chain then G-1 sequential hand-offs, one neighbour hop
+    # each. This is the naive baseline and it is weak at large G -- G-1
+    # sequential steps lose to a log-depth tree once G is big. Reported for
+    # completeness, not as the competitive comparison.
+    # The ND reducer is free to reassociate, so its LOCAL reduction is a
+    # balanced tree of depth ceil(log2 m), not a serial chain of m-1 adds.
+    # Modelling it as a chain would flatter SPRS by handicapping the baseline.
+    local = math.ceil(math.log2(m)) if m > 1 else 0
+    ring = gen + local * hw.compute_latency + (G - 1) * hw.comm_cost(1)
+
+    # ND-RecDouble: local chain, then ceil(log2 G) rounds of pairwise exchange
+    # and add. This is the honest strong baseline -- it has the same log-depth
+    # structure SPRS does, and is free to reassociate within each PE.
+    rounds = math.ceil(math.log2(G)) if G > 1 else 0
+    rd = gen + local * hw.compute_latency + rounds * (hop + hw.compute_latency)
+    return sprs, ring, rd
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default="tables/ndmodel.tex")
+    a = ap.parse_args()
+    os.makedirs(os.path.dirname(a.out), exist_ok=True)
+
+    rows, etas = [], []
+    for N, G, t in INSTANCES:
+        s, ring, rd = costs(N, G, t)
+        eta = s / rd                      # against the STRONG baseline
+        etas.append(eta)
+        rows.append((N, G, t.replace('_', '-'), s, ring, rd, eta))
+
+    b = ["% GENERATED — do not edit by hand.",
+         "% script : scripts/gen_ndmodel.py",
+         "% source : analytical model, same constants as compute_lower_bound",
+         f"% date   : {datetime.date.today().isoformat()}",
+         "% NOTE   : MODELLED, not measured. No ND reducer was implemented.",
+         r"\begin{tabular}{@{}rrlrrrr@{}}", r"\toprule",
+         r"$N$ & $G$ & Topology & \sprs{} & ND-Ring & ND-RecDbl & $\hat{\eta}$ \\",
+         r"\midrule"]
+    for N, G, t, s, ring, rd, e in rows:
+        b.append(f"{N} & {G} & {t} & {s} & {ring} & {rd} & {e:.2f} \\\\")
+    b += [r"\midrule",
+          f"\\multicolumn{{6}}{{@{{}}l}}{{median $\\hat{{\\eta}}$ vs.\\ ND-RecDouble}} & "
+          f"{sorted(etas)[len(etas)//2]:.2f} \\\\",
+          r"\bottomrule", r"\end{tabular}"]
+    open(a.out, "w").write("\n".join(b) + "\n")
+
+    lo, hi = min(etas), max(etas)
+    med = sorted(etas)[len(etas)//2]
+    print(f"  wrote {a.out}")
+    print(f"  modelled eta: median {med:.2f}, range {lo:.2f}--{hi:.2f}")
+    print(f"  (SPRS slower than ND-RecDouble on {sum(1 for e in etas if e>1)}/{len(etas)} instances)")
+
+
+if __name__ == "__main__":
+    main()

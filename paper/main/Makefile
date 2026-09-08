@@ -1,8 +1,6 @@
 # paper_v6 build
 #
-#   make            build the default (WITHOUT-LOGS) variant
-#   make fpga       build the WITH-LOGS variant (needs data/fpga_measured.tex)
-#   make both       build both variants
+#   make            build the PDF
 #   make todo       report remaining \todo{} placeholders, grouped by section
 #   make tables     regenerate all generated tables from the CSVs
 #   make clean      remove build intermediates
@@ -11,11 +9,13 @@ MAIN    := main
 LATEX   := pdflatex -interaction=nonstopmode -file-line-error
 BIBTEX  := bibtex
 
-.PHONY: all fpga both todo tables clean distclean check
+.PHONY: all todo tables clean distclean check verify-tables
 
 all: $(MAIN).pdf
 
-$(MAIN).pdf: $(MAIN).tex references.bib $(wildcard tables/*.tex) $(wildcard figures/*)
+# data/*.tex was omitted here, so editing any of the eight macro files did not
+# trigger a rebuild and `check: all` could validate a stale PDF.
+$(MAIN).pdf: $(MAIN).tex references.bib $(wildcard tables/*.tex) $(wildcard data/*.tex) $(wildcard figures/*)
 	$(LATEX) $(MAIN).tex > /dev/null 2>&1 || true
 	$(BIBTEX) $(MAIN)    > /dev/null 2>&1 || true
 	$(LATEX) $(MAIN).tex > /dev/null 2>&1 || true
@@ -23,18 +23,6 @@ $(MAIN).pdf: $(MAIN).tex references.bib $(wildcard tables/*.tex) $(wildcard figu
 	@test -f $(MAIN).pdf || (echo "BUILD FAILED — see build.log"; grep -E '^.*:[0-9]+: ' build.log | head -20; exit 1)
 	@echo "built $(MAIN).pdf ($$(pdfinfo $(MAIN).pdf 2>/dev/null | awk '/^Pages/{print $$2}') pages)"
 	@$(MAKE) --no-print-directory warn
-
-# WITH-LOGS variant: FPGA table restored, cycle counts read from data/fpga_measured.tex
-fpga: $(MAIN).tex
-	@test -f data/fpga_measured.tex || (echo "data/fpga_measured.tex missing — cannot build WITH-LOGS variant"; exit 1)
-	$(LATEX) "\def\fpgadata{1}\input{$(MAIN).tex}" > /dev/null 2>&1 || true
-	$(BIBTEX) $(MAIN) > /dev/null 2>&1 || true
-	$(LATEX) "\def\fpgadata{1}\input{$(MAIN).tex}" > /dev/null 2>&1 || true
-	$(LATEX) "\def\fpgadata{1}\input{$(MAIN).tex}" > build-fpga.log 2>&1 || true
-	@mv $(MAIN).pdf main-with-fpga.pdf
-	@echo "built main-with-fpga.pdf"
-
-both: all fpga
 
 # Remaining placeholder count, grouped by the section each falls in.
 todo:
@@ -53,13 +41,45 @@ warn:
 	 printf '  undefined refs: %s   undefined citations: %s   overfull boxes: %s\n' \
 	        "$${u:-0}" "$${c:-0}" "$${o:-0}"
 
+# ORDER MATTERS.  Two generator pairs collide on the same output file:
+#   tables/catalogue.tex  <- gen_tournament.py (winner shares, REFUTED by T15)
+#                         <- gen_catalogue.py  (tie-invariant champion-class
+#                                               membership -- what main.tex means)
+#   tables/dedup.tex      <- gen_tables.py and gen_results_macros.py
+# The authoritative generator therefore runs LAST.  Before this ordering existed,
+# `make tables` silently reverted tables/catalogue.tex to the withdrawn
+# winner-share table while main.tex still cited it as membership; the `check`
+# target below now fails on that, so the mistake cannot recur silently.
+#
+# gen_claim_macros.py runs LAST for a different reason: it validates its
+# reconstruction of the canonical reducer against the roots printed in
+# tables/invariance.tex, so gen_tables.py must have written that file first.
+# It fails the build if the reconstruction does not reproduce all 16 roots.
+# Until it was written, data/claim_macros.tex was the one generated .tex in
+# this tree with NO generator anywhere -- `make tables` rewrote 27 of 28 and
+# scripts/verify_tables.py still reported all 28 reproducing, because it
+# diffed that file against its own scratch copy.
 tables:
+	@python3 scripts/gen_tablestyle.py
 	@python3 scripts/gen_tables.py
 	@python3 scripts/gen_cost_tables.py
 	@python3 scripts/gen_tournament.py
 	@python3 scripts/gen_resource.py
 	@python3 scripts/gen_coverage.py
 	@python3 scripts/gen_figures.py
+	@python3 scripts/gen_campaign_macros.py
+	@python3 scripts/gen_catalogue.py
+	@python3 scripts/gen_results_macros.py
+	@python3 scripts/gen_fabric_macros.py
+	@python3 scripts/gen_selection.py
+	@python3 scripts/gen_wround_macros.py
+	@python3 scripts/gen_ksweep.py
+	@python3 scripts/gen_assumptions.py
+	@python3 scripts/gen_claim_macros.py
+
+# Regenerate every table in a scratch copy and diff against what is committed.
+verify-tables:
+	@python3 scripts/verify_tables.py
 
 # Fail if anything still unresolved — used before submission
 check: all
@@ -76,7 +96,37 @@ check: all
 	@test -f build.log || { echo "FAIL: build.log missing — run 'make' first (the undefined-ref guards cannot run without it)"; exit 1; }
 	@if grep -qE "Citation .* undefined" build.log; then echo "FAIL: undefined citations"; grep -E "Citation .* undefined" build.log | head; exit 1; fi
 	@if grep -qE "Reference .* undefined" build.log; then echo "FAIL: undefined references"; grep -E "Reference .* undefined" build.log | head; exit 1; fi
+	@# An undefined MACRO is not an undefined reference and was not caught here.
+	@# data/campaign_macros.tex was generated but never \input, so six \Sweep*
+	@# and \Repair* uses in the pinned-FBT subsection typeset as EMPTY -- the
+	@# sentence read "it holds on of them ()" -- through a clean `make check`.
+	@if grep -q "Undefined control sequence" build.log; then \
+	  echo "FAIL: undefined control sequence(s) -- a macro typeset as nothing:"; \
+	  grep -A1 "Undefined control sequence" build.log | head -20; exit 1; fi
 	@if grep -rl "DEFECTIVE" tables/ >/dev/null 2>&1; then echo "FAIL: tables generated from the defective GPU-0 cycle metric:"; grep -rl "DEFECTIVE" tables/; exit 1; fi
+	@# The stamp above only fires if the generator writes it. gen_tables.py used
+	@# to hardcode the defective CSV and stamp nothing, so the guard could not
+	@# see it. Check the provenance header directly as well.
+	@if grep -rl "^% source.*live_hw_results_p1_unified" tables/ >/dev/null 2>&1; then \
+	  echo "FAIL: tables generated from live_hw_results_p1_unified.csv (defective for cycle-derived numbers):"; \
+	  grep -rl "^% source.*live_hw_results_p1_unified" tables/; \
+	  echo "  -> the generator must resolve its source via hwdata.select()"; exit 1; fi
+	@# Every generated file main.tex \input{}s must actually have a generator in
+	@# this tree, and the file on disk must be the one that generator produces.
+	@# tables/selection.tex was \input with NO generator in paper/scripts/ at all
+	@# (its header pointed at /home/rohit/selrule/, outside the release).
+	@bash scripts/check_inputs_exist.sh || exit 1
+	@python3 scripts/gen_selection.py --check || exit 1
+	@# Every generated .tex must be exactly what its generator produces. Three
+	@# of them had been hand-edited under a "do not edit by hand" banner, so
+	@# `make tables` silently reinstated two claims the council had refuted.
+	@python3 scripts/verify_tables.py || exit 1
+	@# tables/catalogue.tex must be the tie-invariant champion-class table, not the
+	@# winner-share table T15 refuted.  `make tables` used to overwrite it silently.
+	@if grep -q 'wins' tables/catalogue.tex; then \
+	   echo "FAIL: tables/catalogue.tex is the REFUTED winner-share table (T15)."; \
+	   echo "  -> re-run scripts/gen_catalogue.py; gen_tournament.py must not be the last writer"; \
+	   exit 1; fi
 	@# Numbers stated more than once must agree. A clean LaTeX build does not
 	@# imply this: \newcommand{\Foo15} typesets a literal "15" without error,
 	@# and a table whose cells sum to 42 in a 40-instance paper builds fine.

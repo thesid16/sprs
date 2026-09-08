@@ -1,0 +1,39 @@
+% Shared preamble for the SPRS talk. Loads the same TikZ/PGFPlots stack and the same
+% generated macro files as the paper, so every number on a slide is the number in the
+% paper -- there is no second source of truth for the talk.
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning,shapes.geometric,shapes.multipart,arrows.meta,%
+                calc,fit,backgrounds,patterns,decorations.pathreplacing,chains,scopes}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\input{figures/_palette.tex}
+\IfFileExists{data/results_macros.tex}{\input{data/results_macros.tex}}{}
+\IfFileExists{data/campaign_macros.tex}{\input{data/campaign_macros.tex}}{}
+\IfFileExists{data/tournament_macros.tex}{\input{data/tournament_macros.tex}}{}
+\IfFileExists{data/coverage_macros.tex}{\input{data/coverage_macros.tex}}{}
+\IfFileExists{data/fabric_macros.tex}{\input{data/fabric_macros.tex}}{}
+\IfFileExists{data/resource_macros.tex}{\input{data/resource_macros.tex}}{}
+\IfFileExists{data/claim_macros.tex}{\input{data/claim_macros.tex}}{}
+\IfFileExists{data/wround_macros.tex}{\input{data/wround_macros.tex}}{}
+% Match main.tex:57-61 exactly.
+\providecommand{\FBT}{\ensuremath{\mathrm{FBT}}}
+\providecommand{\fadd}{\ensuremath{\mathrm{fadd}_{\mathrm{rtl}}}}
+\providecommand{\Rcan}{\ensuremath{R_{\mathrm{canonical}}}}
+\providecommand{\sprs}{\textsc{SPRS}}
+\providecommand{\sv}[1]{\texttt{#1}}
+% A figure variant, scaled to fit a slide.
+% A figure variant, scaled to fit a slide. Falls back to a visible placeholder if the
+% variant does not exist yet, so the deck always builds and a missing figure is
+% obvious on the slide rather than a build failure.
+\newcommand{\figvar}[2][0.62]{%
+  \begingroup\centering
+  \IfFileExists{figures/variants/#2.tex}%
+    {\resizebox{#1\textwidth}{!}{\input{figures/variants/#2}}}%
+    {\fbox{\parbox{#1\textwidth}{\centering\vspace{8mm}\ttfamily\small
+      figure \detokenize{#2} not yet authored\vspace{8mm}}}}%
+  \par\endgroup}

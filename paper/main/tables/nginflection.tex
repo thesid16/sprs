@@ -1,22 +1,46 @@
 % GENERATED — do not edit by hand.
 % script : scripts/gen_cost_tables.py
-% source : /home/rohit/tournament_p1/results/live_hw_results_p1_maxpe.csv
+% source : /home/rohit/sprs-fix/data/results/live_hw_results_p1_maxpe.csv
 % metric : max over PEs (corrected)
-% date   : 2026-08-02
+% date   : 2026-09-08
 \begin{table}[!t]
-\caption{Champion cycle count normalised by the lower bound $\Omega$, banded by $N/G$. The structural model predicts GCI serialisation binds only while $N/G \lesssim 6$--$8$.}
+\caption{Champion cycle count normalised by the lower bound $\Omega$, banded by $N/G$. Bars are on a common $\mathrm{cyc}/\Omega$ axis (1.35--9.07); the orange segment is each band's observed range. The structural model predicts GCI serialisation binds only while $N/G \lesssim 6$--$8$, and the take-away is that the band medians fall monotonically with $N/G$ --- the opposite of what that reading predicts, which is why we withdraw the test (see text).}
 \label{tab:nginflect}
 \centering
 \footnotesize
-\begin{tabular}{@{}lrrr@{}}
+\renewcommand{\arraystretch}{1.18}
+% ---- shared table style (figures/_palette.tex); see scripts/gen_tablestyle.py.
+% main.tex does not load colortbl, so a row tint is a zero-size rule emitted at
+% the start of the row and painted under the cells that follow it.
+% Defined once per document: these files are \input INSIDE float environments,
+% so the definitions must be global or the second table finds them gone.
+\makeatletter
+\@ifundefined{spwd}{\begingroup\globaldefs\@ne
+  \newlength{\spwd}%
+  \newsavebox{\spbox}%
+  \newcommand{\spmeasure}[1]{\sbox{\spbox}{#1}\spwd=\wd\spbox}%
+  \newcommand{\spband}[1]{\rlap{\raisebox{0pt}[0pt][0pt]{\textcolor{#1}{%
+    \rule[-\dimexpr\arraystretch\dp\strutbox+0.35pt\relax]{\spwd}%
+    {\dimexpr\arraystretch\ht\strutbox+\arraystretch\dp\strutbox+0.7pt\relax}}}}}%
+  \newcommand{\spbar}[2]{\textcolor{#1}{\rule[0.04em]{#2}{0.40em}}}%
+  \newcommand{\spspan}[4]{\makebox[#1][l]{\rlap{\textcolor{spSkyF}%
+    {\rule[0.04em]{#1}{0.40em}}}\hspace*{#2}\textcolor{#3}%
+    {\rule[0.04em]{#4}{0.40em}}}}%
+  \newcommand{\sphd}[1]{\textbf{#1}}%
+\endgroup}{}
+\makeatother
+\def\spTBL{%
+\begin{tabular}{@{}l r r@{\,}l r@{\,--\,}l l@{}}
 \toprule
-$N/G$ band & instances & median cyc/$\Omega$ & range \\
+\spband{spBlueF}\sphd{$N/G$ band} & \sphd{Inst.} & \multicolumn{2}{c}{\sphd{Median cyc/$\Omega$}} & \multicolumn{3}{c}{\sphd{Range over the band}} \\
 \midrule
-$\le 2$ & 7 & 4.16 & 3.08--8.04 \\
-$(2,6]$ & 8 & 3.96 & 1.83--9.07 \\
-$(6,8]$ & 10 & 3.28 & 1.77--4.06 \\
-$(8,32]$ & 12 & 1.91 & 1.38--2.34 \\
-$>32$ & 2 & 1.37 & 1.35--1.40 \\
+$\le 2$ & 7 & 4.16 & \spbar{spBlue}{1.376em} & 3.08 & 8.04 & \spspan{3.400em}{0.761em}{spVerm}{2.188em} \\
+\spband{spGrid}$(2,6]$ & 8 & 3.96 & \spbar{spBlue}{1.310em} & 1.83 & 9.07 & \spspan{3.400em}{0.213em}{spVerm}{3.187em} \\
+$(6,8]$ & 10 & 3.28 & \spbar{spBlue}{1.086em} & 1.77 & 4.06 & \spspan{3.400em}{0.186em}{spVerm}{1.009em} \\
+\spband{spGrid}$(8,32]$ & 12 & 1.91 & \spbar{spBlue}{0.632em} & 1.38 & 2.34 & \spspan{3.400em}{0.014em}{spVerm}{0.423em} \\
+$>32$ & 2 & 1.37 & \spbar{spBlue}{0.454em} & 1.35 & 1.40 & \spspan{3.400em}{0.000em}{spVerm}{0.090em} \\
 \bottomrule
 \end{tabular}
+}%
+\spmeasure{\spTBL}\spTBL
 \end{table}

@@ -1,0 +1,245 @@
+{
+  "theme": "T08",
+  "status": "SETTLED",
+  "verifier_note": "Every factual check executed against the frozen snapshot (READ-ONLY, untouched). Scratch scripts, all re-runnable: /home/rohit/t08scratch/{base.py,gci.py,null.py,null2.py,renorm.py,stats.py,confound.py,topo.py,extra.py,knee.py}. T10_verify.json's Omega-composition facts were taken as input AND independently re-verified (Omega==6*ceil(N/G) on all 29 lb_hu_hlf instances: null2.py line 'verify ... True').",
+
+  "verbatim_prediction": {
+    "location": "paper/main.tex:2318-2361, Sec.VII-D-2 '\\subsubsection{A falsifiable prediction}' (typeset Sec. VII-D-2, 'The Cost of the ABI')",
+    "the_mechanism_sentence": "main.tex:2299-2306, term 3: 'GCI serialisation. Consecutive GENERATEs on one PE are spaced by gci_gap = gci_latency + 2 = 6 cycles. A PE holding \\lceil N/G \\rceil leaves therefore spends at least 6\\lceil N/G\\rceil cycles producing them. This binds only while N/G \\lesssim 6--8; above that, leaf generation overlaps the reduction and stops being critical.'",
+    "the_prediction": "main.tex:2320-2325: 'Term 3 makes a specific, checkable claim: leaf generation should stop being the binding constraint once N/G exceeds roughly 6--8. This is a prediction about our measured cycle counts, and the suite spans N/G from 1 (med_full_torus) to 64 (vlarge_extreme_1d), so it can fail.'",
+    "the_verdict_sentence": "main.tex:2344-2350: 'The prediction holds. Below the band the normalised cost is high and roughly flat (4.16 at N/G <= 2, 3.96 on (2,6]); crossing it produces the sharpest transition in the table (3.28 on (6,8] falling to 1.91 on (8,32], a 42% drop); above it the curve flattens again toward 1.37. The location of the knee was fixed in advance by gci_gap = 6, a hardware constant, not fitted to these measurements --- so the agreement is a successful prediction rather than a description.'",
+    "blast_radius": "grep -n 'falsifiab|predict' paper/main.tex + read of abstract (140-178), C3 (352-371) and Conclusion (2820-2853): the prediction, the knee, the [6,8] band and gci_gap appear NOWHERE outside Sec.VII-D-2. gci_gap occurs at exactly two lines in the whole manuscript, 2300 and 2348, both inside this subsection. grep of companion/main.tex for 'falsifiab|N/G|knee|inflect|gci_gap|leaf-generation' returns ZERO hits. Withdrawing the prediction touches one subsubsection, one table (tab:nginflect) and one figure (fig:nginflect) and nothing else."
+  },
+
+  "verdicts": [
+    {
+      "issue": "D006",
+      "finding": "The 'falsifiable prediction' about the N/G knee is an artefact of the normaliser: Omega itself equals 6*ceil(N/G) on 29 of 39 instances (sprs-r05-statistics, sprs-r07-formal-soundness; views B and C).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED",
+      "observed": "Re-verified independently of T10: Omega == 6*ceil(N/G) EXACTLY on all 29 instances whose active_bound is lb_hu_hlf (null2.py). The single decisive statistic is new: Spearman(cycles - Omega, N/G) = +0.091, n=39, t=+0.55, p=0.58 -- NO relationship; Spearman(cycles/Omega, N/G) = -0.754, p=3.0e-12 (extra.py). The numerator carries no N/G signal whatsoever; the entire reported trend lives in the denominator. Both reviewer-demanded checks were then executed. (i) Raw champion cycles against N/G: Spearman = +0.442, i.e. cycles RISE with N/G (renorm.py). Band medians of raw cycles: 159 / 95 / 158 / 196 / 528 -- not declining, not knee-shaped. (ii) Re-normalise by a GCI-free bound Omega_free = max(lb_span, lb_comm, lb_gather, lb_bisection): Spearman(N/G, cyc/Omega_free) = +0.863, band medians 4.16 / 4.90 / 6.72 / 11.18 / 27.44 -- monotonically RISING. The sign flips.",
+      "what_is_true": "The declining series exists only under the one normaliser that contains the tested term. Under either replacement the reviewers named, no knee survives and the trend reverses.",
+      "consequence": "D006's proposed action ('ADD ANALYSIS') is the wrong remedy: the analysis has now been done and it does not rescue the claim, it kills it. The action is REMOVE OR NARROW CLAIM."
+    },
+    {
+      "issue": "D020",
+      "finding": "The only falsifiable performance prediction is tested with a ratio whose denominator is the predicted term itself, and the decomposition of Omega contradicts the direction the paper concludes (sprs-r11-measurement-validity, view E_full_rtl).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED",
+      "observed": "The second half is the more damaging half, and it is exactly right. D020 demanded 'the measured GCI share lb_gen/cycles ... reconcile its rising trend with the term-3 text'. I computed it (gci.py). 6*ceil(N/G)/cycles, band medians: 6.5% (N/G<=2) / 25.9% ((2,6]) / 30.5% ((6,8]) / 52.4% ((8,32]) / 72.8% (>32). Spearman(N/G, GCI share) = +0.774. Clean separation with no overlap: the share is at most 30.0% on every one of the 7 instances with N/G<=2 and at least 42.7% on every one of the 14 instances with N/G>8, reaching 64.4-74.1% on the 5 with N/G>=32. Independently, the argmax of Omega: active_bound == lb_hu_hlf (the GCI term) on 24 of 24 instances with N/G>6 and on 0 of 7 with N/G<=2 (gci.py section B). Under BOTH readings of 'binds' -- argmax of the bound, or share of the measured makespan -- the GCI term binds ABOVE the claimed knee and does not bind below it. The paper's term-3 sentence states the exact opposite.",
+      "what_is_true": "Term 3's stated direction is inverted relative to the paper's own released artefact, over the whole N/G range. The threshold location is also wrong: the artefact's own crossover, max(non-GCI terms)/6, has median 3.0 and ranges 2.2 to 24.5 across the 39 instances (an 11x spread, extra.py), and the observed argmax switch happens between N/G=2.5 and N/G=4.0, not in [6,8].",
+      "consequence": "A hedge is not enough. The sentence at main.tex:2302-2304 asserts something the released data contradict, and a referee can check it in two lines from the artefact. It must be rewritten, and the rewrite is free -- the correct statement is a stronger result than the wrong one."
+    },
+    {
+      "issue": "D085",
+      "finding": "Omega equals the GCI term for every instance above the claimed knee, so the declining ratio is arithmetically forced; withdraw the 'successful prediction' framing (sprs-r12-adversarial, view F_full_lit).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED",
+      "observed": "NULL MODEL (null.py, null2.py). Null: the ABI/GCI has no effect on where the compiler lands; the schedule overshoots Omega by one global constant c. Then cycles/Omega = 1 + c/Omega, with no mechanism, no knee and no threshold in the model. Justified by Spearman(slack, N/G) = +0.091, p=0.58 (slack instead tracks N, rho=+0.858, and G, rho=+0.827). On the 29 instances where Omega == 6*ceil(N/G) exactly, c = median slack = 95 gives band medians NULL 2.98 / 1.96 / 1.25 against published 3.28 / 1.91 / 1.37 for (6,8] / (8,32] / >32; per-instance median absolute relative error 12.3%. Fitting one c over all 39 (c=103) reproduces the three bands at and above the predicted knee to within 0.13 (3.15 vs 3.28; 2.04 vs 1.91; 1.27 vs 1.37) and overshoots only the two bands below it -- precisely the bands where Omega is set by lb_gather rather than the GCI term, i.e. where the null's premise does not hold and where the paper claims GCI is binding.",
+      "what_is_true": "A one-parameter model containing no GCI physics reproduces the published series wherever the paper's own mechanism is supposed to apply.",
+      "consequence": "'so the agreement is a successful prediction rather than a description' (main.tex:2348-2350) cannot stand in any form."
+    },
+    {
+      "issue": "D038",
+      "finding": "The one quantitative test in the cost section is circular; replace cycles/Omega with a metric that does not contain the tested term (sprs-r04-evaluation-adequacy, view C).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED",
+      "observed": "Same evidence as D006/D085. D038's specific proposed replacements were all executed: (a) plot cycles against 6*ceil(N/G) directly -> done, GCI share rises monotonically and refutes term 3's direction; (b) normalise by an Omega with lb_gen excluded -> done, Spearman flips to +0.863; (c) 'hold (G, topology) fixed and sweep N/G, which the suite currently cannot do' -> confirmed the suite cannot: exactly 2 of 37 distinct (N,G) points carry more than one topology, and no (G, topology) cell has more than one N/G value (topo.py).",
+      "what_is_true": "Circular as stated, and every non-circular substitute available from data in hand contradicts the conclusion rather than supporting it.",
+      "consequence": "No new experiment is needed to settle this. The analysis is already done and it is dispositive."
+    },
+    {
+      "issue": "D128",
+      "finding": "The N/G inflection is largely a property of the denominator, and the stated mechanism runs backwards at low N/G (sprs-r08-compiler-impl, view D_paper_code).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED",
+      "observed": "Both halves confirmed; the reviewer UNDERSTATES the second. The mechanism does not run backwards only at low N/G -- it runs backwards over the entire range. See D020: GCI share 6.5% at N/G<=2 rising monotonically to 72.8% at N/G>32.",
+      "what_is_true": "Confirmed, and stronger than reported.",
+      "consequence": "Merges with D020."
+    },
+    {
+      "issue": "D050",
+      "finding": "G explains cycles/Omega at least as well as N/G, and topology cells differ systematically in N/G, so both 'secondary readings' rest on the same confound (sprs-r05-statistics, view C).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED",
+      "observed": "confound.py, OLS in logs over the 39: log(ratio) ~ log2(N/G) gives slope -0.253, R2 = 0.540; log(ratio) ~ log2(G) gives slope +0.140, R2 = 0.571 -- G alone fits BETTER than N/G alone. Both together: b_NG = -0.202, b_G = +0.114, R2 = 0.894, i.e. each carries independent signal and neither alone is the story. Median G per band falls 128 / 20 / 96 / 32 / 12 across the five N/G bands. D050's second demand (median N/G per topology row) is answered under D043.",
+      "what_is_true": "Exactly as stated.",
+      "consequence": "No single-variable reading of tab:nginflect is defensible, and the paper's existing hedge (main.tex:2352-2361) names the right covariates but does not report this."
+    },
+    {
+      "issue": "D043",
+      "finding": "The per-topology cost comparison confounds topology with G and with N/G; only two same-(N,G) topology contrasts exist and they disagree in sign (sprs-r04-evaluation-adequacy, view C).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED",
+      "observed": "topo.py. Exactly 2 of 37 distinct (N,G) points carry more than one topology, and the reviewer's sign claim is exact: (512,64) fat_tree 3.19 vs mesh 3.00 (mesh better); (2048,256) fat_tree 3.81 vs mesh 4.06 (fat_tree better). Topology-cell median N/G: ring 2.0, hypercube 8.0, mesh 8.0, fat_tree 8.0, torus 9.0, linear 48.0 -- a 24x spread. Spearman(cell median ratio, cell median N/G) = -0.82 over the six cells. Regressing out log2(N/G) and re-ranking on median residual scrambles the ordering completely: raw [linear, hypercube, torus, mesh, fat_tree, ring] becomes [mesh, torus, linear, hypercube, ring, fat_tree] -- linear falls from best to third, ring rises from worst to fifth, fat_tree becomes worst. Within a fixed N/G band the headline 3.2x spread collapses to 1.6x ((6,8]: torus 2.23, hypercube 2.59, fat_tree 3.46, mesh 3.53) and 1.5x ((8,32]: linear 1.38, mesh 1.62, hypercube 1.85, torus 2.00, fat_tree 2.09), and the two orderings disagree.",
+      "what_is_true": "The tab:omegaratio ordering is substantially N/G in disguise. The paper's specific narrative -- 'linear sits closest to the bound (1.39) and ring furthest (4.48)' (main.tex:2364-2368) -- is exactly the contrast between the cell with median N/G = 48 and the cell with median N/G = 2.",
+      "consequence": "The 'orders with bisection width, in the direction term 4 implies' reading (main.tex:2362-2385, ~23 source lines) must be withdrawn. This is the single most confounded passage in the section and also the cheapest to delete."
+    },
+    {
+      "issue": "D009",
+      "finding": "Omega is 'six constituents' in Sec.VI-A and 'seven separately-derived constraints' in Sec.VII-D; the artefact carries a seventh term (lb_hu_hlf) absent from Eq. (9) (sprs-r06-claims-vs-data, sprs-r11-measurement-validity; views C and E).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED_NARROWER",
+      "observed": "The text inconsistency is real: main.tex:1945 'The six constituents are, informally:' versus main.tex:2386-2389 'a lower bound assembled from seven separately-derived constraints'. lb_hu_hlf is present in all 40 shipped lower_bounds.json and absent from Eq. (9) at main.tex:1921-1932. BUT the numeric consequence is zero: topo.py shows Omega == max(lb_span, lb_K_opt, lb_gather, lb_bisection) on 40 of 40 instances -- removing lb_hu_hlf changes Omega on NO instance. Eq. (9) exactly as printed reproduces every Omega value the paper reports.",
+      "what_is_true": "A documentary defect with no numeric footprint. lb_hu_hlf ties the other terms where it is the argmax; it never raises Omega.",
+      "consequence": "One-sentence footnote. Zero pages, zero recomputation, no table changes. A referee who checks will find the equation honest about the numbers even though incomplete about the code."
+    },
+    {
+      "issue": "D120",
+      "finding": "Eq. (9) states K_min = 1, but the shipped lower_bounds.json has K_min != 1 on 32 of 40 instances (up to 96) (sprs-r06-claims-vs-data, view C).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED_NARROWER",
+      "observed": "renorm.py: K_min != 1 on exactly 32 of 40, max K_min = 96, distribution {1:8, 2:7, 3:1, 6:7, 12:5, 18:1, 24:4, 35:1, 48:3, 96:3}. The rule reproduces exactly as K_min = ceil(N/86) with max_gens_per_pe = (imem_depth + gci_gap - 1)//gci_gap = (512+5)//6 = 86 (src/sprs_core.py:1063-1065); 0 of 40 deviate. BUT topo.py recomputes lb_K_opt from scratch with K_min forced to 1 and compares the resulting Omega: 0 of 40 instances change. Reason: lb_gen(K) = 6*ceil(N/K) and lb_instr(K) are both non-increasing in K, so the inner minimisation always lands at K >= K_min and the lower limit never binds.",
+      "what_is_true": "Eq. (9) misdescribes the code; the code does not misreport the numbers.",
+      "consequence": "Same one-sentence footnote as D009/D127. Merge all three."
+    },
+    {
+      "issue": "D127",
+      "finding": "The implemented Omega has a seventh term and an IMEM-derived K_min that Eq. (9) does not mention (sprs-r08-compiler-impl, view D_paper_code).",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED_NARROWER",
+      "observed": "Identical to D009 + D120; both verified, both with zero numeric effect on any published Omega (0 of 40 instances change under either correction).",
+      "what_is_true": "Documentary.",
+      "consequence": "Merge into one footnote with D009 and D120."
+    },
+    {
+      "issue": "T08-margin (task item 3: L0b measurement margin vs the 42% step)",
+      "finding": "L0b declares a 1-54% bypass error band on cycle counts and says 'we draw no conclusion from cycle differences smaller than that margin', yet Sec.VII-D-2 draws one from a 42% step; reviewers also report the step the prediction actually names is only 17% and that the series is monotone with heavily overlapping bands.",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED_NARROWER",
+      "observed": "L0b text verified verbatim at main.tex:2690-2703: 'against the clocked protocol, roughly 59% of runs agree bit-exactly and the remainder settle 1-54% lower ... we draw no conclusion from cycle differences smaller than that margin.' Corroborated in the artefact's own notes: docs/PROJECT_NOTES.md:56 'perf_total[0] cycle counts vs original protocol | ~59% bit-exact, ~41% deterministically lower by 1-54%'. ALL 2,822 HW-validated rows carry ErrorCode = OK_BYPASS (Counter over live_hw_results_p1_maxpe.csv column 6: OK_BYPASS 2822, SIM_TB_TIMEOUT_BYPASS 21, SIM_WALLCLOCK_TIMEOUT_BYPASS 11); no clocked-protocol cycle count exists anywhere in the snapshot, so no per-instance bias correction is recoverable without re-simulation. PERCENTAGES (stats.py): adjacent band-median steps are 4.8%, 17.2%, 41.8%, 28.3%. The 42% quoted in the text is the (6,8]->(8,32] step (41.8%), which is AFTER the predicted band; the step at the crossing the prediction actually names, (2,6]->(6,8], is 17.2%. Every one of the four steps is smaller than the declared 54% margin; only the end-to-end 4.16->1.37 drop (67.1%) exceeds it. MONOTONICITY: the series 4.16 > 3.96 > 3.28 > 1.91 > 1.37 is strictly decreasing at every step -- there is no plateau, no knee and no local flattening at the predicted band. The paper calls a 4.8% step 'roughly flat' and a 28.3% step 'flattens again' in the same sentence. OVERLAP: every adjacent pair of published ranges overlaps ((3.08,8.04)/(1.83,9.07) width 4.96; (1.83,9.07)/(1.77,4.06) width 2.23; (1.77,4.06)/(1.38,2.34) width 0.57; (1.38,2.34)/(1.35,1.40) width 0.02). Mann-Whitney U on adjacent bands: <=2 vs (2,6] p=0.418 ns; (2,6] vs (6,8] p=0.286 ns (this IS the predicted crossing); (6,8] vs (8,32] p=0.006; (8,32] vs >32 p=0.045 (fails Bonferroni alpha=0.0125, n=2). BUT THE OBJECTION IS NARROWER THAN IT LOOKS: the bypass omits the O(G^2) clocked write_route protocol, so the bias should be LARGER at large G, and median G falls from 128 in the lowest N/G band to 12 in the highest (extra table). A G-dependent low bias therefore depresses the LOW-N/G bands more and would, if corrected, STEEPEN the reported decline, not flatten it.",
+      "what_is_true": "The paper does violate its own stated evidential rule -- no step in tab:nginflect clears the 54% margin, and the step at the predicted crossing is 17.2% with p=0.29. The '42%' is real arithmetic but is the step above the band, not across it. However, the plausible direction of the bypass bias works in the paper's favour, so the measurement margin is NOT the load-bearing objection.",
+      "consequence": "Do not spend pages or a re-simulation campaign on the margin. Withdrawing the prediction (required anyway by D006/D020/D085) removes the L0b contradiction at zero cost. A bias-corrected re-run would cost the full clocked-protocol campaign and would not save the claim."
+    },
+    {
+      "issue": "T08-falsifiability (task item 4)",
+      "finding": "Is the prediction falsifiable in the Popperian sense the paper claims ('so it can fail', main.tex:2325)?",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED_NARROWER",
+      "observed": "KNEE SCAN (knee.py). I split the 39 instances at every candidate threshold in the observed N/G values and computed the low/high median-ratio contrast and its Mann-Whitney p. Result: t=2.00 -> 1.89 (p=2e-3); t=2.50 -> 1.91; t=3.20 -> 1.90; t=4.00 -> 2.04 (p=1e-4); t=7.14 -> 1.99; t=8.00 -> 1.95 (p=1.8e-5); t=10.00 -> 1.93; t=15.62 -> 2.00; t=16.00 -> 2.19; t=16.67 -> 2.18; t=23.44 -> 2.24 (p=3.6e-4). EVERY threshold from 2 to 23.44 'confirms' a knee, with contrasts in the narrow range 1.89-2.24 and all p<0.01. The predicted band [6,8] gives 1.95-1.99, which is neither the maximum (23.44 does better) nor distinguishable from t=2. DERIVATION: the [6,8] threshold is never derived. grep of main.tex shows gci_gap appears at exactly two lines, 2300 and 2348; the only justification offered is 'The location of the knee was fixed in advance by gci_gap = 6, a hardware constant' -- i.e. a quantity in CYCLES is used as a threshold on N/G, a dimensionless leaves-per-PE count, with no derivation in the paper or the companion (companion grep: zero hits). The artefact's own crossover, max(non-GCI Omega terms)/6, has median 3.0 and ranges 2.2-24.5.",
+      "what_is_true": "Strictly, the prediction is not unfalsifiable: an outcome in which cycles-Omega grew proportionally to N/G would have produced a flat or rising series and refuted it. That outcome was physically possible. BUT the test as executed has no power to discriminate the ONLY content the prediction has beyond 'the ratio declines' -- namely the LOCATION of the knee. Any threshold between N/G=2 and N/G=23 would have been scored as a confirmation by the same data, at essentially the same effect size; the observed series is monotone at every step with no local feature at [6,8]; the step at the predicted crossing is not significant (p=0.286); the only significant adjacent step is one band above the prediction and is reproduced by a mechanism-free null to within 0.13.",
+      "consequence": "The word 'falsifiable' and the phrase 'successful prediction' must both go. A referee who runs the knee scan -- eleven lines of Python against the released artefact -- gets an unanswerable objection."
+    },
+    {
+      "issue": "T08-confounding (task item 5: bands completely confounded with topology)",
+      "finding": "Reviewers report the N/G bands are completely confounded with topology so the reported trend cannot be attributed to N/G.",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED_NARROWER",
+      "observed": "CO-VARIATION IS SEVERE (confound.py, stats.py). Band x topology crosstab over the 39: no topology appears in all five bands; hypercube (n=7) appears in 2 of 5, ring (n=6) in 2 of 5, linear (n=4) in 3 of 5, mesh (n=4) in 3 of 5, fat_tree (n=8) and torus (n=10) in 4 of 5. All six ring instances -- the worst topology cell, median 4.48 -- have N/G in {2.0, 2.0, 2.0, 2.0, 2.5, 4.0}, entirely inside the two bottom bands. Three of four linear instances -- the best cell, median 1.39 -- have N/G >= 32, and both >32-band instances are linear. So the band series runs from a ring-heavy composition to a linear-only one. BUT THE CONFOUND IS NOT WHAT KILLS THE TREND: deleting all six ring instances leaves the series essentially unchanged at 4.13 / 3.96 / 3.28 / 1.91 / 1.37 (n=33), and deleting ring AND linear leaves 4.13 / 4.58 / 3.28 / 1.97 (n=29, top band empty).",
+      "what_is_true": "The reviewers OVERSTATE for tab:nginflect (the N/G reading survives removal of the confounding topologies; what kills it is the normaliser, not the topology mix) and UNDERSTATE for tab:omegaratio (the topology reading does not survive conditioning on N/G at all -- see D043).",
+      "consequence": "Attribute the withdrawal of the N/G prediction to circularity, not to topology confounding; attribute the withdrawal of the topology ordering to N/G confounding. Getting these the right way round matters: a referee who reads a confession of topology confounding for the N/G table will correctly notice the confession does not explain the effect."
+    },
+    {
+      "issue": "T08-new-1 (NOT raised by any of the fourteen reviewers)",
+      "finding": "The paper UNDERSTATES a real, non-circular, mechanism-level result that it already has in hand and that is strictly stronger than the withdrawn prediction.",
+      "classification": "FACTUAL",
+      "verdict": "CONFIRMED",
+      "observed": "gci.py. The quantity 6*ceil(N/G)/cycles is not circular: the numerator is the RTL-proven constant gci_gap = 6 times the instance's leaves-per-PE, and the denominator is the measured champion cycle count. No lower bound appears in it. It is a LOWER bound on the GCI share, because lb_gen assumes a perfectly balanced leaf assignment; any real assignment puts at least ceil(N/G) leaves on the busiest PE. Measured: at most 30.0% on every one of the 7 instances with N/G<=2; at least 42.7% on every one of the 14 with N/G>8; 64.4-74.1% on the 5 with N/G>=32. The two groups do not overlap. Spearman = +0.774, n=39. So at least two thirds of the champion makespan at the top of the suite is leaf-generation serialisation on a single-channel GCI. SECOND UNDERSTATEMENT (extra.py): the compiler's absolute distance from Omega is near-constant -- median 96 cycles, IQR [60, 147] -- across a 30x range of Omega (13 to 384), and is uncorrelated with N/G (rho=+0.091, p=0.58). That is a much better statement about compiler quality than 'median ratio 2.34': the schedule carries a roughly fixed ~96-cycle overhead over the analytic floor regardless of problem size, so its relative efficiency improves monotonically with scale and reaches 1.35x at the largest instance.",
+      "what_is_true": "The exact fact that destroys the 'prediction' (constant additive slack, GCI-dominated denominator) is, restated the right way round, two publishable positive results the manuscript does not report.",
+      "consequence": "Withdrawal is not a net loss of content. Replacing 44 lines of a circular prediction with 6 lines of direct measurement makes the section shorter AND stronger, and it supplies the quantitative backing for the paper's own unquantified remark that 'a multi-channel leaf interface would remove it' (main.tex:2306-2307)."
+    }
+  ],
+
+  "headline": "The prediction must be withdrawn, and withdrawing it is cheap, contained and net-positive. Three independent things are true at once. (1) The test is circular: Omega equals 6*ceil(N/G) exactly on 29 of 39 instances; the absolute distance cycles-Omega carries no N/G signal at all (Spearman +0.091, p=0.58) while the ratio carries a strong one (-0.754, p=3e-12), so 100% of the reported trend is the denominator, and a one-parameter mechanism-free null (cycles = Omega + 96) reproduces the published band medians at and above the predicted knee to within 0.13. (2) The test has no power to locate the knee, which is the prediction's only content: every candidate threshold from N/G=2 to N/G=23.44 yields a low/high median contrast of 1.89-2.24 at p<0.01, the predicted band is not the best of them, the series is strictly monotone at all four steps with heavily overlapping ranges, and the crossing the prediction actually names is a 17.2% step at Mann-Whitney p=0.286. (3) Worse than circular, the mechanism as written is directionally refuted by the paper's own artefact: the GCI term is the argmax of Omega on 24 of 24 instances with N/G>6 and on 0 of 7 with N/G<=2, and the measured GCI share 6*ceil(N/G)/cycles rises monotonically from a band median of 6.5% to 72.8% -- leaf-generation serialisation is the DOMINANT cost above the knee, not a term that stops binding there. Against that, two consolations. The blast radius is one subsubsection: the prediction, the knee, the [6,8] band and gci_gap appear nowhere in the abstract, C3, the conclusion, or the companion. And the same data, restated the right way round, yield two results the paper currently omits -- a clean, non-circular measurement that at least 43% (and up to 74%) of the champion makespan at high N/G is GCI leaf serialisation, which quantifies the paper's own unquantified 'a multi-channel leaf interface would remove it'; and a near-constant ~96-cycle compiler overhead over the analytic floor across a 30x range of Omega, which is a better compiler-quality statement than 'median 2.34'. The three Eq. (9) defects (missing lb_hu_hlf, K_min=1 vs ceil(N/86), 'six' vs 'seven' constituents) are real but numerically inert: 0 of 40 published Omega values change under either correction, so one footnote settles all three. The measurement-margin collision with L0b is real but not load-bearing, and its likely direction favours the authors.",
+
+  "prediction_is_falsifiable": "no, as operationalised -- and this is the precise form the paper should concede. Strictly it is not unfalsifiable: a measurement in which cycles-Omega grew in proportion to N/G would have produced a flat or rising band series and refuted it, and that outcome was physically possible. But the executed test cannot discriminate the knee's LOCATION, which is the prediction's entire content beyond 'the ratio declines'. Splitting the 39 instances at every candidate threshold (knee.py) shows that N/G = 2, 4, 8, 16 and 23.44 all 'confirm' a knee with contrasts of 1.89-2.24 and p<0.01; the predicted [6,8] band scores 1.95-1.99, neither best nor distinguishable. The series is strictly monotone at every step with no local feature at the band, the step at the predicted crossing is 17.2% at p=0.286, the only significant adjacent step (p=0.006) is one band higher and is reproduced by a null with no mechanism in it, and the [6,8] threshold is nowhere derived -- it is set equal to gci_gap = 6, a quantity in cycles, applied to N/G, a dimensionless leaves-per-PE count.",
+
+  "null_model_reproduces_bands": true,
+
+  "confounded_with_topology": "Yes, severely -- but in the opposite direction from the one the reviewers emphasise, and this distinction is load-bearing. For tab:omegaratio (the topology reading) the confound is decisive: cell median N/G spans 2 (ring) to 48 (linear), Spearman(cell ratio, cell N/G) = -0.82, only 2 of 37 distinct (N,G) points carry more than one topology and those two disagree in sign, and re-ranking on residuals after regressing out log2(N/G) scrambles the order completely (linear best->3rd, ring worst->5th, fat_tree ->worst); within a fixed band the 3.2x headline spread collapses to 1.5-1.6x and the two bands' orderings disagree. For tab:nginflect (the N/G reading) the co-variation is real -- no topology spans all five bands, all six ring instances sit at N/G<=4, both >32 instances are linear -- but it is NOT what breaks the claim: deleting all six ring instances leaves the band series at 4.13 / 3.96 / 3.28 / 1.91 / 1.37, essentially unchanged. What breaks the N/G claim is the normaliser, not the topology mix. Additionally G alone fits the ratio better than N/G alone (R2 0.571 vs 0.540), so even a topology-free reading is not a clean N/G reading.",
+
+  "surviving_statement": "Term~3 can be measured directly rather than through a ratio. The GCI floor $6\\lceil N/G\\rceil$ accounts for at most $30\\%$ of the champion makespan on every instance with $N/G\\le 2$, and for at least $43\\%$ on every instance with $N/G>8$, rising to $64$--$74\\%$ at $N/G\\ge 32$ (Spearman $\\rho=+0.77$, $n=39$); since $6\\lceil N/G\\rceil$ assumes a perfectly balanced leaf assignment, these are lower bounds on the true share. Leaf-generation serialisation is therefore the \\emph{dominant} term at high $N/G$, and a multi-channel leaf interface is the highest-value change available to this fabric. We do not read Table~\\ref{tab:nginflect} as independent evidence for this: $\\Omega$ equals $6\\lceil N/G\\rceil$ on $29$ of the $39$ instances, the absolute distance $\\mathrm{cycles}-\\Omega$ carries no $N/G$ signal ($\\rho=+0.09$, $p=0.58$), and a one-parameter model with no mechanism in it reproduces the band medians at and above $N/G=6$ to within $0.13$. [Companion-only supplement: the band table, the per-instance figure, the null-model comparison and the knee scan.] [Separate footnote, settling D009/D120/D127 at zero cost: 'As implemented, $\\Omega$ also evaluates a GCI-aware Hu/HLF term and derives $K_{\\min}$ from IMEM depth as $\\lceil N/86\\rceil$; neither alters $\\Omega$ on any of the 40 instances, so Eq.~(9) as printed reproduces every value reported here.'] [Replacement for the withdrawn topology reading: 'Table~\\ref{tab:omegaratio} is a descriptive per-topology summary, not a controlled contrast: the six cells differ in median $N/G$ by a factor of $24$, the suite contains only two $(N,G)$ points carrying more than one topology, and those two disagree in sign. We draw no topology ordering from it.']",
+
+  "page_delta": "-0.5 page billed (conservative; -0.6 likely). CUT/MOVE: Sec.VII-D-2 prose main.tex:2318-2361, 44 source lines ~= 0.40 col; tab:nginflect ~= 0.18 col; fig:nginflect (5.8 cm tikz + caption) ~= 0.48 col; the two withdrawn topology-reading paragraphs main.tex:2362-2385, 23 lines ~= 0.22 col. Total removed ~= 1.28 columns ~= 0.64 page. ADD: ~8 lines of replacement prose plus one footnote ~= 0.12 col ~= 0.06 page. The table, the figure, the null-model comparison and the knee scan go to the companion, which currently contains ZERO material on this (grep: no hits for falsifiab/N-G/knee/inflect/gci_gap), so nothing is lost and nothing is billed. NO NEW EXPERIMENT IS REQUIRED: every substitute analysis the reviewers demanded has already been executed from data in hand, and each of them contradicts the claim rather than rescuing it, so re-simulation could only make the situation worse.",
+
+  "cheapest_adequate_fix_ladder": [
+    {"step": "1. Is the finding true?", "answer": "Yes, verified by execution on the released artefact. Ten of ten docket issues confirmed, three of them narrowed to documentary-only."},
+    {"step": "2. Can it be resolved by narrowing or removing an over-claim?", "answer": "YES for the prediction and the topology ordering. Remove 'falsifiable', 'the prediction holds', 'successful prediction rather than a description', and the whole bisection-width topology reading. This is the entire fix for D006, D038, D043, D050, D085 and the L0b collision."},
+    {"step": "3. Restate/clarify/disclose?", "answer": "YES for D009/D120/D127 -- one footnote, since 0 of 40 Omega values change. And YES for D020/D128, but restating is not enough on its own: the term-3 sentence asserts a direction the artefact contradicts, so it must be REWRITTEN, not hedged."},
+    {"step": "4. Analysis of data already in hand?", "answer": "YES, and it is already done: the GCI-share measurement (6.5% -> 72.8%, Spearman +0.774) replaces the withdrawn prediction with a stronger non-circular result at a net saving of ~36 source lines. It needs no new data."},
+    {"step": "5. New experiment?", "answer": "NO. Every cheaper option succeeds. The three experiments a referee might demand -- (a) a (G, topology)-controlled N/G sweep, (b) a clocked-protocol re-run to remove the bypass bias, (c) a non-ABI baseline -- are all unnecessary here: (a) would test a claim we are withdrawing; (b) would, if anything, steepen the trend we are withdrawing (median G falls 128->12 across the bands and the omitted write_route protocol is O(G^2)); (c) is T10's question, not this one. A Q1 referee will NOT reject for the absence of any of them once the claim they would test is gone."}
+  ],
+
+  "decision_ledger_entries": [
+    {
+      "issue": "T08-a: the falsifiable N/G prediction (D006, D020, D038, D085, D128)",
+      "decision": "REMOVE OR NARROW CLAIM",
+      "reason": "D006/D038/D085 CONFIRMED: Omega == 6*ceil(N/G) on 29 of 39; Spearman(cycles-Omega, N/G) = +0.091 (p=0.58) versus Spearman(cycles/Omega, N/G) = -0.754 (p=3e-12); a one-parameter mechanism-free null reproduces the band medians at and above the knee to within 0.13; re-normalising by a GCI-free bound flips the Spearman to +0.863. D020/D128 CONFIRMED and stronger than reported: the GCI term is the argmax of Omega on 24 of 24 instances with N/G>6 and 0 of 7 with N/G<=2, and the measured GCI share rises 6.5% -> 72.8%, so term 3's stated direction is inverted. T08-falsifiability CONFIRMED_NARROWER: every threshold from N/G=2 to 23.44 'confirms' the knee at p<0.01.",
+      "cheaper_alternatives_rejected": [
+        {"option": "Keep the prediction with a stronger hedge", "why_rejected": "The existing hedge (main.tex:2352-2361) already names topology, G and algorithm family as covariates and is not enough, because the confound it confesses is not the one that matters. It does not mention the normaliser, and deleting the confounding topologies leaves the series unchanged (4.13/3.96/3.28/1.91/1.37). A hedge also cannot repair a directional error: term 3 asserts GCI stops binding above the knee and the artefact says it binds only above the knee."},
+        {"option": "Keep the table, drop only the word 'falsifiable'", "why_rejected": "Leaves 'The prediction holds' and 'successful prediction rather than a description' in place, which are the sentences a referee can refute in two lines from the released artefact. Also leaves the term-3 direction error untouched."},
+        {"option": "Re-normalise and report the corrected series", "why_rejected": "Executed. Omega_free = max(lb_span, lb_comm, lb_gather, lb_bisection) is a small near-constant floor (band medians 23/16/20/18/20) so cycles/Omega_free is essentially cycles/const and rises monotonically. Neither normaliser measures the mechanism; the direct GCI-share measurement does, and it is shorter."}
+      ],
+      "required_change": "Delete main.tex:2318-2361 (the whole '\\subsubsection{A falsifiable prediction}'), the \\input of tables/nginflection at 2326 and the fig:nginflect float at 2328-2336. Rewrite term 3 at main.tex:2302-2307 to state the correct direction: the GCI floor is negligible at low N/G and dominates at high N/G. Insert the four-sentence replacement given in surviving_statement into the structural-decomposition subsection. Amend the lead-in at main.tex:2279-2280 ('We give the decomposition below, then test one of its predictions against the measured data') to 'We give the decomposition below and measure the one term that our own hardware constant makes directly measurable.' Move tab:nginflect, fig:nginflect, the null-model comparison and the knee scan into the companion with the corrected framing.",
+      "affected": ["sec:results-overhead", "claim:C3", "claim:cost-decomposition", "tab:nginflect", "fig:nginflect", "eq:omega", "paper/main.tex:2279-2361", "paper/tables/nginflection.tex", "paper/figures/ng_inflection.tex", "companion/main.tex"],
+      "dependencies": ["T10 (Omega composition and the no-baseline framing) must be settled first or move with this; the replacement text reuses T10's finding that Omega's binding terms are reducer-agnostic."],
+      "validation": "grep -n 'falsifiab|prediction holds|successful prediction|knee|inflect|gci..gap' paper/main.tex returns only the rewritten term-3 sentence. The GCI-share numbers reproduce from /home/rohit/t08scratch/gci.py against the released artefact. The abstract, C3 and the conclusion are untouched (verified: they never mention the prediction).",
+      "page_delta": "-0.45",
+      "acceptance_delta": "large-positive",
+      "confidence": "high"
+    },
+    {
+      "issue": "T08-b: the per-topology ordering as an inference (D043, D050)",
+      "decision": "REMOVE OR NARROW CLAIM",
+      "reason": "D043 CONFIRMED exactly as stated: 2 same-(N,G) contrasts, disagreeing in sign ((512,64) mesh 3.00 < fat_tree 3.19; (2048,256) fat_tree 3.81 < mesh 4.06). D050 CONFIRMED: G alone fits better than N/G alone (R2 0.571 vs 0.540). New: topology-cell median N/G spans 2 to 48, Spearman(cell ratio, cell N/G) = -0.82, and the ordering scrambles completely after conditioning on N/G.",
+      "cheaper_alternatives_rejected": [
+        {"option": "Add median N/G per row as D050 asks and keep the ordering", "why_rejected": "Adding the column makes the confound visible and the ordering indefensible in the same table. Better to delete the inference and keep the table as description."},
+        {"option": "Add same-(N,G) instances across all six topologies (D043's first option)", "why_rejected": "That is a new experiment. It would take roughly 12-18 compiles plus xsim runs, but it tests a secondary reading that costs 23 source lines to delete. A Q1 referee will not reject for the absence of a controlled topology contrast once no topology claim is made."}
+      ],
+      "required_change": "Delete main.tex:2362-2385 (the 'Two secondary readings follow' paragraph and the 'The direction deserves a word' paragraph). Retain tab:omegaratio and the final clause 'no instance reaches Omega --- the best is 1.35x'. Insert the two-sentence descriptive replacement given in surviving_statement.",
+      "affected": ["sec:results-overhead", "tab:omegaratio", "fig:omegabyinst", "sec:limitations L5", "paper/main.tex:2362-2385"],
+      "dependencies": ["T08-a (same subsection; edit together)"],
+      "validation": "No sentence in Sec.VII-D asserts an ordering over topologies. tab:omegaratio's caption is descriptive.",
+      "page_delta": "-0.13",
+      "acceptance_delta": "positive",
+      "confidence": "high"
+    },
+    {
+      "issue": "T08-c: Eq. (9) does not match the implementation (D009, D120, D127)",
+      "decision": "EDIT",
+      "reason": "All three CONFIRMED_NARROWER. lb_hu_hlf is absent from Eq. (9) and K_min is stated as 1 while the code uses ceil(N/86); but recomputing Omega under both corrections changes 0 of 40 published values (topo.py). The 'six'/'seven' constituents inconsistency is real (main.tex:1945 vs 2386-2389).",
+      "cheaper_alternatives_rejected": [
+        {"option": "Rewrite Eq. (9) to include the seventh term and the real K_min", "why_rejected": "Costs equation space and a re-typeset for zero numeric change; a footnote conveys the same information in one line and reads as candour rather than correction."},
+        {"option": "NO CHANGE", "why_rejected": "Two reviewers in two independent views found it, and the released artefact makes it checkable in seconds. An uncorrected mismatch between a printed equation and shipped data invites the referee to doubt everything else in the section."}
+      ],
+      "required_change": "Add one footnote to Eq. (9) at main.tex:1932: 'As implemented, compute_lower_bound also evaluates a GCI-aware Hu/HLF term and derives $K_{\\min}$ from IMEM depth as $\\lceil N/86\\rceil$ rather than $1$; neither alters $\\Omega$ on any of the 40 instances, so (9) as printed reproduces every value reported here.' Change 'seven separately-derived constraints' at main.tex:2388 to 'six'.",
+      "affected": ["eq:omega", "sec:method-lb", "sec:results-overhead", "paper/main.tex:1932", "paper/main.tex:2388"],
+      "dependencies": [],
+      "validation": "Recompute Omega for all 40 instances from Eq. (9) as printed and confirm 40/40 agreement with lower_bounds.json (already done: /home/rohit/t08scratch/topo.py).",
+      "page_delta": "+0.02",
+      "acceptance_delta": "positive",
+      "confidence": "high"
+    },
+    {
+      "issue": "T08-d: L0b's 54% margin versus conclusions drawn from a 42% step",
+      "decision": "NO CHANGE (resolved as a side effect of T08-a)",
+      "reason": "T08-margin CONFIRMED_NARROWER. The contradiction is real -- all four band-median steps (4.8%, 17.2%, 41.8%, 28.3%) sit inside the declared 1-54% band, and all 2,822 rows are OK_BYPASS with no clocked-protocol counterpart anywhere in the snapshot. But once the prediction is withdrawn, no conclusion is drawn from any cycle difference in tab:nginflect and the contradiction disappears. Separately, the bias's plausible direction favours the authors: median G falls from 128 to 12 across the bands and the omitted write_route protocol is O(G^2), so correction would steepen rather than flatten the decline.",
+      "cheaper_alternatives_rejected": [
+        {"option": "Re-run the campaign under the clocked write_route protocol", "why_rejected": "It is the most expensive answer available -- the O(G^2) protocol is precisely why bypass was adopted, and at G up to 4096 the cost is prohibitive. It would validate a claim the paper is withdrawing. No Q1 referee will reject for its absence once no cycle-difference conclusion is drawn."},
+        {"option": "Report a bias-corrected band table", "why_rejected": "Impossible from data in hand: no clocked-protocol cycle count exists in the snapshot (ErrorCode is OK_BYPASS on 2,822 of 2,822), so the per-instance bias is unrecoverable without re-simulation."}
+      ],
+      "required_change": "None beyond T08-a. Optionally add six words to L0b noting the surviving GCI-share statement is a ratio of a measured makespan to an analytic constant and is therefore biased in a known direction (the share is over-stated if the bypass under-counts cycles), which is conservative for the low-N/G end and anti-conservative for the high-N/G end -- one clause, and it pre-empts the obvious referee question.",
+      "affected": ["sec:limitations L0b", "sec:results-overhead", "paper/main.tex:2690-2703"],
+      "dependencies": ["T08-a"],
+      "validation": "No sentence in the paper draws a conclusion from a cycle difference smaller than 54%.",
+      "page_delta": "0.00",
+      "acceptance_delta": "neutral",
+      "confidence": "high"
+    },
+    {
+      "issue": "T08-e: the paper understates itself on the GCI share and on compiler tightness",
+      "decision": "ADD ANALYSIS",
+      "reason": "T08-new-1 CONFIRMED. The GCI-share measurement (at most 30.0% on all 7 instances with N/G<=2, at least 42.7% on all 14 with N/G>8, 64.4-74.1% on the 5 with N/G>=32, Spearman +0.774) is non-circular, comes from data already in hand, and quantifies the paper's own unquantified claim that a multi-channel leaf interface would remove term 3. The near-constant ~96-cycle slack across a 30x range of Omega is a better compiler-quality statement than the median 2.34 ratio.",
+      "cheaper_alternatives_rejected": [
+        {"option": "Withdraw the prediction and add nothing", "why_rejected": "Leaves the cost section with no quantitative content at all, which is what made D014/D032 reject-worthy for one reviewer. The replacement is four sentences and is strictly cheaper than what it replaces (44 lines + a table + a figure), so it does not need to be paid for."}
+      ],
+      "required_change": "Insert the GCI-share sentences from surviving_statement into the structural-decomposition subsection, immediately after the rewritten term 3. Add the slack observation to the 'Distance to the lower bound' subsubsection as one clause: 'the absolute distance is near-constant (median 96 cycles, IQR 60-147) across a 30-fold range of $\\Omega$, so the ratio improves with scale rather than the schedule degrading with it.'",
+      "affected": ["sec:results-overhead", "claim:cost-decomposition", "paper/main.tex:2299-2312", "paper/main.tex:2387-2400"],
+      "dependencies": ["T08-a", "T10"],
+      "validation": "Every number reproduces from /home/rohit/t08scratch/gci.py and /home/rohit/t08scratch/extra.py against results/results/*/lower_bounds.json and live_hw_results_p1_maxpe.csv.",
+      "page_delta": "+0.06",
+      "acceptance_delta": "large-positive",
+      "confidence": "high"
+    }
+  ]
+}

@@ -37,7 +37,15 @@ module noc_system #(
     parameter int CN_WATCHDOG   = 20000,
     parameter int GCI_LATENCY   = 4,
     parameter int CN_RT_DEPTH   = 4096,   // routing table depth per router
-    parameter int RESULT_NODE   = 0       // Which GPU reports the root result (CBT Node 0)
+    parameter int RESULT_NODE   = 0,      // Which GPU reports the root result (CBT Node 0)
+    // Width of every field of the adjacency-configuration interface.  The
+    // addressable router range is 0 .. 2**ADJ_ID_W - 2, because the all-ones
+    // code is the "disconnected" sentinel.  12 (the historical fixed width)
+    // therefore tops out at router 4094 and SILENTLY ALIASES anything above it,
+    // which is what broke fat_tree G=4096 (4,192 routers).  Widen at the
+    // instantiation site for such configurations; 12 keeps every smaller
+    // instance bit-identical to the shipped fabric.
+    parameter int ADJ_ID_W      = 12
 )(
     input  logic        clk,
     input  logic        rst,
@@ -64,10 +72,10 @@ module noc_system #(
 
     // ── Adjacency Table Config (loaded before program_start) ──
     input  logic        adj_wr_en,
-    input  logic [11:0] adj_rtr_id,
-    input  logic [11:0] adj_port_id,
-    input  logic [11:0] adj_target_rtr,
-    input  logic [11:0] adj_target_port,
+    input  logic [ADJ_ID_W-1:0] adj_rtr_id,
+    input  logic [ADJ_ID_W-1:0] adj_port_id,
+    input  logic [ADJ_ID_W-1:0] adj_target_rtr,
+    input  logic [ADJ_ID_W-1:0] adj_target_port,
 
     // ── GCI Buffer Load (leaf values, loaded at runtime) ──
     input  logic [N_NODES-1:0]        gci_buf_wr_en,
@@ -82,18 +90,29 @@ module noc_system #(
 
     // =========================================================================
     // Adjacency Table Storage
-    // adj_table[router][port] = {target_router[11:0], target_port[11:0]}
-    // Value of 12'hFFF for target_router means disconnected
+    // adj_table[router][port] = {target_router, target_port}, ADJ_ID_W bits each
+    // All-ones ({ADJ_ID_W{1'b1}}) for target_router means disconnected
     // =========================================================================
-    logic [11:0] adj_tgt_rtr  [0:N_ROUTERS-1][0:PORTS_PER_RTR-1];
-    logic [11:0] adj_tgt_port [0:N_ROUTERS-1][0:PORTS_PER_RTR-1];
+    localparam logic [ADJ_ID_W-1:0] ADJ_DISC_CODE = {ADJ_ID_W{1'b1}};
+    logic [ADJ_ID_W-1:0] adj_tgt_rtr  [0:N_ROUTERS-1][0:PORTS_PER_RTR-1];
+    logic [ADJ_ID_W-1:0] adj_tgt_port [0:N_ROUTERS-1][0:PORTS_PER_RTR-1];
+
+    // The sentinel steals one code point, so the last addressable router is
+    // 2**ADJ_ID_W - 2.  Fail loudly at elaboration instead of aliasing silently.
+    generate
+        if (N_ROUTERS > (2**ADJ_ID_W) - 1) begin : gen_adj_width_check
+            initial $fatal(1,
+                "noc_system: N_ROUTERS=%0d exceeds the ADJ_ID_W=%0d adjacency range (max addressable %0d); widen ADJ_ID_W",
+                N_ROUTERS, ADJ_ID_W, (2**ADJ_ID_W) - 2);
+        end
+    endgenerate
 
     always_ff @(posedge clk) begin
         if (rst) begin
             for (int r = 0; r < N_ROUTERS; r++)
                 for (int p = 0; p < PORTS_PER_RTR; p++) begin
-                    adj_tgt_rtr[r][p]  <= 12'hFFF;  // disconnected
-                    adj_tgt_port[r][p] <= 12'hFFF;
+                    adj_tgt_rtr[r][p]  <= ADJ_DISC_CODE;  // disconnected
+                    adj_tgt_port[r][p] <= ADJ_DISC_CODE;
                 end
         end else if (adj_wr_en) begin
             $display("[NOC_SYS] WRITE ADJ: [%0d][%0d] <- TGT_RTR:%0d TGT_PRT:%0d", adj_rtr_id, adj_port_id, adj_target_rtr, adj_target_port);
@@ -253,7 +272,7 @@ module noc_system #(
     // Adjacency-Driven Inter-Router Wiring via noc_link Instances
     //
     // For each router R, port P (skipping port 0 which is the local NI):
-    //   If adj_tgt_rtr[R][P] != 0xFFF, populate routing paths dynamically
+    //   If adj_tgt_rtr[R][P] != ADJ_DISC_CODE, populate routing paths dynamically
     // =========================================================================
     always_comb begin
         // Default: all ports disconnected
@@ -275,7 +294,7 @@ module noc_system #(
         // Wire based on adjacency table
         for (int r = 0; r < N_ROUTERS; r++) begin
             for (int p = 0; p < PORTS_PER_RTR; p++) begin
-                if (adj_tgt_rtr[r][p] != 12'hFFF) begin
+                if (adj_tgt_rtr[r][p] != ADJ_DISC_CODE) begin
                     automatic int tr = adj_tgt_rtr[r][p];
                     automatic int tp = adj_tgt_port[r][p];
                     if (tr < N_ROUTERS && tp < PORTS_PER_RTR) begin

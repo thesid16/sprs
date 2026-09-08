@@ -54,12 +54,23 @@ print(f"  makespan {sched.makespan}, {len(tb)} chars of SystemVerilog emitted")
 open(os.path.join(os.environ["SPRS_ROOT"], "smoke_tb.sv"), "w").write(tb)
 PY
 
-say "4. The ABI holds: same N, different G and topology, same root"
-python3 - <<'PY' && ok "bitwise invariance reproduced" || bad "INVARIANCE VIOLATED"
-import sys, os, re
-sys.path.insert(0, os.path.join(os.environ["SPRS_ROOT"], "src"))
+say "4. The ABI holds: same N, different G and topology, same OBSERVED root"
+# The root compared here is OBSERVED: tools/exec_image.py parses the emitted
+# testbench's own load_instr / load_gci words and executes them against a
+# functional model of the compute-node ISA.  It is NOT the EXPECTED localparam,
+# which emit_sv_testbench computes from (tree, alu_op) alone and which therefore
+# agreed across configurations even when the program image was empty, NOP-ed or
+# bit-inverted.  tests/checkers/test_smoke4_negative_control.py is the standing
+# proof that this step can now fail.
+python3 - <<'PY' && ok "bitwise invariance reproduced (observed roots)" || bad "INVARIANCE VIOLATED"
+import sys, os
+ROOT = os.environ["SPRS_ROOT"]
+sys.path.insert(0, os.path.join(ROOT, "src"))
+sys.path.insert(0, os.path.join(ROOT, "tools"))
 import sprs_core as sc
+import exec_image as ex
 roots = {}
+problems = []
 for g, t in [(4,'hypercube'), (8,'fat_tree'), (16,'torus'), (2,'linear')]:
     tree = sc.CBTree(32); topo = sc.build_topology(t, g)
     _, s2f = sc.STAGE2_METHODS['2b']; _, s3f = sc.STAGE3_METHODS['3a']
@@ -70,16 +81,40 @@ for g, t in [(4,'hypercube'), (8,'fat_tree'), (16,'torus'), (2,'linear')]:
     tb = sc.emit_sv_testbench(tree, topo, progs, assignment=asgn,
                               addr_alloc=sched.addr_alloc, schedule=sched,
                               alu_op=sc.ALU_FADD)
-    m = re.search(r"EXPECTED\s*=\s*64'h([0-9A-Fa-f]{16})", tb)
-    roots[f"G={g} {t}"] = m.group(1).upper()
-for k, v in roots.items(): print(f"  {k:<18} 0x{v}")
+    obs, exp, info = ex.observed_root(tb)
+    key = f"G={g} {t}"
+    so = "----------------" if obs is None else f"{obs:016X}"
+    print(f"  {key:<18} observed 0x{so}  expected 0x{exp:016X}  "
+          f"compute={info['n_compute']} send={info['n_send']} gen={info['n_generate']}")
+    if not info["all_done"]:
+        problems.append(f"{key}: image did not run to completion "
+                        f"(stuck {info['stuck'][:4]}, illegal {list(info['illegal'])[:4]})")
+    elif obs is None:
+        problems.append(f"{key}: root PE retired no COMPUTE")
+    elif obs != exp:
+        problems.append(f"{key}: observed 0x{obs:016X} != expected 0x{exp:016X}")
+    else:
+        roots[key] = obs
+assert not problems, "; ".join(problems)
+assert len(roots) == 4, f"only {len(roots)} configurations produced a root"
 assert len(set(roots.values())) == 1, f"DIVERGENCE: {set(roots.values())}"
 PY
 
+say "4b. Compiler post-conditions on the emitted image"
+python3 "$ROOT/tools/check_c_leaf.py" --smoke && ok "C-leaf holds on the emitted GCI image" \
+  || bad "C-leaf violated"
+python3 "$ROOT/tools/validate_abi.py" --smoke && ok "ABI post-conditions hold" \
+  || bad "ABI post-condition violated"
+
 say "5. Every published claim re-derives from the released data"
-python3 tools/verify_numbers.py >/tmp/_vn.log 2>&1 \
-  && ok "$(grep -c '\[OK ' /tmp/_vn.log) claims reproduce" \
-  || { bad "claims did not reproduce"; grep '\[FAIL' /tmp/_vn.log | head; }
+# Log to a private temp file, not a fixed name in /tmp: a world-writable
+# /tmp/_vn.log is both a collision and a symlink-follow hazard, and on a shared
+# machine another user's leftover file makes this step read someone else's run.
+VNLOG=$(mktemp "${TMPDIR:-/tmp}/sprs_verify_numbers.XXXXXX")
+python3 tools/verify_numbers.py >"$VNLOG" 2>&1 \
+  && ok "$(grep -c '\[OK ' "$VNLOG") claims reproduce" \
+  || { bad "claims did not reproduce"; grep -E '\[FAIL|\[MISSING' "$VNLOG" | head; }
+rm -f "$VNLOG"
 
 if [ "${1:-}" = "--with-hw" ]; then
   say "6. Hardware simulation of one testbench"
